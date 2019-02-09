@@ -1,9 +1,14 @@
 
 /** This class will essentially represent an entire player state */
 class Board {
+    public gold: number = 0;
 
-    public deck: Array<Card>;
+    public hand: Array<Card> = [];
+    public deck: Array<Card> = [];
     public discard: Array<Card> = [];
+    public workers: Array<Card> = [];
+    public startingWorkers: number;
+
     public inPlay: Array<Card> = [];
     public heroZone: Array<Hero> = [];
     public patrolZone: PatrolZone = new PatrolZone();
@@ -15,6 +20,36 @@ class Board {
     public tech3: TechBuilding = null;
 
     public addOn: AddOn = null;
+
+    constructor(playerNumber: number) {
+        if (playerNumber == 1) {
+            this.startingWorkers = 4;
+        }
+        else {
+            this.startingWorkers = 5;
+        }
+    }
+
+    public drawCards(howMany: number) {
+        // If we need to draw more than we have, shuffle the discard pile
+        if (this.deck.length < howMany) {
+            this.shuffleDiscard();
+            this.deck.concat(this.discard);
+            this.discard = [];
+        }
+
+        this.hand = this.deck.splice(0, howMany);
+    }
+
+    private shuffleDiscard() {
+        let j, x, i;
+        for (i = this.discard.length - 1; i > 0; i--) {
+            j = Math.floor(Math.random() * (i + 1));
+            x = this.deck[i];
+            this.discard[i] = this.discard[j];
+            this.discard[j] = x;
+        }
+    }
 }
 
 /** Works differently from card buildings in pretty much every respect */

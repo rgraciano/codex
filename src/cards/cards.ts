@@ -19,8 +19,10 @@ abstract class Card {
      * 
      * Note that anything that does stuff "on arrival", like adding tokens on arrival, will not include those
      * as base attributes but will add an OnArrival trigger that adds the tokens to the attribute modifiers below.
+     * 
+     * TODO: Should probably set all of the properties to readonly somewhere, since this only covers the reference
      */
-    readonly abstract baseAttributes: Attributes;
+    protected baseAttributes: Attributes = new Attributes();
     
     /** 
      * Modifies the attributes on this card, based on in-play effects and other events.
@@ -30,7 +32,18 @@ abstract class Card {
      * This way we don't have to constantly recaculate the state (e.g. when Drakk leaves, look for anything else that enables Frenzy before we take it off this card), 
      * we can just track it on the event occurrence.
      */
-    public attributeModifiers: Attributes;
+    public attributeModifiers: Attributes = new Attributes();
+
+    /** After a card is used in a way that exhausts it. 
+     * These cards can't use most abilities and can't patrol */
+    public exhausted: boolean;
+
+    /** For cards that just arrived. These cards can't do anything that
+     * requires exhausting, but can patrol. */
+    public arrivalFatigue: boolean;
+    
+    /** This is for cards w/ readiness, to track if they've already attacked once this turn. */
+    public haveAttackedThisTurn: false;
 
     /** This calculates all effective attributes for this card */
     effective(): Attributes {
@@ -51,14 +64,17 @@ abstract class Card {
     }
 }
 
+// TODO
 abstract class Spell extends Card {
     cardType: CardType = "Spell";
 }
 
+// TODO
 abstract class Upgrade extends Card {
     cardType: CardType = "Upgrade";
 }
 
+// TODO
 abstract class Building extends Card {}
 
 /** Base class for heroes and units */
@@ -71,6 +87,7 @@ abstract class Unit extends Character {
     cardType: CardType = "Unit";
 }
 
+// TODO
 abstract class Hero extends Character {
     abstract level: number;
     cardType: CardType = "Hero";
