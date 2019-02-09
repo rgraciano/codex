@@ -4,7 +4,7 @@
 
 
 // we will need a way to disambiguate the cards, so we can target specific cards. 
-// maybe we number them in play, or create an identifier based on where they sit
+// maybe we number them in play, or create an identifier based on where they sit.
 abstract class Card {
 
     readonly abstract cardType: CardType;
