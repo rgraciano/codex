@@ -1,6 +1,6 @@
 
 
-/** Setting up the game... */
+/** Setting up the game for debugging. We'll remove this later in favor of restoring some saved state */
 var player1 = new Board(1);
 var player2 = new Board(2);
 
@@ -17,6 +17,9 @@ player2.discard = [new Tenderfoot(), new TimelyMessenger(), new OlderBrother(),
 player1.drawCards(5);
 player2.drawCards(5);
 
-function beginTurn() {
+function beginTurn(playerBoard: Board) {
+    playerBoard.turnCount++;
+    console.log("P" + playerBoard.playerNumber + "T" + playerBoard.turnCount);
+
 
 }

@@ -54,6 +54,7 @@ abstract class Card {
             attrSum[attr] = this.baseAttributes[attr] + this.attributeModifiers[attr];
 
             // Note we don't check damage here, or armor, or frenzy, as we'll check those at the appropriate times.
+            // TODO: needs to use getters for Doubling Barbarbarian
             if (attr == "health" || attr == "attack") {
                 attrSum[attr] -= this.attributeModifiers.minusOneOne;
                 attrSum[attr] += this.baseAttributes[attr] + this.attributeModifiers.plusOneOne;
@@ -130,6 +131,9 @@ class Attributes {
     public minusOneOne: number = 0;
     public featherRunes: number = 0;
     public crumblingRunes: number = 0;
+
+    // TODO: these all need to be private with getters and setters for Doubling Barbarbarian
+    // TODO: Also model temporaryArmor / temporaryAttack.  See: Aged Sensei.  He'll have to add a trigger to clear it by end of turn.
 }
 
 type CardType = "Spell" | "Hero" | "Unit" | "Building" | "Upgrade";

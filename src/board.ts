@@ -1,6 +1,9 @@
 
 /** This class will essentially represent an entire player state */
 class Board {
+    public playerNumber: number;
+    public turnCount: number = 0;
+
     public gold: number = 0;
 
     public hand: Array<Card> = [];
@@ -22,6 +25,8 @@ class Board {
     public addOn: AddOn = null;
 
     constructor(playerNumber: number) {
+        this.playerNumber = playerNumber;
+
         if (playerNumber == 1) {
             this.startingWorkers = 4;
         }
@@ -49,6 +54,12 @@ class Board {
             this.discard[i] = this.discard[j];
             this.discard[j] = x;
         }
+    }
+
+    // think this should actually be an upkeep trigger...
+    public collectGold(): number {
+        // slow time generator will impact this, so we're going to need to look for cards that impact gold
+        return (this.gold += this.startingWorkers + this.workers.length)
     }
 }
 
