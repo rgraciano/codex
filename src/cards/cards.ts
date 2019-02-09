@@ -51,8 +51,6 @@ abstract class Card {
     }
 }
 
-interface Destroyable {}
-
 abstract class Spell extends Card {
     cardType: CardType = "Spell";
 }
