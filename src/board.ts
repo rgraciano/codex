@@ -13,6 +13,8 @@ class Board {
     public tech1: TechBuilding = null;
     public tech2: TechBuilding = null;
     public tech3: TechBuilding = null;
+
+    public addOn: AddOn = null;
 }
 
 /** Works differently from card buildings in pretty much every respect */
