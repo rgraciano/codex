@@ -1,6 +1,7 @@
 {
     "compileOnSave": true,
     "compilerOptions": {
+        "target": "es6", 
         "module": "system",
         "noImplicitAny": true,
         "removeComments": true,

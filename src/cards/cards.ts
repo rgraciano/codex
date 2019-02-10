@@ -102,11 +102,11 @@ class Attributes {
     public cost: number = 0;
 
     // Sum total effective attack and health
-    public health: number = 0; 
-    public attack: number = 0;
+    private _health: number = 0; 
+    private _attack: number = 0;
 
     // Effective armor, not including squad leader. Some things come with armor or can have armor added
-    public armor: number = 0;
+    private _armor: number = 0;
 
     // The number of things this will obliterate on attack
     public obliterate: number = 0; 
@@ -132,8 +132,26 @@ class Attributes {
     public featherRunes: number = 0;
     public crumblingRunes: number = 0;
 
-    // TODO: these all need to be private with getters and setters for Doubling Barbarbarian
+    /** Whenever we discover a card that requires getters/setters, we can implement as needed. 
+     * Fortunately Javascript makes the property access syntax of thing.health the same whether it's a method accessor or simple property,
+     * so no refactoring is needed elsewhere to make this switch even if we're iterating through property names or whatever. */
+    
+    get health(): number { 
+        return this._health;
+    }
+    set health(newHealth: number) {
+        this._health = newHealth;
+    }
+
+    get attack(): number {
+        return this._attack;
+    }
+    set attack(newAttack: number) {
+        this._attack = newAttack;
+    }
+
     // TODO: Also model temporaryArmor / temporaryAttack.  See: Aged Sensei.  He'll have to add a trigger to clear it by end of turn.
+    // TODO: For Safe Attacking - maybe there's a startOfAttack trigger and an endOfAttack trigger to add / remove the armor? 
 }
 
 type CardType = "Spell" | "Hero" | "Unit" | "Building" | "Upgrade";
