@@ -24,6 +24,8 @@ class Board {
 
     public addOn: AddOn = null;
 
+    public activeTriggers: Array<Trigger> = new Array();
+
     constructor(playerNumber: number) {
         this.playerNumber = playerNumber;
 

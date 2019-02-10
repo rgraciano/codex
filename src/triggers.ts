@@ -28,11 +28,9 @@
  *         try to guess at the optimal ordering based on user outcome (e.g. sum of all health/atk on active player units vs opposing player units, game end events, etc)
  * 
  *         What we'll have to figure out is how to interrupt the stack for a Draw event (or similar), which needs to be confirmed but can't be unwound.
- *         At the moment we need to target or draw or whatever, we will immediately go out and prompt the user to make a decision
+ *         At the moment we need to target or draw or whatever, we will immediately go out and prompt the user to make a decision.
  */
 class Trigger {
-    public static activeList: Array<Trigger>;  // Represents the active set of triggers that needs to be resolved by the user
-
     public description: String;
     public execute: () => void;
 }
