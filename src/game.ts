@@ -2,15 +2,16 @@
 import {anyid} from 'anyid';
 import * as fs from 'fs';
 
-import { Board } from 'board';
-import { Card } from 'cards/cards';
+import { Board } from './board';
+import { Card } from './cards/cards';
+import { Trigger } from './triggers';
 
-import { FruitNinja } from 'cards/neutral/FruitNinja';
-import { Tenderfoot } from 'cards/neutral/Tenderfoot';
-import { OlderBrother } from 'cards/neutral/OlderBrother';
-import { TimelyMessenger } from 'cards/neutral/TimelyMessenger';
+import { FruitNinja } from './cards/neutral/FruitNinja';
+import { Tenderfoot } from './cards/neutral/Tenderfoot';
+import { OlderBrother } from './cards/neutral/OlderBrother';
+import { TimelyMessenger } from './cards/neutral/TimelyMessenger';
 
-class Game {
+export class Game {
     public player1Board: Board;
     public player2Board: Board;
 
@@ -55,7 +56,7 @@ class Game {
 
 
 export class GameServer {
-    private game: Game;
+    public game: Game;
 
     // Unique link to the current game state, can be passed around.  We encourage the user to pass this around at
     // beginning of turn, but technically you could pass it around whenever you want.  We also use this to branch 

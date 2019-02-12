@@ -1,5 +1,5 @@
 
-import { Color, FlavorType, TechLevel, Attributes, Unit } from 'cards/cards';
+import { Color, FlavorType, TechLevel, Attributes, Unit } from '../cards';
 
 export class TimelyMessenger extends Unit {
     protected baseAttributes = new Attributes();

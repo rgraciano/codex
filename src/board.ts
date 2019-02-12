@@ -1,5 +1,5 @@
 
-import { Card, Hero } from 'cards/cards';
+import { Card, Hero } from './cards/cards';
 
 /** This class will essentially represent an entire player state */
 export class Board {

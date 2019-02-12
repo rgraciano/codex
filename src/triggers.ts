@@ -15,6 +15,7 @@
 //
 // "Dies" will have to be an event or trigger itself, as will Draw
 
+import { Card } from './cards/cards';
 
 /**
  * When something happens, we:
@@ -30,7 +31,7 @@
  *         What we'll have to figure out is how to interrupt the stack for a Draw event (or similar), which needs to be confirmed but can't be unwound.
  *         At the moment we need to target or draw or whatever, we will immediately go out and prompt the user to make a decision.
  */
-class Trigger {
+export class Trigger {
     public description: String;
     public execute: () => void;
 }
