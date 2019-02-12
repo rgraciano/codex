@@ -2,6 +2,14 @@
 import {anyid} from 'anyid';
 import * as fs from 'fs';
 
+import { Board } from 'board';
+import { Card } from 'cards/cards';
+
+import { FruitNinja } from 'cards/neutral/FruitNinja';
+import { Tenderfoot } from 'cards/neutral/Tenderfoot';
+import { OlderBrother } from 'cards/neutral/OlderBrother';
+import { TimelyMessenger } from 'cards/neutral/TimelyMessenger';
+
 class Game {
     public player1Board: Board;
     public player2Board: Board;
@@ -13,7 +21,7 @@ class Game {
 
     // TODO: select specs and so on
     // Returns 
-    startGame(): void {
+    initializeGame(): void {
         this.player1Board = new Board(1);
         this.player2Board = new Board(2);
 
@@ -34,12 +42,19 @@ class Game {
 
     startTurn(playerNumber: number): void {
         let board = playerNumber == 1 ? this.player1Board : this.player2Board;
+        board.turnCount++;
         
+        // ready
+
+        // upkeep
+            // get gold
+            // build fading/forecast events; build onupkeep events; all mix together into one trigger list
+            // tick off hero availability if dead
     }
 }
 
 
-class GameServer {
+export class GameServer {
     private game: Game;
 
     // Unique link to the current game state, can be passed around.  We encourage the user to pass this around at
@@ -65,7 +80,22 @@ class GameServer {
         this.game = JSON.parse(fs.readFileSync('../saved_gamestates/' + gameStateId + '.json', 'utf-8'));
     }
 
-    beginTurn(): void {
+    /**
+     * Creates a new game and new game state from square one.
+     */
+    createNewGame(): void {
+        this.game = new Game();
+        this.game.initializeGame();
+
+        // Jump right into start turn, for player convenience
+        this.startTurn();
+        this.saveGameState();
+    }
+
+    /**
+     * 
+     */
+    startTurn(): void {
         if (this.game.validNextActions.includes('Player1TurnStart')) {
             this.game.startTurn(1);
         }
@@ -75,9 +105,12 @@ class GameServer {
         else {
             throw "Valid actions are: " + this.game.validNextActions.toString;
         }
+
+        console.log(this.game.player1Board);
     }
 }
 type Phase = 'Player1TurnStart' | 'Player2TurnStart' | 'NewGame' | 'AttackSetup' | 'AttackDeal' | 'AttackDealCleanup' | 'AttackOverpower' | 'AttackCleanup'; 
+
 
 // Actions are events in the game that can spawn triggers, like upkeep, attack, patrol, etc.
 // This could work like -
@@ -95,14 +128,11 @@ type Phase = 'Player1TurnStart' | 'Player2TurnStart' | 'NewGame' | 'AttackSetup'
 // triggers produces a different outcome (Board state)
 
 // Starting to model a server state...
-class ActionState {
-    public activeTriggers: Array<Trigger> = new Array();
-}
 
 function attack(attackingBoard: Board, defendingBoard: Board, attacker: Card, defender: Card) {
     // first process onAttack triggers; these can be re-ordered
     // re-ordering stops here
-   
+
     // game state check & trigger loop
 
     // next process damage, process any onDamage triggers (do these exist?)

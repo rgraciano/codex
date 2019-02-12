@@ -1,5 +1,7 @@
 
-class FruitNinja extends Unit {
+import { Color, FlavorType, TechLevel, Attributes, Unit } from 'cards/cards';
+
+export class FruitNinja extends Unit {
     protected baseAttributes = new Attributes();
 
     public color: Color = "Neutral";

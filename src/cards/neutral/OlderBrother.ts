@@ -1,5 +1,7 @@
 
-class OlderBrother extends Unit {
+import { Color, FlavorType, TechLevel, Attributes, Unit } from 'cards/cards';
+
+export class OlderBrother extends Unit {
     protected baseAttributes = new Attributes();
 
     public color: Color = "Neutral";

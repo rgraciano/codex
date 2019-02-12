@@ -1,6 +1,8 @@
 
+import { Card, Hero } from 'cards/cards';
+
 /** This class will essentially represent an entire player state */
-class Board {
+export class Board {
     public playerNumber: number;
     public turnCount: number = 0;
 
@@ -17,14 +19,12 @@ class Board {
     public patrolZone: PatrolZone = new PatrolZone();
 
     public baseHealth: number = 20;
- 
+
     public tech1: TechBuilding = null;
     public tech2: TechBuilding = null;
     public tech3: TechBuilding = null;
 
     public addOn: AddOn = null;
-
-    public activeTriggers: Array<Trigger> = new Array();
 
     constructor(playerNumber: number) {
         this.playerNumber = playerNumber;
@@ -61,7 +61,7 @@ class Board {
     // think this should actually be an upkeep trigger...
     public collectGold(): number {
         // slow time generator will impact this, so we're going to need to look for cards that impact gold
-        return (this.gold += this.startingWorkers + this.workers.length)
+        return (this.gold += this.startingWorkers + this.workers.length);
     }
 }
 
@@ -82,7 +82,7 @@ abstract class BoardBuilding {
             this.constructionInProgress = false;
         }
     }
- 
+
     /** Upon taking damage, reduce health. Don't check destroyed here; we'll do that in the game state loop  */
     public damage(amt: number) {
         this.health -= amt;

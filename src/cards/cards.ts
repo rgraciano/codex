@@ -5,7 +5,9 @@
 
 // we will need a way to disambiguate the cards, so we can target specific cards. 
 // maybe we number them in play, or create an identifier based on where they sit.
-abstract class Card {
+
+
+export abstract class Card {
 
     readonly abstract cardType: CardType;
     readonly abstract color: Color;
@@ -66,22 +68,22 @@ abstract class Card {
 }
 
 // TODO
-abstract class Spell extends Card {
+export abstract class Spell extends Card {
     cardType: CardType = "Spell";
 }
 
 // TODO
-abstract class Upgrade extends Card {
+export abstract class Upgrade extends Card {
     cardType: CardType = "Upgrade";
 }
 
 // TODO
-abstract class Building extends Card {}
+export abstract class Building extends Card {}
 
 /** Base class for heroes and units */
-abstract class Character extends Card {}
+export abstract class Character extends Card {}
 
-abstract class Unit extends Character {
+export abstract class Unit extends Character {
     abstract techLevel: TechLevel;
     abstract flavorType: FlavorType;
 
@@ -89,7 +91,7 @@ abstract class Unit extends Character {
 }
 
 // TODO
-abstract class Hero extends Character {
+export abstract class Hero extends Character {
     abstract level: number;
     cardType: CardType = "Hero";
     justDied: boolean = false;
@@ -97,7 +99,7 @@ abstract class Hero extends Character {
 
 
 /**  Tracking what's on the card */
-class Attributes {
+export class Attributes {
     // Cost in gold
     public cost: number = 0;
 
@@ -110,7 +112,7 @@ class Attributes {
 
     // The number of things this will obliterate on attack
     public obliterate: number = 0; 
-   
+
     // From here on down are counters - the number of times this keyword is effective on this card
     public swiftStrike: number = 0; 
     public frenzy: number = 0;
@@ -154,8 +156,8 @@ class Attributes {
     // TODO: For Safe Attacking - maybe there's a startOfAttack trigger and an endOfAttack trigger to add / remove the armor? 
 }
 
-type CardType = "Spell" | "Hero" | "Unit" | "Building" | "Upgrade";
-type Color = "Neutral" | "Red" | "Green" | "Black" | "White" | "Purple" | "Blue";
-type TechLevel = "Tech 0" | "Tech 1" | "Tech 2" | "Tech 3";
-type SpellType = "Burn" | "Buff" | "Debuff";
-type FlavorType = "Mercenary" | "Virtuoso" | "Drunkard" | "Cute Animal" | "Flagbearer" | "Ninja" | "Lizardman";
+export type CardType = "Spell" | "Hero" | "Unit" | "Building" | "Upgrade";
+export type Color = "Neutral" | "Red" | "Green" | "Black" | "White" | "Purple" | "Blue";
+export type TechLevel = "Tech 0" | "Tech 1" | "Tech 2" | "Tech 3";
+export type SpellType = "Burn" | "Buff" | "Debuff";
+export type FlavorType = "Mercenary" | "Virtuoso" | "Drunkard" | "Cute Animal" | "Flagbearer" | "Ninja" | "Lizardman";
