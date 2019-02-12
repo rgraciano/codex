@@ -1,0 +1,23 @@
+{
+  "name": "codex",
+  "version": "0.1.0",
+  "description": "Codex",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rgraciano/codex.git"
+  },
+  "author": "Ryan Graciano",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rgraciano/codex/issues"
+  },
+  "homepage": "https://github.com/rgraciano/codex#readme",
+  "dependencies": {
+    "@types/node": "^11.9.0",
+    "anyid": "^1.0.6"
+  }
+}

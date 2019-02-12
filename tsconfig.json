@@ -7,7 +7,9 @@
         "removeComments": true,
         "preserveConstEnums": true,
         "outDir": "built",
-        "sourceMap": true
+        "sourceMap": true,
+        "moduleResolution": "node",
+        "baseUrl": "src/"
     },
     "include": [
         "src/**/*"
