@@ -71,32 +71,33 @@ export class GameServer {
     /** Creates a new game state ID for the current game state and saves it to the filesystem
      * TODO: Move this to something cloud-friendly; FS is fine for debugging
      */
-    private saveGameState(): void {
+    private saveGameState(): string {
         this.generateGameStateId();
         // TODO: error handling would be good
-        fs.writeFileSync('../saved_gamestates/' + this.gameStateId + '.json', JSON.stringify(this.game));
+        fs.writeFileSync('e:\\saved_gamestates\\' + this.gameStateId + '.json', JSON.stringify(this.game));
+        return this.gameStateId;
     }
 
     public loadGameState(gameStateId: string) {
-        this.game = JSON.parse(fs.readFileSync('../saved_gamestates/' + gameStateId + '.json', 'utf-8'));
+        this.game = JSON.parse(fs.readFileSync('e:\\saved_gamestates\\' + gameStateId + '.json', 'utf-8'));
     }
 
     /**
      * Creates a new game and new game state from square one.
      */
-    createNewGame(): void {
+    createNewGame(): string {
         this.game = new Game();
         this.game.initializeGame();
 
         // Jump right into start turn, for player convenience
-        this.startTurn();
-        this.saveGameState();
+        return this.startTurn();
     }
 
     /**
-     * 
+     * Starts a player's turn and saves the game state.
+     * @returns Game state ID
      */
-    startTurn(): void {
+    startTurn(): string {
         if (this.game.validNextActions.includes('Player1TurnStart')) {
             this.game.startTurn(1);
         }
@@ -107,7 +108,7 @@ export class GameServer {
             throw "Valid actions are: " + this.game.validNextActions.toString;
         }
 
-        console.log(this.game.player1Board);
+        return this.saveGameState();
     }
 }
 type Phase = 'Player1TurnStart' | 'Player2TurnStart' | 'NewGame' | 'AttackSetup' | 'AttackDeal' | 'AttackDealCleanup' | 'AttackOverpower' | 'AttackCleanup'; 

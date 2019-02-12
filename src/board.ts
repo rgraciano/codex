@@ -41,7 +41,7 @@ export class Board {
         // If we need to draw more than we have, shuffle the discard pile
         if (this.deck.length < howMany) {
             this.shuffleDiscard();
-            this.deck.concat(this.discard);
+            this.deck = this.deck.concat(this.discard);
             this.discard = [];
         }
 
@@ -52,7 +52,7 @@ export class Board {
         let j, x, i;
         for (i = this.discard.length - 1; i > 0; i--) {
             j = Math.floor(Math.random() * (i + 1));
-            x = this.deck[i];
+            x = this.discard[i];
             this.discard[i] = this.discard[j];
             this.discard[j] = x;
         }
