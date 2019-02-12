@@ -3,6 +3,7 @@ import {anyid} from 'anyid';
 import * as fs from 'fs';
 
 import { Board } from './board';
+import { PatrolZone } from './board';
 import { Card } from './cards/cards';
 import { Trigger } from './triggers';
 
@@ -42,15 +43,73 @@ export class Game {
     }
 
     startTurn(playerNumber: number): void {
-        let board = playerNumber == 1 ? this.player1Board : this.player2Board;
+        let board, opponentBoard;
+        if (playerNumber == 1) {
+            board = this.player1Board;
+            opponentBoard = this.player2Board;
+        }
+        else {
+            board = this.player2Board;
+            opponentBoard = this.player1Board;
+        }
+    
         board.turnCount++;
         
-        // ready
+        // clear patrol zone, moving everything to "in play"
+        let patrolSlot: keyof PatrolZone;
+        for (patrolSlot in board.patrolZone) {
+            if (patrolSlot !== null) {
+                board.inPlay.push(board.patrolZone[patrolSlot]);
+                board.patrolZone[patrolSlot] = null;
+            }
+        }
 
-        // upkeep
+        // READY PHASE
+        // Nothing happens when we ready cards, so we don't have to worry about any triggers happening here.
+        let andDoToReadyCards = function(activePlayerBoardCopy: Board, opponentBoardCopy: Board, card: Card): Trigger {
+            let attrs = card.effective();
+            if (attrs.exhausted > 0)
+                card.attributeModifiers.exhausted--; // decrement because adding to this means it's disabled
+            if (attrs.arrivalFatigue)
+                card.attributeModifiers.arrivalFatigue = 0; // set to zero because you have arrival fatigue or you don't
+
+            return new Trigger("Readied card " + card.name);
+        };
+        this.findAndDoOnCards(board.inPlay, andDoToReadyCards, board, opponentBoard);
+
+        // tick off hero availability if dead
+
+
+        // upkeep (aka trigger central)
             // get gold
             // build fading/forecast events; build onupkeep events; all mix together into one trigger list
-            // tick off hero availability if dead
+            
+    }
+
+    // The things that will produce triggers: 
+    //      arrives, dies, leaves play (superset of die), upkeep, targets 
+    // I'm thinking that checkGameState() could do most of this for us, so we don't have it happening all over the place.
+    // Card events only impact attributes, and checkGameState() handles clean up from attributes.  This seems like a saner way to manage what could quickly become pretty nutty.
+
+    public findAndDoOnCards(cards: Array<Card>, 
+                            andDo: (activePlayerBoardCopy: Board, opponentBoardCopy: Board, card: Card) => Trigger,
+                            activePlayerBoardCopy: Board, opponentBoardCopy: Board, 
+                            matching?: (card: Card) => boolean): Array<Trigger> {
+                        
+        let triggerResults: Array<Trigger> = [];
+        
+        for (let card of cards) {
+
+            if ((!matching) || matching(card)) {
+                let result = andDo(activePlayerBoardCopy, opponentBoardCopy, card);
+
+                if (result) {
+                    triggerResults.push(result);
+                }
+            }
+        }
+
+        return triggerResults;
     }
 }
 

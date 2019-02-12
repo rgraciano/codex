@@ -1,5 +1,6 @@
 
 import { Card, Hero } from './cards/cards';
+import { Trigger } from 'triggers';
 
 /** This class will essentially represent an entire player state */
 export class Board {
@@ -122,10 +123,10 @@ class TechBuilding extends BoardBuilding {
     }
 }
 
-class PatrolZone {
-    public squadLeader: Card;
-    public elite: Card;
-    public scavenger: Card;
-    public technician: Card;
-    public lookout: Card;
+export class PatrolZone {
+    public squadLeader: Card = null;
+    public elite: Card = null;
+    public scavenger: Card = null;
+    public technician: Card = null;
+    public lookout: Card = null;
 }

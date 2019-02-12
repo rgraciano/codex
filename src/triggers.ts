@@ -32,8 +32,15 @@ import { Card } from './cards/cards';
  *         At the moment we need to target or draw or whatever, we will immediately go out and prompt the user to make a decision.
  */
 export class Trigger {
-    public description: String;
-    public execute: () => void;
+    public description: string;
+    public execute: () => (Trigger | null) = function() { return null; };
+
+    constructor(description: string, execute?: () => (Trigger | null)) {
+        if (execute)
+            this.execute = execute;
+        
+        this.description = description;
+    }
 }
 
 interface AttackHandler {

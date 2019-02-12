@@ -35,14 +35,6 @@ export abstract class Card {
      * we can just track it on the event occurrence.
      */
     public attributeModifiers: Attributes = new Attributes();
-
-    /** After a card is used in a way that exhausts it. 
-     * These cards can't use most abilities and can't patrol */
-    public exhausted: boolean;
-
-    /** For cards that just arrived. These cards can't do anything that
-     * requires exhausting, but can patrol. */
-    public arrivalFatigue: boolean;
     
     /** This is for cards w/ readiness, to track if they've already attacked once this turn. */
     public haveAttackedThisTurn: false;
@@ -133,6 +125,15 @@ export class Attributes {
     public minusOneOne: number = 0;
     public featherRunes: number = 0;
     public crumblingRunes: number = 0;
+
+    /** After a card is used in a way that exhausts it. 
+     * These cards can't use most abilities and can't patrol.
+     * Add 1 to this every time something is disabled, and we'll remove the counters as we go. */
+    public exhausted: number = 0;
+
+    /** For cards that just arrived. These cards can't do anything that
+     * requires exhausting, but can patrol. */
+    public arrivalFatigue: number = 0;
 
     /** Whenever we discover a card that requires getters/setters, we can implement as needed. 
      * Fortunately Javascript makes the property access syntax of thing.health the same whether it's a method accessor or simple property,
