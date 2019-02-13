@@ -66,16 +66,19 @@ export class Game {
 
         // READY PHASE
         // Nothing happens when we ready cards, so we don't have to worry about any triggers happening here.
-        let andDoToReadyCards = function(activePlayerBoardCopy: Board, opponentBoardCopy: Board, card: Card): Trigger {
-            let attrs = card.effective();
-            if (attrs.exhausted > 0)
-                card.attributeModifiers.exhausted--; // decrement because adding to this means it's disabled
-            if (attrs.arrivalFatigue)
-                card.attributeModifiers.arrivalFatigue = 0; // set to zero because you have arrival fatigue or you don't
-
-            return new Trigger("Readied card " + card.name);
+        let andDoToReadyCards = function(activePlayerBoardCopy: Board, opponentBoardCopy: Board, card: Card): EventDescriptor {
+            if (card.attributeModifiers.exhausted > 0)
+                card.attributeModifiers.exhausted--; // decrement because adding to this means it's disabled or may have come into play exhausted
+            
+            card.attributeModifiers.arrivalFatigue = 0; // set to zero because you have arrival fatigue or you don't
+            return new EventDescriptor('ReadyCard', "Readied " + card.name, card);
         };
-        this.findAndDoOnCards(board.inPlay, andDoToReadyCards, board, opponentBoard);
+        let matching = function(card: Card): boolean {
+            let attrs = card.effective();
+            return (attrs.exhausted > 0 || attrs.arrivalFatigue > 0);
+        };
+        this.findAndDoOnCards(board.inPlay, andDoToReadyCards, board, opponentBoard, matching);
+
 
         // tick off hero availability if dead
 
@@ -86,17 +89,18 @@ export class Game {
             
     }
 
-    // The things that will produce triggers: 
-    //      arrives, dies, leaves play (superset of die), upkeep, targets 
-    // I'm thinking that checkGameState() could do most of this for us, so we don't have it happening all over the place.
-    // Card events only impact attributes, and checkGameState() handles clean up from attributes.  This seems like a saner way to manage what could quickly become pretty nutty.
+
+   // public createListOfHandlers(cards: Array<Card>, interfaceName: string): Array<Trigger> {
+
+    //}
+
 
     public findAndDoOnCards(cards: Array<Card>, 
-                            andDo: (activePlayerBoardCopy: Board, opponentBoardCopy: Board, card: Card) => Trigger,
+                            andDo: (activePlayerBoardCopy: Board, opponentBoardCopy: Board, card: Card) => EventDescriptor,
                             activePlayerBoardCopy: Board, opponentBoardCopy: Board, 
-                            matching?: (card: Card) => boolean): Array<Trigger> {
+                            matching?: (card: Card) => boolean): Array<EventDescriptor> {
                         
-        let triggerResults: Array<Trigger> = [];
+        let events: Array<EventDescriptor> = [];
         
         for (let card of cards) {
 
@@ -104,12 +108,12 @@ export class Game {
                 let result = andDo(activePlayerBoardCopy, opponentBoardCopy, card);
 
                 if (result) {
-                    triggerResults.push(result);
+                    events.push(result);
                 }
             }
         }
 
-        return triggerResults;
+        return events;
     }
 }
 
@@ -171,6 +175,24 @@ export class GameServer {
     }
 }
 type Phase = 'Player1TurnStart' | 'Player2TurnStart' | 'NewGame' | 'AttackSetup' | 'AttackDeal' | 'AttackDealCleanup' | 'AttackOverpower' | 'AttackCleanup'; 
+
+
+/** Describes something that happened in the game, so the UI can tell the user later and perhaps do something visually  */
+class EventDescriptor {
+    public eventType: ServerEvent;
+
+    public initiatingCard: Card;
+    public impactedCards: Array<Card>;
+
+    public text: string;
+
+    constructor(eventType: ServerEvent, text: string, initiatingCard: Card, impactedCards?: Array<Card>) {
+        this.eventType = eventType;
+        this.text = text;
+        this.initiatingCard = initiatingCard;
+    }
+}
+type ServerEvent = 'ReadyCard';
 
 
 // Actions are events in the game that can spawn triggers, like upkeep, attack, patrol, etc.
