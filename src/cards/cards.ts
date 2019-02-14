@@ -14,6 +14,17 @@ export abstract class Card {
     
     readonly abstract name: string;
 
+    // We need some way to identify active cards.  Note that we re-generate card objects when they are discarded
+    public static cardIdCounter: number = 1;
+    public readonly cardId: number;
+
+    /** Some cards, like Jail or Graveyard, are containers for other cards */
+    public contains: Array<Card>;
+
+    constructor() {
+        this.cardId = Card.cardIdCounter++; 
+    }
+
     /** 
      * This represents the things that are printed on the card that can actually be changed during the game. 
      * This set of attributes won't be changed, but we'll have another set that represent the modifiers.
@@ -35,9 +46,6 @@ export abstract class Card {
      * we can just track it on the event occurrence.
      */
     public attributeModifiers: Attributes = new Attributes();
-    
-    /** This is for cards w/ readiness, to track if they've already attacked once this turn. */
-    public haveAttackedThisTurn: false;
 
     /** This calculates all effective attributes for this card */
     effective(): Attributes {
@@ -46,16 +54,14 @@ export abstract class Card {
         let attr: keyof Attributes;
         for (attr in this.baseAttributes) {
             attrSum[attr] = this.baseAttributes[attr] + this.attributeModifiers[attr];
-
-            // Note we don't check damage here, or armor, or frenzy, as we'll check those at the appropriate times.
-            // TODO: needs to use getters for Doubling Barbarbarian
-            if (attr == "health" || attr == "attack") {
-                attrSum[attr] -= this.attributeModifiers.minusOneOne;
-                attrSum[attr] += this.baseAttributes[attr] + this.attributeModifiers.plusOneOne;
-            }
         }
 
         return attrSum;
+    }
+
+    /** Resets this card - takes off all tokens, resets all attributes, etc.  Happens when putting back into hand, putting into discard, and so on */
+    public leavePlay(): void {
+        this.attributeModifiers = new Attributes();
     }
 }
 
@@ -90,7 +96,10 @@ export abstract class Hero extends Character {
 }
 
 
-/**  Tracking what's on the card */
+/**  
+ * Tracking what's on the card.  We get the final number by adding up what's here and what the card's base statistics are.  This is a little inefficient because the card doesn't have
+ * base stats for everything, so it might make more sense to create two objects and create some sort of union, but this makes life easy.
+ */
 export class Attributes {
     // Cost in gold
     public cost: number = 0;
@@ -135,22 +144,29 @@ export class Attributes {
      * requires exhausting, but can patrol. */
     public arrivalFatigue: number = 0;
 
+    /** This is for cards w/ readiness, to track if they've already attacked once this turn. */
+    public haveAttackedThisTurn: 0;
+
     /** Whenever we discover a card that requires getters/setters, we can implement as needed. 
      * Fortunately Javascript makes the property access syntax of thing.health the same whether it's a method accessor or simple property,
      * so no refactoring is needed elsewhere to make this switch even if we're iterating through property names or whatever. */
     
     get health(): number { 
-        return this._health;
+        return this.calcPostTokenHpOrAtk(this._health);
     }
     set health(newHealth: number) {
         this._health = newHealth;
     }
 
     get attack(): number {
-        return this._attack;
+        return this.calcPostTokenHpOrAtk(this._attack);
     }
     set attack(newAttack: number) {
         this._attack = newAttack;
+    }
+
+    private calcPostTokenHpOrAtk(hpOrAtk: number) {
+        return hpOrAtk - this.minusOneOne + this.plusOneOne;
     }
 
     // TODO: Also model temporaryArmor / temporaryAttack.  See: Aged Sensei.  He'll have to add a trigger to clear it by end of turn.
