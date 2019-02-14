@@ -15,11 +15,11 @@ export abstract class Card {
     readonly abstract name: string;
 
     // We need some way to identify active cards.  Note that we re-generate card objects when they are discarded
-    public static cardIdCounter: number = 1;
-    public readonly cardId: number;
+    static cardIdCounter: number = 1;
+    readonly cardId: number;
 
     /** Some cards, like Jail or Graveyard, are containers for other cards */
-    public contains: Array<Card>;
+    contains: Array<Card>;
 
     constructor() {
         this.cardId = Card.cardIdCounter++; 
@@ -45,7 +45,7 @@ export abstract class Card {
      * This way we don't have to constantly recaculate the state (e.g. when Drakk leaves, look for anything else that enables Frenzy before we take it off this card), 
      * we can just track it on the event occurrence.
      */
-    public attributeModifiers: Attributes = new Attributes();
+    attributeModifiers: Attributes = new Attributes();
 
     /** This calculates all effective attributes for this card */
     effective(): Attributes {
@@ -60,7 +60,7 @@ export abstract class Card {
     }
 
     /** Resets this card - takes off all tokens, resets all attributes, etc.  Happens when putting back into hand, putting into discard, and so on */
-    public leavePlay(): void {
+    leavePlay(): void {
         this.attributeModifiers = new Attributes();
     }
 }
@@ -95,6 +95,23 @@ export abstract class Hero extends Character {
     justDied: boolean = false;
 }
 
+/** 
+ * Sometimes an ability or spell will affect the game for a period of time.  The effect is best represented by a typical handler,
+ * but where does the handler go if the card leaves play?  For example, spells leave play as soon as you cast them, and ability effects
+ * may last beyond the death of the card that enacted them.
+ * 
+ * To account for this, we create a "card" called an Effect that the user can't see but the game can track.  This special card tracks the
+ * impact of ongoing effects and can setup handlers as if it was a card to do things at specific times, destroy itself at a specific time, etc.
+ * 
+ * Making this a "card" means the game can search all cards for, say, OnUpkeep handlers and do them, and the engine doesn't need to know or care
+ * what's making those handlers happen.
+ */
+export class Effect extends Card {
+    readonly cardType: 'None';
+    readonly color: 'None';
+    readonly name: 'Effect';
+}
+
 
 /**  
  * Tracking what's on the card.  We get the final number by adding up what's here and what the card's base statistics are.  This is a little inefficient because the card doesn't have
@@ -102,7 +119,7 @@ export abstract class Hero extends Character {
  */
 export class Attributes {
     // Cost in gold
-    public cost: number = 0;
+    cost: number = 0;
 
     // Sum total effective attack and health
     private _health: number = 0; 
@@ -112,40 +129,40 @@ export class Attributes {
     private _armor: number = 0;
 
     // The number of things this will obliterate on attack
-    public obliterate: number = 0; 
+    obliterate: number = 0; 
 
     // From here on down are counters - the number of times this keyword is effective on this card
-    public swiftStrike: number = 0; 
-    public frenzy: number = 0;
-    public stealth: number = 0;
-    public flying: number = 0;
-    public antiAir: number = 0;
-    public longRange: number = 0;
-    public unstoppable: number = 0;
-    public invisible: number = 0;
-    public overpower: number = 0;
-    public readiness: number = 0;
-    public haste: number = 0;
+    swiftStrike: number = 0; 
+    frenzy: number = 0;
+    stealth: number = 0;
+    flying: number = 0;
+    antiAir: number = 0;
+    longRange: number = 0;
+    unstoppable: number = 0;
+    invisible: number = 0;
+    overpower: number = 0;
+    readiness: number = 0;
+    haste: number = 0;
 
     // Counting how many runes are on the card
-    public timeRunes: number = 0;
-    public damage: number = 0;
-    public plusOneOne: number = 0;
-    public minusOneOne: number = 0;
-    public featherRunes: number = 0;
-    public crumblingRunes: number = 0;
+    timeRunes: number = 0;
+    damage: number = 0;
+    plusOneOne: number = 0;
+    minusOneOne: number = 0;
+    featherRunes: number = 0;
+    crumblingRunes: number = 0;
 
     /** After a card is used in a way that exhausts it. 
      * These cards can't use most abilities and can't patrol.
      * Add 1 to this every time something is disabled, and we'll remove the counters as we go. */
-    public exhausted: number = 0;
+    exhausted: number = 0;
 
     /** For cards that just arrived. These cards can't do anything that
      * requires exhausting, but can patrol. */
-    public arrivalFatigue: number = 0;
+    arrivalFatigue: number = 0;
 
     /** This is for cards w/ readiness, to track if they've already attacked once this turn. */
-    public haveAttackedThisTurn: 0;
+    haveAttackedThisTurn: 0;
 
     /** Whenever we discover a card that requires getters/setters, we can implement as needed. 
      * Fortunately Javascript makes the property access syntax of thing.health the same whether it's a method accessor or simple property,
@@ -173,8 +190,8 @@ export class Attributes {
     // TODO: For Safe Attacking - maybe there's a startOfAttack trigger and an endOfAttack trigger to add / remove the armor? 
 }
 
-export type CardType = "Spell" | "Hero" | "Unit" | "Building" | "Upgrade";
-export type Color = "Neutral" | "Red" | "Green" | "Black" | "White" | "Purple" | "Blue";
+export type CardType = "Spell" | "Hero" | "Unit" | "Building" | "Upgrade" | "None";
+export type Color = "Neutral" | "Red" | "Green" | "Black" | "White" | "Purple" | "Blue" | "None";
 export type TechLevel = "Tech 0" | "Tech 1" | "Tech 2" | "Tech 3";
 export type SpellType = "Burn" | "Buff" | "Debuff";
 export type FlavorType = "Mercenary" | "Virtuoso" | "Drunkard" | "Cute Animal" | "Flagbearer" | "Ninja" | "Lizardman";

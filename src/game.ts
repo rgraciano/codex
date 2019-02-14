@@ -80,11 +80,12 @@ export class Game {
         this.findAndDoOnCards(board.inPlay, andDoToReadyCards, board, opponentBoard, matching);
 
 
-        // tick off hero availability if dead
+        // TODO: tick off hero availability when heroes are implemented
 
 
         // upkeep (aka trigger central)
-            // get gold
+            // get gold, TODO: account for slow-time generator
+
             // build fading/forecast events; build onupkeep events; all mix together into one trigger list
             
     }
@@ -92,7 +93,7 @@ export class Game {
 
    // public createListOfHandlers(cards: Array<Card>, interfaceName: string): Array<Trigger> {
 
-    //}
+   // }
 
 
     public findAndDoOnCards(cards: Array<Card>, 

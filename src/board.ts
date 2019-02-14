@@ -13,6 +13,7 @@ export class Board {
     public deck: Array<Card> = [];
     public discard: Array<Card> = [];
     public workers: Array<Card> = [];
+    effects: Array<Effect> = [];
     public startingWorkers: number;
 
     public inPlay: Array<Card> = [];
