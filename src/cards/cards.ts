@@ -1,11 +1,5 @@
 // some interesting cards to model:
 //     Rememberer, Abomination, Building Inspector, any of the illusions
-//     How do we handle Heroes?  Separate class?  They do a lot of the same things...
-
-
-// we will need a way to disambiguate the cards, so we can target specific cards. 
-// maybe we number them in play, or create an identifier based on where they sit.
-
 
 export abstract class Card {
 
