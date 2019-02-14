@@ -13,13 +13,13 @@ import { OlderBrother } from './cards/neutral/OlderBrother';
 import { TimelyMessenger } from './cards/neutral/TimelyMessenger';
 
 export class Game {
-    public player1Board: Board;
-    public player2Board: Board;
+    player1Board: Board;
+    player2Board: Board;
 
-    public activeTriggers: Array<Trigger> = new Array();
+    activeTriggers: Array<Trigger> = new Array();
 
     // Represents valid actions from the current game state
-    public validNextActions: Array<Phase>;
+    validNextActions: Array<Phase>;
 
     // TODO: select specs and so on
     // Returns 
@@ -91,12 +91,12 @@ export class Game {
     }
 
 
-   // public createListOfHandlers(cards: Array<Card>, interfaceName: string): Array<Trigger> {
+   // createListOfHandlers(cards: Array<Card>, interfaceName: string): Array<Trigger> {
 
    // }
 
 
-    public findAndDoOnCards(cards: Array<Card>, 
+    findAndDoOnCards(cards: Array<Card>, 
                             andDo: (activePlayerBoardCopy: Board, opponentBoardCopy: Board, card: Card) => EventDescriptor,
                             activePlayerBoardCopy: Board, opponentBoardCopy: Board, 
                             matching?: (card: Card) => boolean): Array<EventDescriptor> {
@@ -120,12 +120,12 @@ export class Game {
 
 
 export class GameServer {
-    public game: Game;
+    game: Game;
 
     // Unique link to the current game state, can be passed around.  We encourage the user to pass this around at
     // beginning of turn, but technically you could pass it around whenever you want.  We also use this to branch 
     // (create multiple game states/outcomes) and avoid collisions.
-    public gameStateId: string;
+    gameStateId: string;
 
     private generateGameStateId(): string {
         this.gameStateId = anyid().encode('Aa0').length(10).random().id();
@@ -142,7 +142,7 @@ export class GameServer {
         return this.gameStateId;
     }
 
-    public loadGameState(gameStateId: string) {
+    loadGameState(gameStateId: string) {
         this.game = JSON.parse(fs.readFileSync('e:\\saved_gamestates\\' + gameStateId + '.json', 'utf-8'));
     }
 
@@ -180,12 +180,12 @@ type Phase = 'Player1TurnStart' | 'Player2TurnStart' | 'NewGame' | 'AttackSetup'
 
 /** Describes something that happened in the game, so the UI can tell the user later and perhaps do something visually  */
 class EventDescriptor {
-    public eventType: ServerEvent;
+    eventType: ServerEvent;
 
-    public initiatingCard: Card;
-    public impactedCards: Array<Card>;
+    initiatingCard: Card;
+    impactedCards: Array<Card>;
 
-    public text: string;
+    text: string;
 
     constructor(eventType: ServerEvent, text: string, initiatingCard: Card, impactedCards?: Array<Card>) {
         this.eventType = eventType;

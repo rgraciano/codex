@@ -4,10 +4,10 @@ import { Color, FlavorType, TechLevel, Attributes, Unit } from '../cards';
 export class FruitNinja extends Unit {
     protected baseAttributes = new Attributes();
 
-    public color: Color = "Neutral";
-    public flavorType: FlavorType = "Ninja";
-    public name: string = "Fruit Ninja";
-    public techLevel: TechLevel = "Tech 0";
+    color: Color = "Neutral";
+    flavorType: FlavorType = "Ninja";
+    name: string = "Fruit Ninja";
+    techLevel: TechLevel = "Tech 0";
 
     constructor() {
         super();

@@ -4,10 +4,10 @@ import { Color, FlavorType, TechLevel, Attributes, Unit } from '../cards';
 export class Tenderfoot extends Unit {
     protected baseAttributes = new Attributes();
 
-    public color: Color = "Neutral";
-    public flavorType: FlavorType = "Virtuoso";
-    public name: string = "Tenderfoot";
-    public techLevel: TechLevel = "Tech 0";
+    color: Color = "Neutral";
+    flavorType: FlavorType = "Virtuoso";
+    name: string = "Tenderfoot";
+    techLevel: TechLevel = "Tech 0";
 
     constructor() {
         super();

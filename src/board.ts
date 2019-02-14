@@ -1,32 +1,32 @@
 
-import { Card, Hero } from './cards/cards';
+import { Card, Hero, Effect } from './cards/cards';
 import { Trigger } from 'triggers';
 
 /** This class will essentially represent an entire player state */
 export class Board {
-    public playerNumber: number;
-    public turnCount: number = 0;
+    playerNumber: number;
+    turnCount: number = 0;
 
-    public gold: number = 0;
+    gold: number = 0;
 
-    public hand: Array<Card> = [];
-    public deck: Array<Card> = [];
-    public discard: Array<Card> = [];
-    public workers: Array<Card> = [];
+    hand: Array<Card> = [];
+    deck: Array<Card> = [];
+    discard: Array<Card> = [];
+    workers: Array<Card> = [];
     effects: Array<Effect> = [];
-    public startingWorkers: number;
+    startingWorkers: number;
 
-    public inPlay: Array<Card> = [];
-    public heroZone: Array<Hero> = [];
-    public patrolZone: PatrolZone = new PatrolZone();
+    inPlay: Array<Card> = [];
+    heroZone: Array<Hero> = [];
+    patrolZone: PatrolZone = new PatrolZone();
 
-    public baseHealth: number = 20;
+    baseHealth: number = 20;
 
-    public tech1: TechBuilding = null;
-    public tech2: TechBuilding = null;
-    public tech3: TechBuilding = null;
+    tech1: TechBuilding = null;
+    tech2: TechBuilding = null;
+    tech3: TechBuilding = null;
 
-    public addOn: AddOn = null;
+    addOn: AddOn = null;
 
     constructor(playerNumber: number) {
         this.playerNumber = playerNumber;
@@ -39,7 +39,7 @@ export class Board {
         }
     }
 
-    public drawCards(howMany: number) {
+    drawCards(howMany: number) {
         // If we need to draw more than we have, shuffle the discard pile
         if (this.deck.length < howMany) {
             this.shuffleDiscard();
@@ -61,7 +61,7 @@ export class Board {
     }
 
     // think this should actually be an upkeep trigger...
-    public collectGold(): number {
+    collectGold(): number {
         // slow time generator will impact this, so we're going to need to look for cards that impact gold
         return (this.gold += this.startingWorkers + this.workers.length);
     }
@@ -69,10 +69,10 @@ export class Board {
 
 /** Works differently from card buildings in pretty much every respect */
 abstract class BoardBuilding {
-    public readonly abstract maxHealth: number;
-    public health: number;
-    public destroyed = false;
-    public constructionInProgress = true;
+    readonly abstract maxHealth: number;
+    health: number;
+    destroyed = false;
+    constructionInProgress = true;
     
     protected playerBoard: Board;
 
@@ -86,31 +86,31 @@ abstract class BoardBuilding {
     }
 
     /** Upon taking damage, reduce health. Don't check destroyed here; we'll do that in the game state loop  */
-    public damage(amt: number) {
+    damage(amt: number) {
         this.health -= amt;
     }
 
     /** Upon destruction, we mark the building destroyed and decrement base health */
-    public destroy() {
+    destroy() {
         this.destroyed = true;
         this.playerBoard.baseHealth -= 2;
         // new construction will begin at the start of the player's next turn
     }
 
     /** At the end of the player's turn, finish construction */
-    public finishConstruction() {
+    finishConstruction() {
         this.constructionInProgress = false;
         this.health = this.maxHealth;
     }
 }
 
 class AddOn extends BoardBuilding {
-    public readonly maxHealth: number = 4;
+    readonly maxHealth: number = 4;
 }
 
 class TechBuilding extends BoardBuilding {
-    public level: number;
-    public readonly maxHealth: number = 5;
+    level: number;
+    readonly maxHealth: number = 5;
 
     constructor(level: number, playerBoard: Board, buildInstantly: boolean = false) {
         super(playerBoard, buildInstantly);
@@ -118,16 +118,16 @@ class TechBuilding extends BoardBuilding {
     }
 
     /** For the start of the player's turn, when we begin reconstructing  */
-    public reconstruct() {
+    reconstruct() {
         this.destroyed = false;
         this.constructionInProgress = true;
     }
 }
 
 export class PatrolZone {
-    public squadLeader: Card = null;
-    public elite: Card = null;
-    public scavenger: Card = null;
-    public technician: Card = null;
-    public lookout: Card = null;
+    squadLeader: Card = null;
+    elite: Card = null;
+    scavenger: Card = null;
+    technician: Card = null;
+    lookout: Card = null;
 }

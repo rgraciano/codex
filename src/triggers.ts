@@ -14,10 +14,10 @@ import { Card, CardType } from './cards/cards';
  * 
  */
 export class Trigger {
-    public description: string;
-    public card: Card;
-    public requiresTarget: boolean;
-    public execute: () => (Trigger | null) = function() { return null; };
+    description: string;
+    card: Card;
+    requiresTarget: boolean;
+    execute: () => (Trigger | null) = function() { return null; };
 
     constructor(description: string, card?: Card, execute?: () => (Trigger | null)) {
         if (execute)

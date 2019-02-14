@@ -4,10 +4,10 @@ import { Color, FlavorType, TechLevel, Attributes, Unit } from '../cards';
 export class TimelyMessenger extends Unit {
     protected baseAttributes = new Attributes();
 
-    public color: Color = "Neutral";
-    public flavorType: FlavorType = "Mercenary";
-    public name: string = "Timely Messenger";
-    public techLevel: TechLevel = "Tech 0";
+    color: Color = "Neutral";
+    flavorType: FlavorType = "Mercenary";
+    name: string = "Timely Messenger";
+    techLevel: TechLevel = "Tech 0";
 
     constructor() {
         super();
