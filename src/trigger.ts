@@ -1,5 +1,5 @@
 
-import { Card, CardType } from './cards/cards';
+import { Card, CardType } from './cards/card';
 
 /**
  * When something could cause in-game decisions and spiraling effects, we create a Trigger for the user to take action on that thing. 
@@ -14,21 +14,38 @@ import { Card, CardType } from './cards/cards';
  * 
  */
 export class Trigger {
-    description: string;
+    descriptor: EventDescriptor;
     card: Card;
     requiresTarget: boolean;
     execute: () => (Trigger | null) = function() { return null; };
 
-    constructor(description: string, card?: Card, execute?: () => (Trigger | null)) {
+    constructor(descriptor: EventDescriptor, card?: Card, execute?: () => (Trigger | null)) {
         if (execute)
             this.execute = execute;
 
         if (card)
             this.card = card;
         
-        this.description = description;
+        this.descriptor = descriptor;
     }
 }
+
+/** Describes something that happened in the game, so the UI can tell the user later and perhaps do something visually  */
+export class EventDescriptor {
+    eventType: ServerEvent;
+
+    initiatingCard: Card;
+    impactedCards: Array<Card>;
+
+    text: string;
+
+    constructor(eventType: ServerEvent, text: string, initiatingCard: Card, impactedCards?: Array<Card>) {
+        this.eventType = eventType;
+        this.text = text;
+        this.initiatingCard = initiatingCard;
+    }
+}
+export type ServerEvent = 'ReadyCard' | 'UpkeepChoices';
 
 interface AttackHandler {
     onAttack(attacker: Card, defender: Card): Trigger;

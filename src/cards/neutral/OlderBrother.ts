@@ -1,5 +1,5 @@
 
-import { Color, FlavorType, TechLevel, Attributes, Unit } from '../cards';
+import { Color, FlavorType, TechLevel, Attributes, Unit } from '../card';
 
 export class OlderBrother extends Unit {
     protected baseAttributes = new Attributes();

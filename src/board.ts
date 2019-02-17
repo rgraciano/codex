@@ -1,6 +1,6 @@
 
-import { Card, Hero, Effect } from './cards/cards';
-import { Trigger } from 'triggers';
+import { Card, Hero, Effect } from './cards/card';
+import { Trigger } from 'trigger';
 
 /** This class will essentially represent an entire player state */
 export class Board {
