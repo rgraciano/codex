@@ -22,6 +22,8 @@ export class Game {
 
     phaseStack: PhaseStack;
 
+    activePlayer: number = 1;
+
     constructor() {
         this.player1Board = new Board(1);
         this.player2Board = new Board(2);

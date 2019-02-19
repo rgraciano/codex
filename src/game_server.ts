@@ -2,6 +2,8 @@
 import { Game } from './game';
 import {anyid} from 'anyid';
 import * as fs from 'fs';
+import { Phase } from './phases/phase';
+import { startTurn } from './phases/player_turn';
 
 /*
 Here's how the game server works:
@@ -58,50 +60,51 @@ export class GameServer {
     /**
      * Creates a new game and new game state from square one.
      */
-    createNewGame(): string {
+    createNewGame(): void {
         this.game = new Game();
-        
-        // Jump right into start turn, for player convenience
-        return this.startTurn();
-    }
-
-    /**
-     * Starts a player's turn and saves the game state.
-     * @returns Game state ID
-     */
-    startTurn(): string {
-        if (this.game.validNextActions.includes('Player1TurnStart')) {
-            this.game.startTurn(1);
-        }
-        else if (this.game.validNextActions.includes('Player2TurnStart')) {
-            this.game.startTurn(2);
-        }
-        else {
-            throw "Valid actions are: " + this.game.validNextActions.toString;
-        }
-
-        return this.saveGameState();
+        startTurn(this.game, 1);
     }
 
     // TODO: likely to replace the skeleton with some framework here...
-    action(action: string, context: StringMap) {
+    action(action: string, context: StringMap): string {
         if (action == 'NewGame') {
             this.createNewGame();
-            return;
+            return this.responseSuccess();
         }
-        else {
-            let state: (string | boolean) = GameServer.getAlNumProperty(context, 'state');
-            
-            if (!state) {
-                console.log('Did not receive a state');
-                return;
-            }
-
-            state = <string>state; // asserting that this is definitely a string now..
-
-            this.loadGameState(state);
+        
+        let state: (string | boolean) = GameServer.getAlNumProperty(context, 'state');
+        
+        if (!state) {
+            return this.responseError('No state specified');
         }
 
+        state = <string>state; // asserting that this is definitely a string now..
+
+        this.loadGameState(state);
+
+        if (!this.game.phaseStack.isValidAction(action)) {
+            return this.responseError('Action ' + action + ' is not currently valid.  Currently valid actions include ' + this.game.phaseStack.validActions());
+        }
+
+        this.saveGameState();
+        return this.responseSuccess();
+    }
+
+    responseError(error: string) {
+        return JSON.stringify( { error: error });
+    }
+
+    responseSuccess() {
+        let topOfStack: Phase = this.game.phaseStack.topOfStack();
+
+        return JSON.stringify( { 
+            state: this.gameStateId, 
+            validActions: topOfStack.validActions,  
+            mustResolveTriggersOn: topOfStack.mustResolveTriggersOn,
+            player1Board: this.game.player1Board,
+            player2Board: this.game.player2Board
+        } );
+    }
         /*
 game flow then...
 
@@ -116,7 +119,6 @@ phase: player1turnstart
 	- valid actions: attack, patrol, ability, etc. also END TURN is a valid action.
     - draw/discard, end turn trigger nest
 */
-    }
 
     // TODO: Replace later; will pick some kind of framework that does this boilerplate stuff for us
     static getAlNumProperty(context: StringMap, property: string): (string | boolean) {
