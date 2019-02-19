@@ -3,7 +3,7 @@ import { Game } from './game';
 import { anyid } from 'anyid';
 import * as fs from 'fs';
 import { Phase, ActionName } from './phases/phase';
-import { startTurn } from './phases/player_turn';
+import { startTurnAction, upkeepChoiceAction } from './phases/player_turn';
 
 /*
 Here's how the game server works:
@@ -61,7 +61,7 @@ export class GameServer {
     action(action: ActionName, context: StringMap): string {
         if (action == 'NewGame') {
             this.game = new Game();
-            startTurn(this.game);
+            startTurnAction(this.game);
 
             this.saveGameState();
             return this.responseSuccess();
@@ -81,6 +81,18 @@ export class GameServer {
             return this.responseError('Action ' + action + ' is not currently valid.  Currently valid actions include ' + this.game.phaseStack.validActions());
         }
 
+        switch (action) {
+            case 'UpkeepChoice':
+                let cardId:(string | boolean) = GameServer.getAlNumProperty(context, 'cardId');
+                if (cardId) 
+                    upkeepChoiceAction(this.game, <string>cardId);
+                else
+                    this.responseError('Must pick a card ID for upkeep');
+                break;
+            default:
+                this.responseError('Invalid action');
+        }
+
         this.saveGameState();
         return this.responseSuccess();
     }
@@ -90,12 +102,14 @@ export class GameServer {
     }
 
     responseSuccess() {
+        this.game.phaseStack.resolveEmptyPhases();
         let topOfStack: Phase = this.game.phaseStack.topOfStack();
 
         return JSON.stringify( { 
-            state: this.gameStateId, 
+            state: this.gameStateId,
+            events: this.game.events,
             validActions: topOfStack.validActions,  
-            mustResolveTriggersOn: topOfStack.mustResolveTriggersOn,
+            mustResolveIds: topOfStack.mustResolveIds,
             player1Board: this.game.player1Board,
             player2Board: this.game.player2Board
         } );
@@ -123,5 +137,5 @@ phase: player1turnstart
         return false;
     }
 }
-interface StringMap { [s: string]: string; }
+export interface StringMap { [s: string]: string; }
 

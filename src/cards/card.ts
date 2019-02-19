@@ -1,5 +1,6 @@
 
 import {anyid} from 'anyid';
+import { EventDescriptor } from '../game';
 
 export abstract class Card {
 
@@ -193,3 +194,12 @@ export type Color = "Neutral" | "Red" | "Green" | "Black" | "White" | "Purple" |
 export type TechLevel = "Tech 0" | "Tech 1" | "Tech 2" | "Tech 3";
 export type SpellType = "Burn" | "Buff" | "Debuff";
 export type FlavorType = "Mercenary" | "Virtuoso" | "Drunkard" | "Cute Animal" | "Flagbearer" | "Ninja" | "Lizardman";
+
+
+export interface AttackHandler extends Card {
+    onAttack(attacker: Card, defender: Card): EventDescriptor;
+}
+
+export interface UpkeepHandler extends Card {
+    onUpkeep(): EventDescriptor;
+}

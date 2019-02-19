@@ -4,8 +4,9 @@ import { Card } from '../cards/card';
 import { Board} from '../board';
 import { PatrolZone } from '../board';
 import { Phase } from './phase';
+import { UpkeepHandler } from '../cards/card';
 
-export function startTurn(game: Game): void {
+export function startTurnAction(game: Game): void {
     let boards = game.getBoardAndOpponentBoard();
     let board = boards[0];
     let opponentBoard = boards[1];
@@ -20,28 +21,24 @@ export function startTurn(game: Game): void {
 
     // TODO: tick off hero availability when heroes are implemented
 
-    // upkeep (aka trigger central)
+    // collect gold...
     game.addEvent(board.collectGold());
-    // TODO: This should return an ED to talk to the user...
-    // TODO: account for slow-time generator
 
-        // build fading/forecast events; build onupkeep events; all mix together into one trigger list          
+    // enter upkeep, process upkeep events
+    enterUpkeepPhase(game);
 }
 
-export function upkeep(game: Game, card?: Card): void {
-    let boards = game.getBoardAndOpponentBoard();
-    let board = boards[0];
-    let opponentBoard = boards[1];
-
-    if (card) {
-        // if the user wanted to process a particular card to upkeep, do this stuff
-    }
+/**
+ * Enters the upkeep phase and processes 
+ */
+function enterUpkeepPhase(game: Game): void {
+    let board = game.getBoardAndOpponentBoard()[0];
 
     let phase: Phase;
 
-    // check the phase. is this the upkeep phase? if not, create the upkeep phase and put it on top of the stack.
-    if (game.phaseStack.topOfStack().phase != 'Upkeep') {
-        phase = new Phase('Upkeep', [ 'Upkeep' ]);
+    // check the phase. is this the upkeep phase? if not, create the upkeep phase and put it on top of the stack
+    if (game.phaseStack.topOfStack().name != 'Upkeep') {
+        phase = new Phase('Upkeep', [ 'UpkeepChoice' ]);
         game.phaseStack.addToStack(phase);
     }
     else {
@@ -51,20 +48,31 @@ export function upkeep(game: Game, card?: Card): void {
     // find all of the cards with handlers that match
     let foundCards: Array<Card> = Game.findCardsWithHandlers(board.inPlay, 'onUpkeep');
     
-    // add all of those cards to the list of allowedActions, automatically removing those that were already resolved
+    // add all of those cards to the list of allowedActions, automatically removing those that were already resolved and ensuring there are no duplicates
     phase.filterResolvedAndMarkMustDo(foundCards);
+}
 
-    // if the list is now empty, pop the upkeep phase off the stack
-    if (phase.mustResolveTriggersOn.length == 0) {
-        game.phaseStack.endCurrentPhase();
-        game.addEvent(new EventDescriptor('UpkeepOver', 'Upkeep phase completed'));
+export function upkeepChoiceAction(game: Game, cardId: string): void {
+
+    let phase = game.phaseStack.topOfStack();
+
+    if (phase.name != 'Upkeep' || !phase.mustResolve(cardId)) {
+        game.addEvent(new EventDescriptor('Error', 'Upkeep is not valid for ID ' + cardId));
+        return;
     }
-    else {
-        // return list of upkeep choices to the client
-        game.addEvents(phase.mustResolveTriggersOn.map(cardId => {
-            return new EventDescriptor('UpkeepChoices', 'Upkeep still to be processed', cardId);
-        }));
-    }
+
+    // We are about to fire this handler, so we'll mark its ID done
+    phase.markResolved(cardId);
+
+    // Do the upkeep thing
+    let upkpHandler: UpkeepHandler = <UpkeepHandler>Card.idToCardMap.get(cardId);
+    game.addEvent(upkpHandler.onUpkeep());
+
+    // In case the phase didn't change, refresh the list again to send an up to date one to the user.
+    // This may also actually end the phase, if this was the last thing to be processed.
+    //
+    // In the event the onUpkeep handler pushed us into another phase, then it's fine; this function 
+    // will do nothing and it'll get re-processed later.
 }
 
 function clearPatrolZone(board: Board) {

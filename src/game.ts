@@ -113,12 +113,8 @@ export class EventDescriptor {
             this.impactedCardIds = impactedCardIds;
         }
     }
-
-    static getCardsFromEDList(list: Array<EventDescriptor>): Array<Card> {
-        return list.map(ed => { return ed.card } );
-    }
 }
-export type ServerEvent = 'ClearPatrolZone' | 'CollectGold' | 'ReadyCard' | 'UpkeepChoices' | 'UpkeepOver';
+export type ServerEvent = 'Error' | 'ClearPatrolZone' | 'CollectGold' | 'ReadyCard' | 'UpkeepChoices' | 'UpkeepOver';
 
 
 
