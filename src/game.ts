@@ -63,21 +63,24 @@ export class Game {
 
     /** 
      * Searches an array of cards for every card mapping to an interface (eg, implements onUpkeep).
-     * @param handlerFunction The function on an interface that would indicate this interface is implemented, eg, 'onUpkeep'
-     * @param handlerEDFunction The Event Descriptor generator function on the interface, eg, UpkeepHandler.upkeepEventDescriptor
      * 
-     * For example, findCardsWithHandlers(board.InPlay, 'onUpkeep', 'UpkeepChoices', 'upkeepText')
+     * @param implementsFunction The function on an interface that would indicate this interface is implemented, eg, 'onUpkeep'
+     * 
+     * For example, findCardsWithHandlers(board.InPlay, 'onUpkeep')
      */
-    static findCardsWithHandlers(cards: Array<Card>, handlerFunction: string, handlerEDFunction: (card: Card) => EventDescriptor): Array<EventDescriptor> {
-        return Game.findAndDoOnCards(cards, 
-                                    (card: Card): boolean => {
-                                        return Reflect.has(card, handlerFunction);
-                                    },
-                                    (card: Card): EventDescriptor => {
-                                        return handlerEDFunction(card);
-                                    });
+    static findCardsWithHandlers(cards: Array<Card>, implementsFunction: string): Array<Card> {
+        return cards.filter(card => {
+            return Reflect.has(card, implementsFunction);
+        });
     }
     
+    /**
+     * Finds cards matching arbitary criteria, does a thing to those cards, and returns EventDescriptors describing what we did.
+     * 
+     * @param cards search space
+     * @param matching do something if this returns true
+     * @param andDo what do
+     */
     static findAndDoOnCards(cards: Array<Card>, matching: (card: Card) => boolean, andDo: (card: Card) => EventDescriptor) : Array<EventDescriptor> {          
         let events: Array<EventDescriptor> = [];
         
@@ -95,23 +98,27 @@ export class Game {
 export class EventDescriptor {
     eventType: ServerEvent;
 
-    initiatingCard: Card;
-    impactedCards: Array<Card>;
+    cardId: string;
+    impactedCardIds: Array<string>;
 
     text: string;
 
-    constructor(eventType: ServerEvent, text: string, initiatingCard?: Card, impactedCards?: Array<Card>) {
+    constructor(eventType: ServerEvent, text: string, cardId?: string, impactedCardIds?: Array<string>) {
         this.eventType = eventType;
         this.text = text;
 
-        if (initiatingCard)
-            this.initiatingCard = initiatingCard;
-        if (impactedCards) {
-            this.impactedCards = impactedCards;
+        if (cardId)
+            this.cardId = cardId;
+        if (impactedCardIds) {
+            this.impactedCardIds = impactedCardIds;
         }
     }
+
+    static getCardsFromEDList(list: Array<EventDescriptor>): Array<Card> {
+        return list.map(ed => { return ed.card } );
+    }
 }
-export type ServerEvent = 'ClearPatrolZone' | 'CollectGold' | 'ReadyCard' | 'UpkeepChoices';
+export type ServerEvent = 'ClearPatrolZone' | 'CollectGold' | 'ReadyCard' | 'UpkeepChoices' | 'UpkeepOver';
 
 
 

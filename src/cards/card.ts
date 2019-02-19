@@ -1,5 +1,5 @@
-// some interesting cards to model:
-//     Rememberer, Abomination, Building Inspector, any of the illusions
+
+import {anyid} from 'anyid';
 
 export abstract class Card {
 
@@ -9,14 +9,18 @@ export abstract class Card {
     readonly abstract name: string;
 
     // We need some way to identify active cards.  Note that we re-generate card objects when they are discarded
-    static cardIdCounter: number = 1;
-    readonly cardId: number;
+    readonly cardId: string;
 
     /** Some cards, like Jail or Graveyard, are containers for other cards */
     contains: Array<Card>;
 
+    static cardToIdMap: Map<Card, string>;
+    static idToCardMap: Map<string, Card>;
+
     constructor() {
-        this.cardId = Card.cardIdCounter++; 
+        this.cardId = anyid().encode('Aa0').length(10).random().id();
+        Card.cardToIdMap.set(this, this.cardId);
+        Card.idToCardMap.set(this.cardId, this);
     }
 
     /** 

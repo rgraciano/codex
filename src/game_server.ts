@@ -1,8 +1,8 @@
 
 import { Game } from './game';
-import {anyid} from 'anyid';
+import { anyid } from 'anyid';
 import * as fs from 'fs';
-import { Phase } from './phases/phase';
+import { Phase, ActionName } from './phases/phase';
 import { startTurn } from './phases/player_turn';
 
 /*
@@ -58,7 +58,7 @@ export class GameServer {
     }
 
     // TODO: likely to replace the skeleton with some framework here...
-    action(action: string, context: StringMap): string {
+    action(action: ActionName, context: StringMap): string {
         if (action == 'NewGame') {
             this.game = new Game();
             startTurn(this.game);

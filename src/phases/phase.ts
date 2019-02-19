@@ -1,7 +1,8 @@
 
 import { Card } from '../cards/card';
 
-type PhaseName = 'Player1TurnStart' | 'Player2TurnStart' | 'NewGame';
+export type PhaseName = 'Player1TurnStart' | 'Player2TurnStart' | 'NewGame' | 'Upkeep';
+export type ActionName = 'Upkeep' | 'NewGame';
 // note patrol and un-patrol will need to be options, or attack/ability/exhaust will need to check if patrolling and
 // remove from that state
 
@@ -22,23 +23,31 @@ export class PhaseStack {
         this.stack = [ new Phase('NewGame', [ ] ) ];
     }
 
+    addToStack(newTop: Phase): void {
+        this.stack.push(newTop);
+    }
+
     topOfStack(): Phase {
         return this.stack[this.stack.length - 1];
     }
 
-    isValidAction(action: string): boolean {
+    isValidAction(action: ActionName): boolean {
         return this.topOfStack().isValidAction(action);
     }
 
-    validActions(): Array<string> {
+    validActions(): Array<ActionName> {
         return this.topOfStack().validActions;
+    }
+
+    endCurrentPhase(): void {
+        this.stack.pop();
     }
 }
 
 export class Phase {
     phase: PhaseName;
 
-    validActions: Array<string> = [];
+    validActions: Array<ActionName> = [];
 
     // We both keep a list of cards we have to resolve still, 
     // as well as a list of resolved, because we will recalculate the list as we go.
@@ -47,24 +56,30 @@ export class Phase {
     // it on resolvedTriggers.  It then redoes the mustResolveTriggersOn list, just in case you actually
     // killed a thing on the list or otherwise removed it from consideration.  If you didn't kill it, 
     // then it needs the resolvedTriggers list to make sure it doesn't allow you to re-execute it.
-    mustResolveTriggersOn: Array<Card> = [];
-    resolvedTriggers: Array<Card> = [];
+    mustResolveTriggersOn: Array<string> = [];
+    resolvedTriggers: Array<string> = [];
 
-    constructor(phase: PhaseName, validActions: Array<string>) {
+    constructor(phase: PhaseName, validActions: Array<ActionName>) {
         this.phase = phase;
         this.validActions = validActions;
     }
 
-    isValidAction(action: string) {
+    /** Filters out already resolved cards and adds all of the rest to the mustResolve list */
+    filterResolvedAndMarkMustDo(cards: Array<Card>): void {
+        let cardIds: Array<string> = cards.map(card => { return card.cardId });
+        this.mustResolveTriggersOn.push(...cardIds.filter(cardId => { return this.resolvedTriggers.indexOf(cardId) >= 0; }));
+    }
+
+    isValidAction(action: ActionName) {
         return this.validActions.indexOf(action) !== -1;
     }
 
-    markResolved(card: Card) {
-        this.resolvedTriggers.push(card);
+    markResolved(cardId: string) {
+        this.resolvedTriggers.push(cardId);
     }
 
-    wasDone(card: Card): boolean {
-        return this.resolvedTriggers.indexOf(card) !== -1;
+    wasDone(cardId: string): boolean {
+        return this.resolvedTriggers.indexOf(cardId) !== -1;
     }
 
     finished(): boolean {

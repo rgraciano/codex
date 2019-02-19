@@ -10,8 +10,5 @@ interface UpkeepHandler {
     upkeepText: string;
     onUpkeep(): EventDescriptor;
 }
-function upkeepEventDescriptor(card: UpkeepHandler & Card): EventDescriptor { 
-    return new EventDescriptor('UpkeepChoices', card.upkeepText, card);
-}
 
 //function processTriggers(targets: )
