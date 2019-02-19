@@ -4,7 +4,7 @@ import { GameServer } from './game_server';
 
 var gs: GameServer = new GameServer();
 
-gs.action('NewGame', {});
+console.log(gs.action('NewGame', {}));
 
 
 

@@ -15,8 +15,8 @@ export abstract class Card {
     /** Some cards, like Jail or Graveyard, are containers for other cards */
     contains: Array<Card>;
 
-    static cardToIdMap: Map<Card, string>;
-    static idToCardMap: Map<string, Card>;
+    static cardToIdMap: Map<Card, string> = new Map<Card, string>();
+    static idToCardMap: Map<string, Card> = new Map<string, Card>();
 
     constructor() {
         this.cardId = anyid().encode('Aa0').length(10).random().id();

@@ -1,6 +1,6 @@
 
 import { Card, Hero, Effect } from './cards/card';
-import { EventDescriptor } from 'game';
+import { EventDescriptor } from './game';
 
 /** This class will essentially represent an entire player state */
 export class Board {

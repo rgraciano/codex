@@ -1,8 +1,10 @@
 
 import { Card } from '../cards/card';
 
-export type PhaseName = 'Player1TurnStart' | 'Player2TurnStart' | 'NewGame' | 'Upkeep';
-export type ActionName = 'UpkeepChoice' | 'NewGame';
+export type PhaseName = 'PlayerTurn' | 'NewGame' | 'Upkeep';
+export type ActionName = 'NewGame' | 'UpkeepChoice' | TurnActionName;
+export type TurnActionName = 'PlayCard' | 'Worker' | 'Tech' | 'BuildTech' | 'BuildAddOn' | 'Patrol' | 'Ability' | 'Attack' | 'HeroSummon' | 'HeroLevel' | 'EndTurn';
+
 // note patrol and un-patrol will need to be options, or attack/ability/exhaust will need to check if patrolling and
 // remove from that state
 

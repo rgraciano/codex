@@ -3,7 +3,7 @@ import { Game } from './game';
 import { anyid } from 'anyid';
 import * as fs from 'fs';
 import { Phase, ActionName } from './phases/phase';
-import { startTurnAction, upkeepChoiceAction } from './phases/player_turn';
+import { startTurnAction, upkeepChoiceAction } from './phases/start_turn';
 
 /*
 Here's how the game server works:

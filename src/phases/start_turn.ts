@@ -11,20 +11,23 @@ export function startTurnAction(game: Game): void {
     let board = boards[0];
     let opponentBoard = boards[1];
 
-    board.turnCount++;
+    board.turnCount++; // TODO: This needs to be done per player
     
     // clear patrol zone, moving everything to "in play"
     game.addEvent(clearPatrolZone(board));
 
-    // READY PHASE
+    // ready everything
     game.addEvents(readyAllCards(game, board));
 
     // TODO: tick off hero availability when heroes are implemented
 
-    // collect gold...
+    // collect gold
     game.addEvent(board.collectGold());
 
-    // enter upkeep, process upkeep events
+    // add your turn to the phase stack
+    game.phaseStack.addToStack(new Phase('PlayerTurn', [ 'PlayCard', 'Worker', 'Tech', 'BuildTech', 'BuildAddOn', 'Patrol', 'Ability', 'Attack', 'HeroSummon', 'HeroLevel', 'EndTurn']));
+
+    // enter upkeep phase, process upkeep events
     enterUpkeepPhase(game);
 }
 
@@ -67,12 +70,6 @@ export function upkeepChoiceAction(game: Game, cardId: string): void {
     // Do the upkeep thing
     let upkpHandler: UpkeepHandler = <UpkeepHandler>Card.idToCardMap.get(cardId);
     game.addEvent(upkpHandler.onUpkeep());
-
-    // In case the phase didn't change, refresh the list again to send an up to date one to the user.
-    // This may also actually end the phase, if this was the last thing to be processed.
-    //
-    // In the event the onUpkeep handler pushed us into another phase, then it's fine; this function 
-    // will do nothing and it'll get re-processed later.
 }
 
 function clearPatrolZone(board: Board) {
