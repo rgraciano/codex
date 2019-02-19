@@ -2,10 +2,8 @@
 
 import { Game } from '../game';
 import { Card } from '../cards/card';
-import { PatrolZone } from '../board';
-import { Trigger, EventDescriptor } from '../trigger';
 
-export function attack(game: Game, playerNumber: number, attacker: Card, defender: Card) {
+export function attack(game: Game, attacker: Card, defender: Card) {
     // first process onAttack triggers; these can be re-ordered
     // re-ordering stops here
 

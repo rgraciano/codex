@@ -1,10 +1,13 @@
 
 // Until we build an API, we can initialize everything directly and test it here.
-import { GameServer, Game } from './game';
+import { GameServer } from './game_server';
 
 var gs: GameServer = new GameServer();
 
-console.log("New game state ID: " + gs.createNewGame());
+gs.action('NewGame', {});
 
-console.log(gs.game.player1Board);
+
+
+
+
 

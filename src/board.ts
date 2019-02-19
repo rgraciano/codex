@@ -1,6 +1,6 @@
 
 import { Card, Hero, Effect } from './cards/card';
-import { Trigger } from 'trigger';
+import { EventDescriptor } from 'game';
 
 /** This class will essentially represent an entire player state */
 export class Board {
@@ -40,7 +40,7 @@ export class Board {
     }
 
     drawCards(howMany: number) {
-        // If we need to draw more than we have, shuffle the discard pile
+        // If we need to draw more than we have, shuffle the discard pile.  TODO: Limit to one reshuffle per turn
         if (this.deck.length < howMany) {
             this.shuffleDiscard();
             this.deck = this.deck.concat(this.discard);
@@ -61,9 +61,11 @@ export class Board {
     }
 
     // think this should actually be an upkeep trigger...
-    collectGold(): number {
-        // slow time generator will impact this, so we're going to need to look for cards that impact gold
-        return (this.gold += this.startingWorkers + this.workers.length);
+    collectGold(): EventDescriptor {
+        // TODO: slow time generator will impact this, so we're going to need to look for cards that impact gold
+        let collected: number = this.startingWorkers + this.workers.length;
+        this.gold += collected;
+        return new EventDescriptor('CollectGold', 'Collected ' + collected + ' gold');
     }
 }
 

@@ -57,18 +57,13 @@ export class GameServer {
         this.game = JSON.parse(fs.readFileSync('e:\\saved_gamestates\\' + gameStateId + '.json', 'utf-8'));
     }
 
-    /**
-     * Creates a new game and new game state from square one.
-     */
-    createNewGame(): void {
-        this.game = new Game();
-        startTurn(this.game, 1);
-    }
-
     // TODO: likely to replace the skeleton with some framework here...
     action(action: string, context: StringMap): string {
         if (action == 'NewGame') {
-            this.createNewGame();
+            this.game = new Game();
+            startTurn(this.game);
+
+            this.saveGameState();
             return this.responseSuccess();
         }
         
