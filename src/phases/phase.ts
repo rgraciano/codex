@@ -34,10 +34,6 @@ export class PhaseStack {
         return this.stack[this.stack.length - 1];
     }
 
-    isValidAction(action: ActionName): boolean {
-        return this.topOfStack().isValidAction(action);
-    }
-
     validActions(): Array<ActionName> {
         return this.topOfStack().validActions;
     }
@@ -94,7 +90,7 @@ export class Phase {
         return this.mustResolveIds.indexOf(cardId) !== -1;
     }
 
-    isValidAction(action: ActionName) {
+    isValidAction(action: ActionName): boolean {
         return this.validActions.indexOf(action) !== -1;
     }
 

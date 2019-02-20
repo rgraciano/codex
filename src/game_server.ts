@@ -55,6 +55,8 @@ export class GameServer {
     }
 
     loadGameState(gameStateId: string) {
+        // this is going to need to create objects. maybe https://github.com/typestack/class-transformer ?
+        // i'm thinking likely best thing to do would be to separate data and behavior as much as possible so it's not as much of an issue
         this.game = JSON.parse(fs.readFileSync('e:\\saved_gamestates\\' + gameStateId + '.json', 'utf-8'));
     }
 
@@ -78,8 +80,8 @@ export class GameServer {
 
         this.loadGameState(state);
 
-        if (!this.game.phaseStack.isValidAction(action)) {
-            return this.responseError('Action ' + action + ' is not currently valid.  Currently valid actions include ' + this.game.phaseStack.validActions());
+        if (!this.game.phaseStack.topOfStack().isValidAction(action)) {
+            return this.responseError('Action ' + action + ' is not currently valid.  Currently valid actions include ' + this.game.phaseStack.validActions().toString);
         }
    
         try {
