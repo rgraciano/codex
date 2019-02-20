@@ -13,11 +13,13 @@ export class Board {
     deck: Array<Card> = [];
     discard: Array<Card> = [];
     workers: Array<Card> = [];
-    effects: Array<Effect> = [];
     startingWorkers: number;
 
-    inPlay: Array<Card> = [];
     heroZone: Array<Hero> = [];
+
+    // These things are "active" - cards that are in play somewhere
+    inPlay: Array<Card> = [];
+    effects: Array<Effect> = [];
     patrolZone: PatrolZone = new PatrolZone();
 
     baseHealth: number = 20;
@@ -66,6 +68,46 @@ export class Board {
         let collected: number = this.startingWorkers + this.workers.length;
         this.gold += collected;
         return new EventDescriptor('CollectGold', 'Collected ' + collected + ' gold');
+    }
+
+    /** Verifies a card is in a specific space.  Returns null if it can't be found */
+    findCardById(space: Array<Card>, cardId: string): (Card | undefined) {
+        let card: Card = Card.idToCardMap.get(cardId);
+
+        if (card === undefined || space.indexOf(card) === -1) {
+            return undefined;
+        }
+
+        return card;
+    }
+
+    /**
+     *  Moves a card from one area to another, e.g. hand to play space, play to discard, etc.
+     *  If toSpace is omitted then the card is simply removed.
+     */
+    moveCard(fromSpace: Array<Card>, card: Card, toSpace?: Array<Card>): boolean {
+        let index = fromSpace.indexOf(card);
+        
+        if (index === -1) {
+            return false;
+        }
+
+        fromSpace.splice(index, 1);
+
+        if (toSpace)
+            toSpace.push(card);
+            
+        return true;
+    }
+
+    getPatrolZoneAsArray(): Array<Card> {
+        let a: Array<Card> = [];
+
+        for (let thing in this) {
+            a.push(this.patrolZone[thing]);
+        }
+
+        return a;
     }
 }
 
@@ -127,9 +169,11 @@ class TechBuilding extends BoardBuilding {
 }
 
 export class PatrolZone {
+    [key: string]: Card;
     squadLeader: Card = null;
     elite: Card = null;
     scavenger: Card = null;
     technician: Card = null;
     lookout: Card = null;
 }
+

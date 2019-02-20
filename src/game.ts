@@ -30,13 +30,13 @@ export class Game {
         this.player2Board = new Board(2);
 
         // We will have to put in something to find starters etc later.  For now just give everyone the same bogus starter
-        this.player1Board.discard = [new Tenderfoot(), new TimelyMessenger(), new OlderBrother(), 
-            new FruitNinja(), new Tenderfoot(), new TimelyMessenger(),
-            new OlderBrother(), new FruitNinja(), new Tenderfoot(), new TimelyMessenger()];
+        this.player1Board.discard = [new Tenderfoot(1), new TimelyMessenger(1), new OlderBrother(1), 
+            new FruitNinja(1), new Tenderfoot(1), new TimelyMessenger(1),
+            new OlderBrother(1), new FruitNinja(1), new Tenderfoot(1), new TimelyMessenger(1)];
 
-        this.player2Board.discard = [new Tenderfoot(), new TimelyMessenger(), new OlderBrother(), 
-                new FruitNinja(), new Tenderfoot(), new TimelyMessenger(),
-                new OlderBrother(), new FruitNinja(), new Tenderfoot(), new TimelyMessenger()];
+        this.player2Board.discard = [new Tenderfoot(2), new TimelyMessenger(2), new OlderBrother(2), 
+                new FruitNinja(2), new Tenderfoot(2), new TimelyMessenger(2),
+                new OlderBrother(2), new FruitNinja(2), new Tenderfoot(2), new TimelyMessenger(2)];
 
         this.player1Board.drawCards(5);
         this.player2Board.drawCards(5);
@@ -114,7 +114,7 @@ export class EventDescriptor {
         }
     }
 }
-export type ServerEvent = 'Error' | 'ClearPatrolZone' | 'CollectGold' | 'ReadyCard' | 'UpkeepChoices' | 'UpkeepOver';
+export type ServerEvent = 'Error' | 'ClearPatrolZone' | 'CollectGold' | 'ReadyCard' | 'UpkeepChoices' | 'UpkeepOver' | 'PaidFor' | 'Arrives';
 
 
 

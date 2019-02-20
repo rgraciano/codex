@@ -9,8 +9,8 @@ export class TimelyMessenger extends Unit {
     name: string = "Timely Messenger";
     techLevel: TechLevel = "Tech 0";
 
-    constructor() {
-        super();
+    constructor(owner: number, controller?: number) {
+        super(owner, controller);
         this.baseAttributes.health = 1;
         this.baseAttributes.attack = 1;
         this.baseAttributes.cost = 1;

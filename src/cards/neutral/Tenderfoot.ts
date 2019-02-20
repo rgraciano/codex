@@ -9,8 +9,8 @@ export class Tenderfoot extends Unit {
     name: string = "Tenderfoot";
     techLevel: TechLevel = "Tech 0";
 
-    constructor() {
-        super();
+    constructor(owner: number, controller?: number) {
+        super(owner, controller);
         this.baseAttributes.health = 2;
         this.baseAttributes.attack = 1;
         this.baseAttributes.cost = 1;

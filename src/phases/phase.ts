@@ -1,8 +1,9 @@
 
 import { Card } from '../cards/card';
+import { Game } from '../game';
 
-export type PhaseName = 'PlayerTurn' | 'NewGame' | 'Upkeep';
-export type ActionName = 'NewGame' | 'UpkeepChoice' | TurnActionName;
+export type PhaseName = 'PlayerTurn' | 'NewGame' | 'Upkeep' | 'Arrive';
+export type ActionName = 'NewGame' | 'UpkeepChoice' | 'ArriveChoice' | TurnActionName;
 export type TurnActionName = 'PlayCard' | 'Worker' | 'Tech' | 'BuildTech' | 'BuildAddOn' | 'Patrol' | 'Ability' | 'Attack' | 'HeroSummon' | 'HeroLevel' | 'EndTurn';
 
 // note patrol and un-patrol will need to be options, or attack/ability/exhaust will need to check if patrolling and
@@ -46,6 +47,7 @@ export class PhaseStack {
         this.stack = this.stack.filter(phase => {
             switch (phase.name) {
                 case 'Upkeep':
+                case 'Arrive':
                     if (phase.mustResolveIds.length === 0) {
                         return false;
                     }
@@ -80,13 +82,15 @@ export class Phase {
         this.validActions = validActions;
     }
 
-    /** Filters out already resolved cards and cards already on the list, and adds all of the rest to the mustResolve list */
-    filterResolvedAndMarkMustDo(cards: Array<Card>): void {
-        let cardIds: Array<string> = cards.map(card => { return card.cardId });
-        this.mustResolveIds.push(...cardIds.filter(cardId => { return (this.resolvedIds.indexOf(cardId) >= 0) && (this.mustResolveIds.indexOf(cardId) >= 0) }));
+    /** 
+     * Adds cards that must be resolved.
+     */
+    markMustResolve(cards: Array<Card>): void {
+        this.mustResolveIds.push(...cards.map(card => { return card.cardId }));
+        //this.mustResolveIds.push(...cardIds.filter(cardId => { return (this.resolvedIds.indexOf(cardId) >= 0) && (this.mustResolveIds.indexOf(cardId) >= 0) })); // to also filter... no longer needed
     }
 
-    mustResolve(cardId: string): boolean {
+    ifMustResolve(cardId: string): boolean {
         return this.mustResolveIds.indexOf(cardId) !== -1;
     }
 
@@ -110,4 +114,12 @@ export class Phase {
     finished(): boolean {
         return this.resolvedIds.length === 0;
     }
+}
+
+export function findCardsToResolve(game: Game, space: Array<Card>, handlerFnName: string) {
+    // find all of the cards with handlers that match
+    let foundCards: Array<Card> = Game.findCardsWithHandlers(space, handlerFnName);
+
+    // add all of those cards to the list of allowedActions, automatically removing those that were already resolved and ensuring there are no duplicates
+    game.phaseStack.topOfStack().markMustResolve(foundCards);
 }

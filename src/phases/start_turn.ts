@@ -3,7 +3,7 @@ import { Game, EventDescriptor } from '../game';
 import { Card } from '../cards/card';
 import { Board} from '../board';
 import { PatrolZone } from '../board';
-import { Phase } from './phase';
+import { Phase, findCardsToResolve } from './phase';
 import { UpkeepHandler } from '../cards/card';
 
 export function startTurnAction(game: Game): void {
@@ -24,42 +24,19 @@ export function startTurnAction(game: Game): void {
     // collect gold
     game.addEvent(board.collectGold());
 
-    // add your turn to the phase stack
+    // enter player turn phase
     game.phaseStack.addToStack(new Phase('PlayerTurn', [ 'PlayCard', 'Worker', 'Tech', 'BuildTech', 'BuildAddOn', 'Patrol', 'Ability', 'Attack', 'HeroSummon', 'HeroLevel', 'EndTurn']));
 
-    // enter upkeep phase, process upkeep events
-    enterUpkeepPhase(game);
-}
-
-/**
- * Enters the upkeep phase and processes 
- */
-function enterUpkeepPhase(game: Game): void {
-    let board = game.getBoardAndOpponentBoard()[0];
-
-    let phase: Phase;
-
-    // check the phase. is this the upkeep phase? if not, create the upkeep phase and put it on top of the stack
-    if (game.phaseStack.topOfStack().name != 'Upkeep') {
-        phase = new Phase('Upkeep', [ 'UpkeepChoice' ]);
-        game.phaseStack.addToStack(phase);
-    }
-    else {
-        phase = game.phaseStack.topOfStack();
-    }
-
-    // find all of the cards with handlers that match
-    let foundCards: Array<Card> = Game.findCardsWithHandlers(board.inPlay, 'onUpkeep');
-    
-    // add all of those cards to the list of allowedActions, automatically removing those that were already resolved and ensuring there are no duplicates
-    phase.filterResolvedAndMarkMustDo(foundCards);
+    // enter upkeep phase, process upkeep events. when this is resolved, we'll exit into the PlayerTurn phase just beneath
+    game.phaseStack.addToStack(new Phase('Upkeep', [ 'UpkeepChoice' ]));
+    findCardsToResolve(game, game.getBoardAndOpponentBoard()[0].inPlay, 'onUpkeep');
 }
 
 export function upkeepChoiceAction(game: Game, cardId: string): void {
 
     let phase = game.phaseStack.topOfStack();
 
-    if (phase.name != 'Upkeep' || !phase.mustResolve(cardId)) {
+    if (phase.name != 'Upkeep' || !phase.ifMustResolve(cardId)) {
         game.addEvent(new EventDescriptor('Error', 'Upkeep is not valid for ID ' + cardId));
         return;
     }

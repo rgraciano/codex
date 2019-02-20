@@ -18,10 +18,17 @@ export abstract class Card {
     static cardToIdMap: Map<Card, string> = new Map<Card, string>();
     static idToCardMap: Map<string, Card> = new Map<string, Card>();
 
-    constructor() {
+    // Tracks who controls this card; makes lookups easier later
+    owner: number;
+    controller: number;
+
+    constructor(owner: number, controller?: number) {
         this.cardId = anyid().encode('Aa0').length(10).random().id();
         Card.cardToIdMap.set(this, this.cardId);
         Card.idToCardMap.set(this.cardId, this);
+
+        this.owner = owner;
+        this.controller = this.controller ? this.controller : this.owner;
     }
 
     /** 
@@ -202,4 +209,11 @@ export interface AttackHandler extends Card {
 
 export interface UpkeepHandler extends Card {
     onUpkeep(): EventDescriptor;
+}
+
+export interface ArriveHandler extends Card {
+    onArrive(arrival: Card): EventDescriptor;
+}
+export interface OpponentArriveHandler extends Card {
+    onOpponentArrive(arrival: Card): EventDescriptor;
 }

@@ -4,6 +4,7 @@ import { anyid } from 'anyid';
 import * as fs from 'fs';
 import { Phase, ActionName } from './phases/phase';
 import { startTurnAction, upkeepChoiceAction } from './phases/start_turn';
+import { playCardAction, arriveChoiceAction } from './phases/play_card';
 
 /*
 Here's how the game server works:
@@ -80,28 +81,39 @@ export class GameServer {
         if (!this.game.phaseStack.isValidAction(action)) {
             return this.responseError('Action ' + action + ' is not currently valid.  Currently valid actions include ' + this.game.phaseStack.validActions());
         }
+   
+        try {
+            let props: StringMap;
+            switch (action) {
+                case 'UpkeepChoice':
+                    props = GameServer.requiredAlnumProperties(context, ['cardId']);
+                    upkeepChoiceAction(this.game, props['cardId']);
+                    break;
+                case 'PlayCard':
+                    props = GameServer.requiredAlnumProperties(context, ['cardId']);
+                    playCardAction(this.game, props['cardId']);
+                    break;
+                case 'ArriveChoice':
+                    props = GameServer.requiredAlnumProperties(context, ['cardId']);
+                    arriveChoiceAction(this.game, props['cardId']);
+                    break;
+                default:
+                    this.responseError('Invalid action');
+            }
 
-        switch (action) {
-            case 'UpkeepChoice':
-                let cardId:(string | boolean) = GameServer.getAlNumProperty(context, 'cardId');
-                if (cardId) 
-                    upkeepChoiceAction(this.game, <string>cardId);
-                else
-                    this.responseError('Must pick a card ID for upkeep');
-                break;
-            default:
-                this.responseError('Invalid action');
+            this.saveGameState();
+            return this.responseSuccess();
+        } catch (e) {
+            return this.responseError(e.message);
         }
-
-        this.saveGameState();
-        return this.responseSuccess();
     }
 
     responseError(error: string) {
-        return JSON.stringify( { error: error });
+        return JSON.stringify( { error: error } );
     }
 
     responseSuccess() {
+        // TODO: This should turn into a game state sweep. Check dead things, check game end, etc.
         this.game.phaseStack.resolveEmptyPhases();
         let topOfStack: Phase = this.game.phaseStack.topOfStack();
 
@@ -129,6 +141,21 @@ phase: player1turnstart
     - draw/discard, end turn trigger nest
 */
 
+    static requiredAlnumProperties(context: StringMap, requiredList: Array<string>): StringMap {
+        let validated: StringMap = new StringMap();
+
+        for (let req of requiredList) {
+            if (context.hasOwnProperty(req) && !( /[^a-zA-Z0-9]/.test(context[req]) )) {
+                validated[req] = context[req];
+            }
+            else {
+                throw new Error('Missing parameter: ' + req); // TODO: this doesn't map to error handling elsewhere, but it's easy to manage...
+            }
+        }
+
+        return validated;
+    }
+
     // TODO: Replace later; will pick some kind of framework that does this boilerplate stuff for us
     static getAlNumProperty(context: StringMap, property: string): (string | boolean) {
         if (context.hasOwnProperty(property) && !( /[^a-zA-Z0-9]/.test(context[property]) )) {
@@ -137,5 +164,5 @@ phase: player1turnstart
         return false;
     }
 }
-export interface StringMap { [s: string]: string; }
+export class StringMap { [s: string]: string; }
 

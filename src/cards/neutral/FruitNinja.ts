@@ -9,8 +9,8 @@ export class FruitNinja extends Unit {
     name: string = "Fruit Ninja";
     techLevel: TechLevel = "Tech 0";
 
-    constructor() {
-        super();
+    constructor(owner: number, controller?: number) {
+        super(owner, controller);
         this.baseAttributes.health = 2;
         this.baseAttributes.attack = 2;
         this.baseAttributes.frenzy = 1;
