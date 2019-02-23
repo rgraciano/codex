@@ -10,8 +10,8 @@ export class TimelyMessenger extends Unit {
     techLevel: TechLevel = "Tech 0";
     importPath: string = "./neutral";
 
-    constructor(owner: number, controller?: number) {
-        super(owner, controller);
+    constructor(owner: number, controller?: number, cardId?: string) {
+        super(owner, controller, cardId);
         this.baseAttributes.health = 1;
         this.baseAttributes.attack = 1;
         this.baseAttributes.cost = 1;

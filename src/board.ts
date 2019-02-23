@@ -155,7 +155,7 @@ export class Board {
     getPatrolZoneAsArray(): Array<Card> {
         let a: Array<Card> = [];
 
-        for (let thing in this) {
+        for (let thing in this.patrolZone) {
             a.push(this.patrolZone[thing]);
         }
 

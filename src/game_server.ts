@@ -2,9 +2,9 @@
 import { Game } from './game';
 import { anyid } from 'anyid';
 import * as fs from 'fs';
-import { Phase, ActionName } from './phases/phase';
-import { startTurnAction, upkeepChoiceAction } from './phases/start_turn';
-import { playCardAction, arriveChoiceAction } from './phases/play_card';
+import { Phase, ActionName } from './actions/phase';
+import { startTurnAction, upkeepChoiceAction } from './actions/start_turn';
+import { playCardAction, arriveChoiceAction } from './actions/play_card';
 
 /*
 Here's how the game server works:
@@ -47,17 +47,21 @@ export class GameServer {
     /** Creates a new game state ID for the current game state and saves it to the filesystem
      * TODO: Move this to something cloud-friendly; FS is fine for debugging
      */
-    private saveGameState(): string {
+    private saveGameState(stringifiedGameState: string): string {
         this.generateGameStateId();
         // TODO: error handling would be good
-        fs.writeFileSync('e:\\saved_gamestates\\' + this.gameStateId + '.json', JSON.stringify(this.game.serialize()));
+        fs.writeFileSync('e:\\saved_gamestates\\' + this.gameStateId + '.json', stringifiedGameState);
         return this.gameStateId;
     }
 
     loadGameState(gameStateId: string) {
         // this is going to need to create objects. maybe https://github.com/typestack/class-transformer ?
         // i'm thinking likely best thing to do would be to separate data and behavior as much as possible so it's not as much of an issue
-        this.game = Game.deserialize(JSON.parse(fs.readFileSync('e:\\saved_gamestates\\' + gameStateId + '.json', 'utf-8')));
+        let path = 'e:\\saved_gamestates\\' + gameStateId + '.json';
+        if (fs.existsSync(path))
+            this.game = Game.deserialize(JSON.parse(fs.readFileSync(path, 'utf-8')));
+        else
+            throw new Error('Game state ' + gameStateId + ' does not exist');
     }
 
     // TODO: likely to replace the skeleton with some framework here...
@@ -67,7 +71,6 @@ export class GameServer {
             this.game.setupNewGame();
             startTurnAction(this.game);
 
-            this.saveGameState();
             return this.responseSuccess();
         }
         
@@ -104,7 +107,6 @@ export class GameServer {
                     this.responseError('Invalid action');
             }
 
-            this.saveGameState();
             return this.responseSuccess();
         } catch (e) {
             return this.responseError(e.message);
@@ -118,16 +120,12 @@ export class GameServer {
     responseSuccess() {
         // TODO: This should turn into a game state sweep. Check dead things, check game end, etc.
         this.game.phaseStack.resolveEmptyPhases();
+        let stringifiedGameState = JSON.stringify(this.game.serialize());
+        this.saveGameState(stringifiedGameState);
+
         let topOfStack: Phase = this.game.phaseStack.topOfStack();
 
-        return JSON.stringify( { 
-            state: this.gameStateId,
-            events: this.game.events,
-            validActions: topOfStack.validActions,  
-            mustResolveIds: topOfStack.mustResolveIds,
-            player1Board: this.game.player1Board,
-            player2Board: this.game.player2Board
-        } );
+        return stringifiedGameState;
     }
         /*
 game flow then...

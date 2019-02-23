@@ -3,7 +3,7 @@
 
 import 'reflect-metadata';
 
-import { PhaseStack } from './phases/phase';
+import { PhaseStack } from './actions/phase';
 
 import { Board } from './board';
 

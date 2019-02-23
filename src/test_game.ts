@@ -5,15 +5,15 @@ import { Game } from './game';
 
 var gs: GameServer = new GameServer();
 
-gs.action('NewGame', {});
+//gs.action('NewGame', {});
 
 //testSaveGameState(gs.gameStateId, gs.game);
 
-//testPlayCard(gs);
+testPlayCard(gs);
 
 function testPlayCard(gs: GameServer) {
-   // player 1 start state: L9YlsOq7Pr
-    console.log(gs.action('PlayCard', { 'state': 'L9YlsOq7Pr', 'cardId': '6ZqGXSEruv' }));
+   // player 1 start state: oXSYI0NAdh, card  vpfLoJHbHU
+    console.log(gs.action('PlayCard', { 'state': 'oXSYI0NAdh', 'cardId': 'vpfLoJHbHU' }));
 }
 
 

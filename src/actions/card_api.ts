@@ -18,6 +18,7 @@ export class CardApi {
         game.addEvent(new EventDescriptor('Arrives', card.name + ' arrives'));
     
         // Next we need to check OnArrives for this card, onArrive for our cards, and onOpponentArrive for our opponent's cards.
+        // TODO: Need to distinguish btwn "Arrives" and "onArrive"
         game.phaseStack.addToStack(new Phase('Arrive', [ 'ArriveChoice' ]));
         findCardsToResolve(game, board.inPlay.concat(board.getPatrolZoneAsArray(), board.effects), 'onArrive');
         findCardsToResolve(game, opponentBoard.inPlay.concat(opponentBoard.getPatrolZoneAsArray(), opponentBoard.effects), 'onOpponentArrive');
