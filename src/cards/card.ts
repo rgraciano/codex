@@ -14,7 +14,7 @@ export abstract class Card {
     readonly cardId: string;
 
     /** Some cards, like Jail or Graveyard, are containers for other cards */
-    contains: Array<Card>;
+    contains: Array<Card> = new Array<Card>();
 
     static cardToIdMap: Map<Card, string> = new Map<Card, string>();
     static idToCardMap: Map<string, Card> = new Map<string, Card>();

@@ -51,16 +51,16 @@ export class Game {
         pojo.activePlayer = this.activePlayer;
         pojo.player1Board = this.player1Board.serialize();
         pojo.player2Board = this.player2Board.serialize();
-        pojo.phaseStack = this.phaseStack.serialize();
+        //pojo.phaseStack = this.phaseStack.serialize();
         return pojo;
     }
 
     static deserialize(pojo: ObjectMap): Game {
         let game: Game = new Game();
         game.activePlayer = <number>pojo.activePlayer;
-        game.player1Board = Board.deserialize(pojo.player1Board);
-        game.player2Board = Board.deserialize(pojo.player2Board);
-        game.phaseStack = PhaseStack.deserialize(pojo.phaseStack);
+        game.player1Board = Board.deserialize(<ObjectMap>pojo.player1Board);
+        game.player2Board = Board.deserialize(<ObjectMap>pojo.player2Board);
+        //game.phaseStack = PhaseStack.deserialize(pojo.phaseStack);
         return game;
     }
 

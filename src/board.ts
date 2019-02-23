@@ -44,6 +44,8 @@ export class Board {
 
     serialize(): ObjectMap {
         let pojo: ObjectMap = new ObjectMap();
+
+        pojo.playerNumber = this.playerNumber;
         pojo.turnCount = this.turnCount;
         pojo.gold = this.gold;
         pojo.baseHealth = this.baseHealth;
@@ -57,13 +59,38 @@ export class Board {
 
         pojo.patrolZone = PatrolZone.serialize(this.patrolZone); // break from convention here b/c instance method screws up property iteration on pz
 
-        // tech buildings, add on still to do...
+        if (this.tech1) pojo.tech1 = this.tech1.serialize();
+        if (this.tech2) pojo.tech2 = this.tech2.serialize();
+        if (this.tech3) pojo.tech3 = this.tech3.serialize();
+
+        if (this.addOn) pojo.addOn = this.addOn.serialize();
 
         return pojo;
     }
 
     static deserialize(pojo: ObjectMap): Board {
-        return new Board(1);//todo: fix
+        let board = new Board(<number>pojo.playerNumber);
+
+        board.turnCount = <number>pojo.turnCount;
+        board.gold = <number>pojo.gold;
+        board.baseHealth = <number>pojo.baseHealth;
+
+        board.hand = Card.deserializeCards(<Array<ObjectMap>>pojo.hand);
+        board.deck = Card.deserializeCards(<Array<ObjectMap>>pojo.deck);
+        board.discard = Card.deserializeCards(<Array<ObjectMap>>pojo.discard);
+        board.workers = Card.deserializeCards(<Array<ObjectMap>>pojo.workers);
+        board.heroZone = <Array<Hero>>Card.deserializeCards(<Array<ObjectMap>>pojo.heroZone);
+        board.inPlay = Card.deserializeCards(<Array<ObjectMap>>pojo.inPlay);
+
+        board.patrolZone = PatrolZone.deserialize(<ObjectMap>pojo.patrolZone);
+
+        if (pojo.tech1) board.tech1 = TechBuilding.deserialize(<ObjectMap>pojo.tech1, board);
+        if (pojo.tech2) board.tech2 = TechBuilding.deserialize(<ObjectMap>pojo.tech2, board);
+        if (pojo.tech3) board.tech3 = TechBuilding.deserialize(<ObjectMap>pojo.tech3, board);
+
+        if (pojo.addOn) board.addOn = AddOn.deserialize(<ObjectMap>pojo.addOn, board);
+
+        return board;
     }
 
     drawCards(howMany: number) {
@@ -154,6 +181,21 @@ abstract class BoardBuilding {
         }
     }
 
+    serialize(): ObjectMap {
+        let pojo = new ObjectMap();
+        pojo.maxHealth = this.maxHealth;
+        pojo.health = this.health;
+        pojo.destroyed = this.destroyed;
+        pojo.constructionInProgress = this.constructionInProgress;
+        return pojo;
+    }
+
+    static deserializeCommonProperties(bb: BoardBuilding, pojo: ObjectMap): void {
+        bb.health = <number>pojo.health;
+        bb.destroyed = <boolean>pojo.destroyed;
+        bb.constructionInProgress = <boolean>pojo.constructionInProgress;
+    }
+
     /** Upon taking damage, reduce health. Don't check destroyed here; we'll do that in the game state loop  */
     damage(amt: number) {
         this.health -= amt;
@@ -175,6 +217,12 @@ abstract class BoardBuilding {
 
 class AddOn extends BoardBuilding {
     readonly maxHealth: number = 4;
+
+    static deserialize(pojo: ObjectMap, playerBoard: Board): AddOn {
+        let ao = new AddOn(playerBoard);
+        BoardBuilding.deserializeCommonProperties(ao, pojo);
+        return ao;
+    }
 }
 
 class TechBuilding extends BoardBuilding {
@@ -184,6 +232,18 @@ class TechBuilding extends BoardBuilding {
     constructor(level: number, playerBoard: Board, buildInstantly: boolean = false) {
         super(playerBoard, buildInstantly);
         this.level = level;
+    }
+
+    serialize(): ObjectMap {
+        let pojo: ObjectMap = super.serialize();
+        pojo.level = this.level;
+        return pojo;
+    }
+
+    static deserialize(pojo: ObjectMap, playerBoard: Board): TechBuilding {
+        let tb = new TechBuilding(<number>pojo.level, playerBoard);
+        BoardBuilding.deserializeCommonProperties(tb, pojo);
+        return tb;
     }
 
     /** For the start of the player's turn, when we begin reconstructing  */

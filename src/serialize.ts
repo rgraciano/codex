@@ -35,7 +35,8 @@ import { Game } from './game';
 export function saveGameState(gameStateId: string, game: Game): void {
     let plainObjectMap: ObjectMap = new ObjectMap();
 
-
+    let test = game.serialize();
+    console.log(test);
 }
 export class ObjectMap {
     [s: string]: Object;

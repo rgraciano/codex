@@ -1,10 +1,13 @@
 
 // Until we build an API, we can initialize everything directly and test it here.
 import { GameServer } from './game_server';
+import { saveGameState } from './serialize';
 
 var gs: GameServer = new GameServer();
 
-//console.log(gs.action('NewGame', {}));
+gs.action('NewGame', {});
+
+saveGameState(gs.gameStateId, gs.game);
 
 testPlayCard(gs);
 
