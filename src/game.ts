@@ -14,6 +14,8 @@ import { TimelyMessenger } from './cards/neutral/TimelyMessenger';
 
 import { Card } from './cards/card';
 
+import { ObjectMap } from './serialize';
+
 
 export class Game {
     player1Board: Board;
@@ -42,6 +44,24 @@ export class Game {
         this.player2Board.drawCards(5);
 
         this.phaseStack = new PhaseStack();
+    }
+
+    serialize(): ObjectMap {
+        let pojo: ObjectMap = new ObjectMap;
+        pojo.activePlayer = this.activePlayer;
+        pojo.player1Board = this.player1Board.serialize();
+        pojo.player2Board = this.player2Board.serialize();
+        pojo.phaseStack = this.phaseStack.serialize();
+        return pojo;
+    }
+
+    static deserialize(pojo: ObjectMap): Game {
+        let game: Game = new Game();
+        game.activePlayer = <number>pojo.activePlayer;
+        game.player1Board = Board.deserialize(pojo.player1Board);
+        game.player2Board = Board.deserialize(pojo.player2Board);
+        game.phaseStack = PhaseStack.deserialize(pojo.phaseStack);
+        return game;
     }
 
     getBoardAndOpponentBoard(): Array<Board> {
@@ -115,6 +135,4 @@ export class EventDescriptor {
     }
 }
 export type ServerEvent = 'Error' | 'ClearPatrolZone' | 'CollectGold' | 'ReadyCard' | 'UpkeepChoices' | 'UpkeepOver' | 'PaidFor' | 'Arrives';
-
-
 

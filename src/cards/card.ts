@@ -1,6 +1,7 @@
 
-import {anyid} from 'anyid';
+import { anyid } from 'anyid';
 import { EventDescriptor } from '../game';
+import { ObjectMap } from '../serialize';
 
 export abstract class Card {
 
@@ -22,13 +23,49 @@ export abstract class Card {
     owner: number;
     controller: number;
 
-    constructor(owner: number, controller?: number) {
-        this.cardId = anyid().encode('Aa0').length(10).random().id();
+    constructor(owner: number, controller?: number, cardId?: string) {
+        this.cardId = cardId ? cardId : anyid().encode('Aa0').length(10).random().id();
         Card.cardToIdMap.set(this, this.cardId);
         Card.idToCardMap.set(this.cardId, this);
 
         this.owner = owner;
         this.controller = this.controller ? this.controller : this.owner;
+    }
+
+    serialize(): ObjectMap {
+        let pojo = new ObjectMap();
+        pojo.constructorName = this.constructor.name;
+        pojo.cardType = this.cardType; // note that some of these things don't need to be saved for server state, but the client uses them so we serialize them
+        pojo.color = this.color;
+        pojo.name = this.name;
+        pojo.cardId = this.cardId;
+        pojo.contains = Card.serializeCards(this.contains);
+        pojo.owner = this.owner;
+        pojo.controller = this.controller;
+        pojo.baseAttributes = Object.assign({}, this.baseAttributes);
+        pojo.attributeModifiers = Object.assign({}, this.attributeModifiers);
+        return pojo;
+    }
+
+    static serializeCards(cards: Array<Card>): Array<ObjectMap> {
+        return cards.map(cardInstance => cardInstance.serialize());
+    }
+
+    static deserializeCards(pojoCards: ObjectMap[]): Array<Card> {
+        return pojoCards.map(pojoCard => Card.deserialize(pojoCard));
+    }
+
+    abstract deserializeExtra(pojo: ObjectMap): void;
+
+    static deserialize(pojo: ObjectMap): Card {
+        // Reason #32452345 this project would've been easier in Java. This is a hack-y way of figuring out which specific card we're trying to
+        // instantiate, and doing that dynamically. We have to use the Node.js global context to find the class we want, by the name we stored in 
+        // the POJO, then call new with the relevant arguments.
+        let card: Card = new (<any>global)[<string>pojo.constructorName](pojo.owner, pojo.controller, pojo.cardId);
+        card.deserializeExtra(pojo);
+
+        return card;
+
     }
 
     /** 
@@ -74,15 +111,19 @@ export abstract class Card {
 // TODO
 export abstract class Spell extends Card {
     cardType: CardType = "Spell";
+    deserializeExtra(pojo: ObjectMap): void {}
 }
 
 // TODO
 export abstract class Upgrade extends Card {
     cardType: CardType = "Upgrade";
+    deserializeExtra(pojo: ObjectMap): void {}
 }
 
 // TODO
-export abstract class Building extends Card {}
+export abstract class Building extends Card {
+    deserializeExtra(pojo: ObjectMap): void {}
+}
 
 /** Base class for heroes and units */
 export abstract class Character extends Card {}
@@ -92,6 +133,15 @@ export abstract class Unit extends Character {
     abstract flavorType: FlavorType;
 
     cardType: CardType = "Unit";
+
+    serialize(): ObjectMap {
+        let pojo = super.serialize();
+        pojo.techLevel = this.techLevel;
+        pojo.flavorType = this.flavorType;
+        return pojo;
+    }
+
+    deserializeExtra(pojo: ObjectMap): void {}
 }
 
 // TODO
@@ -99,6 +149,18 @@ export abstract class Hero extends Character {
     abstract level: number;
     cardType: CardType = "Hero";
     justDied: boolean = false;
+
+    serialize(): ObjectMap {
+        let pojo = super.serialize();
+        pojo.level = this.level;
+        pojo.justDied = this.justDied;
+        return pojo;
+    }
+
+    deserializeExtra(pojo: ObjectMap): void {
+        this.level = <number>pojo.level;
+        this.justDied = <boolean>pojo.justDied;
+    }
 }
 
 /** 
@@ -116,6 +178,8 @@ export class Effect extends Card {
     readonly cardType: 'None';
     readonly color: 'None';
     readonly name: 'Effect';
+
+    deserializeExtra(pojo: ObjectMap): void {}
 }
 
 
@@ -196,7 +260,7 @@ export class Attributes {
     // TODO: For Safe Attacking - maybe there's a startOfAttack trigger and an endOfAttack trigger to add / remove the armor? 
 }
 
-export type CardType = "Spell" | "Hero" | "Unit" | "Building" | "Upgrade" | "None";
+export type CardType = "Spell" | "Hero" | "Unit" | "Building" | "Upgrade" | "Effect" | "None";
 export type Color = "Neutral" | "Red" | "Green" | "Black" | "White" | "Purple" | "Blue" | "None";
 export type TechLevel = "Tech 0" | "Tech 1" | "Tech 2" | "Tech 3";
 export type SpellType = "Burn" | "Buff" | "Debuff";

@@ -1,6 +1,7 @@
 
 import { Card, Hero, Effect } from './cards/card';
 import { EventDescriptor } from './game';
+import { ObjectMap } from './serialize';
 
 /** This class will essentially represent an entire player state */
 export class Board {
@@ -39,6 +40,30 @@ export class Board {
         else {
             this.startingWorkers = 5;
         }
+    }
+
+    serialize(): ObjectMap {
+        let pojo: ObjectMap = new ObjectMap();
+        pojo.turnCount = this.turnCount;
+        pojo.gold = this.gold;
+        pojo.baseHealth = this.baseHealth;
+
+        pojo.hand = Card.serializeCards(this.hand);
+        pojo.deck = Card.serializeCards(this.deck);
+        pojo.discard = Card.serializeCards(this.discard);
+        pojo.workers = Card.serializeCards(this.workers);
+        pojo.heroZone = Card.serializeCards(this.heroZone);
+        pojo.inPlay = Card.serializeCards(this.inPlay);
+
+        pojo.patrolZone = PatrolZone.serialize(this.patrolZone); // break from convention here b/c instance method screws up property iteration on pz
+
+        // tech buildings, add on still to do...
+
+        return pojo;
+    }
+
+    static deserialize(pojo: ObjectMap): Board {
+        return new Board(1);//todo: fix
     }
 
     drawCards(howMany: number) {
@@ -175,5 +200,23 @@ export class PatrolZone {
     scavenger: Card = null;
     technician: Card = null;
     lookout: Card = null;
+
+    static serialize(pz: PatrolZone): ObjectMap {
+        let objmap = new ObjectMap();
+        for (let key in this) {
+            if (key)
+                objmap[key] = pz[key].serialize();
+        }
+        return objmap;
+    }
+
+    static deserialize(pojo: ObjectMap): PatrolZone {
+        let pz = new PatrolZone();
+        for (let key in pojo) {
+            pz[key] = Card.deserialize(<ObjectMap>pojo[key]);
+        }
+
+        return pz;
+    }
 }
 
