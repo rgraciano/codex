@@ -50,14 +50,14 @@ export class GameServer {
     private saveGameState(): string {
         this.generateGameStateId();
         // TODO: error handling would be good
-        fs.writeFileSync('e:\\saved_gamestates\\' + this.gameStateId + '.json', JSON.stringify(this.game));
+        fs.writeFileSync('e:\\saved_gamestates\\' + this.gameStateId + '.json', JSON.stringify(this.game.serialize()));
         return this.gameStateId;
     }
 
     loadGameState(gameStateId: string) {
         // this is going to need to create objects. maybe https://github.com/typestack/class-transformer ?
         // i'm thinking likely best thing to do would be to separate data and behavior as much as possible so it's not as much of an issue
-        this.game = JSON.parse(fs.readFileSync('e:\\saved_gamestates\\' + gameStateId + '.json', 'utf-8'));
+        this.game = Game.deserialize(JSON.parse(fs.readFileSync('e:\\saved_gamestates\\' + gameStateId + '.json', 'utf-8')));
     }
 
     // TODO: likely to replace the skeleton with some framework here...
@@ -168,4 +168,5 @@ phase: player1turnstart
     }
 }
 export class StringMap { [s: string]: string; }
+export class ObjectMap { [s: string]: Object; }
 

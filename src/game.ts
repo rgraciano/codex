@@ -14,7 +14,7 @@ import { TimelyMessenger } from './cards/neutral/TimelyMessenger';
 
 import { Card } from './cards/card';
 
-import { ObjectMap } from './serialize';
+import { ObjectMap } from './game_server';
 
 
 export class Game {
@@ -43,15 +43,16 @@ export class Game {
         this.player2Board.drawCards(5);
 
         this.phaseStack = new PhaseStack();
+        this.phaseStack.setupForNewGame();
     }
 
     serialize(): ObjectMap {
-        let pojo: ObjectMap = new ObjectMap;
-        pojo.activePlayer = this.activePlayer;
-        pojo.player1Board = this.player1Board.serialize();
-        pojo.player2Board = this.player2Board.serialize();
-        //pojo.phaseStack = this.phaseStack.serialize();
-        return pojo;
+        return {
+            activePlayer: this.activePlayer,
+            player1Board: this.player1Board.serialize(),
+            player2Board: this.player2Board.serialize(),
+            phaseStack: this.phaseStack.serialize()
+        };
     }
 
     static deserialize(pojo: ObjectMap): Game {
@@ -59,7 +60,7 @@ export class Game {
         game.activePlayer = <number>pojo.activePlayer;
         game.player1Board = Board.deserialize(<ObjectMap>pojo.player1Board);
         game.player2Board = Board.deserialize(<ObjectMap>pojo.player2Board);
-        //game.phaseStack = PhaseStack.deserialize(pojo.phaseStack);
+        game.phaseStack = PhaseStack.deserialize(<ObjectMap>pojo.phaseStack);
         return game;
     }
 

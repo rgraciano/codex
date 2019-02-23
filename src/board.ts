@@ -1,7 +1,7 @@
 
 import { Card, Hero, Effect } from './cards/card';
 import { EventDescriptor } from './game';
-import { ObjectMap } from './serialize';
+import { ObjectMap } from './game_server';
 
 /** This class will essentially represent an entire player state */
 export class Board {
@@ -43,21 +43,21 @@ export class Board {
     }
 
     serialize(): ObjectMap {
-        let pojo: ObjectMap = new ObjectMap();
+        let pojo: ObjectMap = {
+            playerNumber: this.playerNumber,
+            turnCount: this.turnCount,
+            gold: this.gold,
+            baseHealth: this.baseHealth,
 
-        pojo.playerNumber = this.playerNumber;
-        pojo.turnCount = this.turnCount;
-        pojo.gold = this.gold;
-        pojo.baseHealth = this.baseHealth;
+            hand: Card.serializeCards(this.hand),
+            deck: Card.serializeCards(this.deck),
+            discard: Card.serializeCards(this.discard),
+            workers: Card.serializeCards(this.workers),
+            heroZone: Card.serializeCards(this.heroZone),
+            inPlay: Card.serializeCards(this.inPlay),
 
-        pojo.hand = Card.serializeCards(this.hand);
-        pojo.deck = Card.serializeCards(this.deck);
-        pojo.discard = Card.serializeCards(this.discard);
-        pojo.workers = Card.serializeCards(this.workers);
-        pojo.heroZone = Card.serializeCards(this.heroZone);
-        pojo.inPlay = Card.serializeCards(this.inPlay);
-
-        pojo.patrolZone = PatrolZone.serialize(this.patrolZone); // break from convention here b/c instance method screws up property iteration on pz
+            patrolZone: PatrolZone.serialize(this.patrolZone), // break from convention here b/c instance method screws up property iteration on pz
+        };
 
         if (this.tech1) pojo.tech1 = this.tech1.serialize();
         if (this.tech2) pojo.tech2 = this.tech2.serialize();
@@ -182,12 +182,12 @@ abstract class BoardBuilding {
     }
 
     serialize(): ObjectMap {
-        let pojo = new ObjectMap();
-        pojo.maxHealth = this.maxHealth;
-        pojo.health = this.health;
-        pojo.destroyed = this.destroyed;
-        pojo.constructionInProgress = this.constructionInProgress;
-        return pojo;
+        return {
+            maxHealth: this.maxHealth,
+            health: this.health,
+            destroyed: this.destroyed,
+            constructionInProgress: this.constructionInProgress
+        };  
     }
 
     static deserializeCommonProperties(bb: BoardBuilding, pojo: ObjectMap): void {

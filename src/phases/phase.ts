@@ -1,6 +1,7 @@
 
 import { Card } from '../cards/card';
 import { Game } from '../game';
+import { ObjectMap } from '../game_server';
 
 export type PhaseName = 'PlayerTurn' | 'NewGame' | 'Upkeep' | 'Arrive';
 export type ActionName = 'NewGame' | 'UpkeepChoice' | 'ArriveChoice' | TurnActionName;
@@ -19,11 +20,20 @@ export type TurnActionName = 'PlayCard' | 'Worker' | 'Tech' | 'BuildTech' | 'Bui
  * We represent phases as a stack, checking that actions in the current phase are possible
  */
 export class PhaseStack {
-    stack: Array<Phase>;
+    stack: Array<Phase> = new Array<Phase>();
 
-    /** This only gets called at the beginning of the game, to create a new set of nested actions to track */
-    constructor() {
+    setupForNewGame() {
         this.stack = [ new Phase('NewGame', [ ] ) ];
+    }
+
+    serialize(): ObjectMap {
+        return { stack: this.stack.map(phase => phase.serialize()) };
+    }
+
+    static deserialize(pojo: ObjectMap): PhaseStack {
+        let ps = new PhaseStack();
+        ps.stack = (<Array<ObjectMap>>pojo.stack).map(phase => Phase.deserialize(phase));
+        return ps;
     }
 
     addToStack(newTop: Phase): void {
@@ -76,6 +86,17 @@ export class Phase {
     constructor(name: PhaseName, validActions: Array<ActionName>) {
         this.name = name;
         this.validActions = validActions;
+    }
+
+    serialize(): ObjectMap {
+        return { 
+            name: this.name, 
+            validActions: this.validActions 
+        };
+    }
+
+    static deserialize(pojo: ObjectMap): Phase {
+        return new Phase(<PhaseName>pojo.name, <Array<ActionName>>pojo.validActions);
     }
 
     /** 

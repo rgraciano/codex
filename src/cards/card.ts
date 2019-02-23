@@ -1,7 +1,7 @@
 
 import { anyid } from 'anyid';
 import { EventDescriptor } from '../game';
-import { ObjectMap } from '../serialize';
+import { ObjectMap } from '../game_server';
 
 export abstract class Card {
 
@@ -35,19 +35,19 @@ export abstract class Card {
     }
 
     serialize(): ObjectMap {
-        let pojo = new ObjectMap();
-        pojo.constructorName = this.constructor.name;
-        pojo.importPath = this.importPath;
-        pojo.cardType = this.cardType; // note that some of these things don't need to be saved for server state, but the client uses them so we serialize them
-        pojo.color = this.color;
-        pojo.name = this.name;
-        pojo.cardId = this.cardId;
-        pojo.contains = Card.serializeCards(this.contains);
-        pojo.owner = this.owner;
-        pojo.controller = this.controller;
-        pojo.baseAttributes = Object.assign({}, this.baseAttributes);
-        pojo.attributeModifiers = Object.assign({}, this.attributeModifiers);
-        return pojo;
+        return {
+            constructorName: this.constructor.name,
+            importPath: this.importPath,
+            cardType: this.cardType, // note that some of these things don't need to be saved for server state, but the client uses them so we serialize them
+            color: this.color,
+            name: this.name,
+            cardId: this.cardId,
+            contains: Card.serializeCards(this.contains),
+            owner: this.owner,
+            controller: this.controller,
+            baseAttributes: Object.assign({}, this.baseAttributes),
+            attributeModifiers: Object.assign({}, this.attributeModifiers)
+        };
     }
 
     static serializeCards(cards: Array<Card>): Array<ObjectMap> {
