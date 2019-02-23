@@ -23,6 +23,8 @@ export abstract class Card {
     owner: number;
     controller: number;
 
+    importPath: string = '';
+
     constructor(owner: number, controller?: number, cardId?: string) {
         this.cardId = cardId ? cardId : anyid().encode('Aa0').length(10).random().id();
         Card.cardToIdMap.set(this, this.cardId);
@@ -35,6 +37,7 @@ export abstract class Card {
     serialize(): ObjectMap {
         let pojo = new ObjectMap();
         pojo.constructorName = this.constructor.name;
+        pojo.importPath = this.importPath;
         pojo.cardType = this.cardType; // note that some of these things don't need to be saved for server state, but the client uses them so we serialize them
         pojo.color = this.color;
         pojo.name = this.name;
@@ -61,11 +64,20 @@ export abstract class Card {
         // Reason #32452345 this project would've been easier in Java. This is a hack-y way of figuring out which specific card we're trying to
         // instantiate, and doing that dynamically. We have to use the Node.js global context to find the class we want, by the name we stored in 
         // the POJO, then call new with the relevant arguments.
-        let card: Card = new (<any>global)[<string>pojo.constructorName](pojo.owner, pojo.controller, pojo.cardId);
+        let ns: any;
+        let card: Card;
+
+        if ((<string>pojo.importPath).length > 0) {
+            ns = require(<string>pojo.importPath + '/' + <string>pojo.constructorName + '.js'); 
+            card = new ns[<string>pojo.constructorName](pojo.owner, pojo.controller, pojo.cardId);
+        }
+        else {
+            ns = module;
+            card = new ns['exports'][<string>pojo.constructorName](pojo.owner, pojo.controller, pojo.cardId);
+        }
+
         card.deserializeExtra(pojo);
-
         return card;
-
     }
 
     /** 

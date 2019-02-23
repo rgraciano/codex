@@ -8,6 +8,7 @@ export class FruitNinja extends Unit {
     flavorType: FlavorType = "Ninja";
     name: string = "Fruit Ninja";
     techLevel: TechLevel = "Tech 0";
+    importPath: string = "./neutral";
 
     constructor(owner: number, controller?: number) {
         super(owner, controller);

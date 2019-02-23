@@ -36,7 +36,11 @@ export function saveGameState(gameStateId: string, game: Game): void {
     let plainObjectMap: ObjectMap = new ObjectMap();
 
     let test = game.serialize();
-    console.log(test);
+    let jsonified = JSON.stringify(test);
+    let loaded = JSON.parse(jsonified);
+    let newgame = Game.deserialize(loaded);
+
+    console.log('post load');
 }
 export class ObjectMap {
     [s: string]: Object;

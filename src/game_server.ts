@@ -64,6 +64,7 @@ export class GameServer {
     action(action: ActionName, context: StringMap): string {
         if (action == 'NewGame') {
             this.game = new Game();
+            this.game.setupNewGame();
             startTurnAction(this.game);
 
             this.saveGameState();

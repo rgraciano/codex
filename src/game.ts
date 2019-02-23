@@ -27,11 +27,10 @@ export class Game {
 
     events: Array<EventDescriptor> = [];
 
-    constructor() {
+    setupNewGame() {
         this.player1Board = new Board(1);
         this.player2Board = new Board(2);
 
-        // We will have to put in something to find starters etc later.  For now just give everyone the same bogus starter
         this.player1Board.discard = [new Tenderfoot(1), new TimelyMessenger(1), new OlderBrother(1), 
             new FruitNinja(1), new Tenderfoot(1), new TimelyMessenger(1),
             new OlderBrother(1), new FruitNinja(1), new Tenderfoot(1), new TimelyMessenger(1)];

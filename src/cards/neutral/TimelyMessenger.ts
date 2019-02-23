@@ -8,6 +8,7 @@ export class TimelyMessenger extends Unit {
     flavorType: FlavorType = "Mercenary";
     name: string = "Timely Messenger";
     techLevel: TechLevel = "Tech 0";
+    importPath: string = "./neutral";
 
     constructor(owner: number, controller?: number) {
         super(owner, controller);

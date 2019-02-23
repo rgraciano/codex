@@ -8,6 +8,7 @@ export class Tenderfoot extends Unit {
     flavorType: FlavorType = "Virtuoso";
     name: string = "Tenderfoot";
     techLevel: TechLevel = "Tech 0";
+    importPath: string = "./neutral";
 
     constructor(owner: number, controller?: number) {
         super(owner, controller);

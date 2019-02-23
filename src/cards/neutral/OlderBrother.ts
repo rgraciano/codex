@@ -8,6 +8,7 @@ export class OlderBrother extends Unit {
     flavorType: FlavorType = "Drunkard";
     name: string = "Older Brother";
     techLevel: TechLevel = "Tech 0";
+    importPath: string = "./neutral";
 
     constructor(owner: number, controller?: number) {
         super(owner, controller);

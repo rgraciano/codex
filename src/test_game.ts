@@ -9,7 +9,7 @@ gs.action('NewGame', {});
 
 saveGameState(gs.gameStateId, gs.game);
 
-testPlayCard(gs);
+//testPlayCard(gs);
 
 function testPlayCard(gs: GameServer) {
    // player 1 start state: L9YlsOq7Pr
