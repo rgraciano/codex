@@ -1,7 +1,7 @@
 
 import { Card } from '../cards/card';
 import { Game } from '../game';
-import { ObjectMap } from '../game_server';
+import { ObjectMap, StringMap } from '../game_server';
 
 export type PhaseName = 'PlayerTurn' | 'NewGame' | 'Upkeep' | 'Arrives';
 export type ActionName = 'NewGame' | 'UpkeepChoice' | 'ArriveChoice' | TurnActionName;
@@ -54,7 +54,7 @@ export class PhaseStack {
             switch (phase.name) {
                 case 'Upkeep':
                 case 'Arrives':
-                    if (phase.mustResolveIds.length === 0) {
+                    if (phase.mustResolveTuples.length === 0) {
                         return false;
                     }
                 default:
@@ -73,14 +73,11 @@ export class Phase {
 
     validActions: Array<ActionName> = [];
 
-    // We both keep a list of cards we have to resolve still, 
-    // as well as a list of resolved, because we will recalculate the list as we go.
-    // E.g., say it's Upkeep time.  The game generates a list of cards to resolve upkeep
-    // triggers on (here).  You pick one to resolve first, and the game does its thing and lists 
-    // it on resolvedIds.  It then redoes the mustResolveIds list, just in case you actually
-    // killed a thing on the list or otherwise removed it from consideration.  If you didn't kill it, 
-    // then it needs the resolvedIds list to make sure it doesn't allow you to re-execute it.
-    mustResolveIds: Array<string> = [];
+    /* 
+    * We both keep a list of cards we have to resolve still, 
+    * as well as a list of resolved, because we will recalculate the list as we go.
+    */
+    mustResolveTuples: Array<[string, string]> = [];
     resolvedIds: Array<string> = [];
 
     constructor(name: PhaseName, validActions: Array<ActionName>) {
@@ -91,24 +88,34 @@ export class Phase {
     serialize(): ObjectMap {
         return { 
             name: this.name, 
-            validActions: this.validActions 
+            validActions: this.validActions,
+            mustResolveTuples: this.mustResolveTuples,
+            resolvedIds: this.resolvedIds
         };
     }
 
     static deserialize(pojo: ObjectMap): Phase {
-        return new Phase(<PhaseName>pojo.name, <Array<ActionName>>pojo.validActions);
+        let phase = new Phase(<PhaseName>pojo.name, <Array<ActionName>>pojo.validActions);
+        phase.mustResolveTuples = <Array<[string, string]>>pojo.mustResolveTuples;
+        phase.resolvedIds = <Array<string>>pojo.resovedIds;
+        return phase;
     }
 
     /** 
      * Adds cards that must be resolved.
      */
-    markMustResolve(cards: Array<Card>): void {
-        this.mustResolveIds.push(...cards.map(card => { return card.cardId }));
-        //this.mustResolveIds.push(...cardIds.filter(cardId => { return (this.resolvedIds.indexOf(cardId) >= 0) && (this.mustResolveIds.indexOf(cardId) >= 0) })); // to also filter... no longer needed
+    markMustResolve(cards: Array<Card>, handlerFnName: string): void {
+        this.mustResolveTuples.push(...cards.map(card => <[string,string]>[card.cardId, handlerFnName]));
     }
 
+    /** @returns whether or not card can be found in list of must resolved */
     ifMustResolve(cardId: string): boolean {
-        return this.mustResolveIds.indexOf(cardId) !== -1;
+        return (this.mustResolveTuples.filter(tuple => tuple[0] === cardId)).length > 0;
+    }
+
+    /** @returns Tuple of [cardId, handlerFnName] if found in mustResolve list, or undefined if not */
+    getMustResolveTupleForCardId(cardId: string): [string, string] {
+        return this.mustResolveTuples.find(tuple => tuple[0] === cardId);
     }
 
     isValidAction(action: ActionName): boolean {
@@ -118,9 +125,9 @@ export class Phase {
     markResolved(cardId: string) {
         this.resolvedIds.push(cardId);
 
-        let index = this.mustResolveIds.indexOf(cardId);
+        let index = this.mustResolveTuples.findIndex(tuple => tuple[0] === cardId);
         if (index > -1) {
-            this.mustResolveIds.splice(index, 1);
+            this.mustResolveTuples.splice(index, 1);
         }
     }
 
@@ -138,5 +145,5 @@ export function findCardsToResolve(game: Game, space: Array<Card>, handlerFnName
     let foundCards: Array<Card> = Game.findCardsWithHandlers(space, handlerFnName);
 
     // add all of those cards to the list of allowedActions, automatically removing those that were already resolved and ensuring there are no duplicates
-    game.phaseStack.topOfStack().markMustResolve(foundCards);
+    game.phaseStack.topOfStack().markMustResolve(foundCards, handlerFnName);
 }

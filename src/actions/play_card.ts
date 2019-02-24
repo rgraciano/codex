@@ -33,7 +33,9 @@ export function playCardAction(game: Game, cardId: string): void {
 export function arriveChoiceAction(game: Game, cardId: string): void {
     let phase = game.phaseStack.topOfStack();
 
-    if (phase.name != 'Arrives' || !phase.ifMustResolve(cardId)) {
+    let mustResolveTuple = phase.mustResolveTuples.find(tuple => tuple[0] === cardId);
+
+    if (phase.name != 'Arrives' || !mustResolveTuple) {
         throw new Error('Arrives is not valid for ID ' + cardId);
     }
 
@@ -41,11 +43,18 @@ export function arriveChoiceAction(game: Game, cardId: string): void {
 
     let card: Card = Card.idToCardMap.get(cardId);
 
-    if (card.controller == game.activePlayer) {
-        game.addEvent((<ArrivesHandler>card).onArrives(card));
-    }
-    else {
-        game.addEvent((<OpponentArrivesHandler>card).onOpponentArrives(card));
+    switch (mustResolveTuple[1]) {
+        case 'onArrives':
+            game.addEvent((<ArrivesHandler>card).onArrives(card));
+            break;
+        case 'onAnotherArrives':
+            game.addEvent((<AnotherArrivesHandler>card).onAnotherArrives(card));
+            break;
+        case 'onOpponentArrives':
+            game.addEvent((<OpponentArrivesHandler>card).onOpponentArrives(card));
+            break;
+        default:
+            throw new Error('Could not find hanlder for ' + mustResolveTuple[1] + ' on cardId ' + cardId);
     }
 }
 
