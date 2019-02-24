@@ -122,22 +122,34 @@ export class GameServer {
         return this.responseSuccess();
     }
     
-
-    // TODO: Do this as long as there's stuff to do... clear the whole stack. May matter due to death of cards
+    /**
+    * Before the end of this action, clear as many actions as the game can clear without user input.
+    * 
+    * First, eliminate any empty phases - phases that don't have any cards on them to take action on.
+    * Second, eliminate any phases with only a single valid action, by performing that action.
+    * 
+    * Each time we eliminate one of the above, we keep going to clear as many as we can.
+    */
     cleanUpPhases() {
-        this.game.phaseStack.resolveEmptyPhases();
+        let clearedEmptyPhase: boolean, clearedSingleAction: boolean;
 
-        // If there's only one action that can be performed, and the game knows how to perform that action, then we do it automatically now before
-        // returning to the user.  'PlayerChoice' indicates that the player MUST do something.
-        let topOfStack = this.game.phaseStack.topOfStack();
-        if (topOfStack.name != 'PlayerChoice' && topOfStack.validActions.length === 1 && topOfStack.mustResolveTuples.length === 1) {
-            this.runAction(topOfStack.validActions[0], topOfStack.mustResolveTuples[0][0]);
-        }
+        do {
+            clearedEmptyPhase = this.game.phaseStack.resolveEmptyPhases();
+
+            // If there's only one action that can be performed, and the game knows how to perform that action, then we do it automatically now before
+            // returning to the user.  'PlayerChoice' indicates that the player MUST do something.
+            let topOfStack = this.game.phaseStack.topOfStack();
+            if (topOfStack.name != 'PlayerChoice' && topOfStack.validActions.length === 1 && topOfStack.mustResolveTuples.length === 1) {
+                this.runAction(topOfStack.validActions[0], topOfStack.mustResolveTuples[0][0]);
+                clearedSingleAction = true;
+            }
+            else 
+                clearedSingleAction = false;
+        } while(clearedEmptyPhase || clearedSingleAction);
     }
 
     responseSuccess(): string {
         // TODO: This should turn into a game state sweep. Check dead things, check game end, etc.
-        this.game.phaseStack.resolveEmptyPhases();
         let stringifiedGameState = JSON.stringify(this.game.serialize());
         this.saveGameState(stringifiedGameState);
 

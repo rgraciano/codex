@@ -48,8 +48,12 @@ export class PhaseStack {
         return this.topOfStack().validActions;
     }
 
-    /** This will clear out any phases that are no longer valid because they have cleared out all required cards.  Cards may have died due to effects or simply been resolved */
-    resolveEmptyPhases(): void {
+    /** This will clear out any phases that are no longer valid because they have cleared out all required cards.  
+     * Cards may have died due to effects or simply been resolved.
+     * @returns true if phases were eliminated, false if not */
+    resolveEmptyPhases(): boolean {
+        let beginLen = this.stack.length;
+
         this.stack = this.stack.filter(phase => {
             switch (phase.name) {
                 case 'Upkeep':
@@ -61,6 +65,10 @@ export class PhaseStack {
                     return true;
             }
         });
+
+        let endLen = this.stack.length;
+
+        return beginLen != endLen;
     }
 
     endCurrentPhase(): void {
