@@ -279,7 +279,7 @@ export type SpellType = "Burn" | "Buff" | "Debuff";
 export type FlavorType = "Mercenary" | "Virtuoso" | "Drunkard" | "Cute Animal" | "Flagbearer" | "Ninja" | "Lizardman";
 
 
-export interface AttackHandler extends Card {
+export interface AttacksHandler extends Card {
     onAttack(attacker: Card, defender: Card): EventDescriptor;
 }
 
@@ -287,9 +287,17 @@ export interface UpkeepHandler extends Card {
     onUpkeep(): EventDescriptor;
 }
 
-export interface ArriveHandler extends Card {
-    onArrive(arrival: Card): EventDescriptor;
+/** Used for cards that have "Arrives: (do something)" card text */
+export interface ArrivesHandler extends Card {
+    onArrives(arrival: Card): EventDescriptor;
 }
-export interface OpponentArriveHandler extends Card {
-    onOpponentArrive(arrival: Card): EventDescriptor;
+
+/** Used for cards that say something like "When an <X> enters play, (do something)" */
+export interface AnotherArrivesHandler extends Card {
+    onAnotherArrives(arrival: Card): EventDescriptor;
+}
+
+/** Used for triggers that work when an opponent's card arrives*/
+export interface OpponentArrivesHandler extends Card {
+    onOpponentArrives(arrival: Card): EventDescriptor;
 }

@@ -1,6 +1,6 @@
 
 import { Game, EventDescriptor } from '../game';
-import { Card, ArriveHandler, OpponentArriveHandler } from '../cards/card';
+import { Card, ArrivesHandler, AnotherArrivesHandler, OpponentArrivesHandler } from '../cards/card';
 import { CardApi } from './card_api';
 
 export function playCardAction(game: Game, cardId: string): void {
@@ -21,8 +21,9 @@ export function playCardAction(game: Game, cardId: string): void {
     }
 
     board.gold -= attrs.cost;
-    game.addEvent(new EventDescriptor('PaidFor', 'Paid ' + attrs.cost + ' gold'));
+    game.addEvent(new EventDescriptor('PaidFor', 'Paid ' + attrs.cost + ' gold for ' + cardToPlay.name));
 
+    // Takes card out of hand, but doesn't put it in play yet
     board.moveCard(board.hand, cardToPlay);
 
     // TODO: Add spell support. Spells don't "arrive"
@@ -32,8 +33,8 @@ export function playCardAction(game: Game, cardId: string): void {
 export function arriveChoiceAction(game: Game, cardId: string): void {
     let phase = game.phaseStack.topOfStack();
 
-    if (phase.name != 'Arrive' || !phase.ifMustResolve(cardId)) {
-        throw new Error('Arrive is not valid for ID ' + cardId);
+    if (phase.name != 'Arrives' || !phase.ifMustResolve(cardId)) {
+        throw new Error('Arrives is not valid for ID ' + cardId);
     }
 
     phase.markResolved(cardId);
@@ -41,10 +42,10 @@ export function arriveChoiceAction(game: Game, cardId: string): void {
     let card: Card = Card.idToCardMap.get(cardId);
 
     if (card.controller == game.activePlayer) {
-        game.addEvent((<ArriveHandler>card).onArrive(card));
+        game.addEvent((<ArrivesHandler>card).onArrives(card));
     }
     else {
-        game.addEvent((<OpponentArriveHandler>card).onOpponentArrive(card));
+        game.addEvent((<OpponentArrivesHandler>card).onOpponentArrives(card));
     }
 }
 

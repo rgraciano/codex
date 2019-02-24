@@ -3,7 +3,7 @@ import { Card } from '../cards/card';
 import { Game } from '../game';
 import { ObjectMap } from '../game_server';
 
-export type PhaseName = 'PlayerTurn' | 'NewGame' | 'Upkeep' | 'Arrive';
+export type PhaseName = 'PlayerTurn' | 'NewGame' | 'Upkeep' | 'Arrives';
 export type ActionName = 'NewGame' | 'UpkeepChoice' | 'ArriveChoice' | TurnActionName;
 export type TurnActionName = 'PlayCard' | 'Worker' | 'Tech' | 'BuildTech' | 'BuildAddOn' | 'Patrol' | 'Ability' | 'Attack' | 'HeroSummon' | 'HeroLevel' | 'EndTurn';
 
@@ -53,7 +53,7 @@ export class PhaseStack {
         this.stack = this.stack.filter(phase => {
             switch (phase.name) {
                 case 'Upkeep':
-                case 'Arrive':
+                case 'Arrives':
                     if (phase.mustResolveIds.length === 0) {
                         return false;
                     }

@@ -13,14 +13,27 @@ export class CardApi {
         let board = boards[0];
         let opponentBoard = boards[1];
     
-        // Card is added to the set of in play cards
+        // First, apply any bonuses this card may get from other cards in play
+        // TODO...
+
+        // Second, enter the ARRIVES phase...
+        game.phaseStack.addToStack(new Phase('Arrives', [ 'ArriveChoice' ]));
+
+        let inPlayWithoutNewCard = board.inPlay;
+
+        // Add the card to "in play"
         board.inPlay.push(card);
-        game.addEvent(new EventDescriptor('Arrives', card.name + ' arrives'));
-    
-        // Next we need to check OnArrives for this card, onArrive for our cards, and onOpponentArrive for our opponent's cards.
-        // TODO: Need to distinguish btwn "Arrives" and "onArrive"
-        game.phaseStack.addToStack(new Phase('Arrive', [ 'ArriveChoice' ]));
-        findCardsToResolve(game, board.inPlay.concat(board.getPatrolZoneAsArray(), board.effects), 'onArrive');
-        findCardsToResolve(game, opponentBoard.inPlay.concat(opponentBoard.getPatrolZoneAsArray(), opponentBoard.effects), 'onOpponentArrive');
+
+        // Add this card's "Arrives: ..." to the list of things to resolve
+        findCardsToResolve(game, [ card ], 'onArrives');
+
+        // Add any of my cards' "When <x> enters play, (do something)" to the list of things to resolve
+        findCardsToResolve(game, inPlayWithoutNewCard.concat(board.getPatrolZoneAsArray(), board.effects), 'onAnotherArrives');
+
+        // Add any of my opponents cards' "When an opponent's <x> enters play, (do something)" to the list of things to resolve.
+        // I don't know any cards that actually do this, but implementing it here means it will technically be possible 
+        findCardsToResolve(game, opponentBoard.inPlay.concat(opponentBoard.getPatrolZoneAsArray(), opponentBoard.effects), 'onOpponentArrives');
+
+        // All done! If there's more than one event to resolve from the above, the user will be asked to choose the order.
     }
 }
