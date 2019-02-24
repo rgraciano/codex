@@ -276,7 +276,7 @@ export type CardType = "Spell" | "Hero" | "Unit" | "Building" | "Upgrade" | "Eff
 export type Color = "Neutral" | "Red" | "Green" | "Black" | "White" | "Purple" | "Blue" | "None";
 export type TechLevel = "Tech 0" | "Tech 1" | "Tech 2" | "Tech 3";
 export type SpellType = "Burn" | "Buff" | "Debuff";
-export type FlavorType = "Mercenary" | "Virtuoso" | "Drunkard" | "Cute Animal" | "Flagbearer" | "Ninja" | "Lizardman";
+export type FlavorType = "QA" | "Mercenary" | "Virtuoso" | "Drunkard" | "Cute Animal" | "Flagbearer" | "Ninja" | "Lizardman";
 
 
 export interface AttacksHandler extends Card {
@@ -289,7 +289,7 @@ export interface UpkeepHandler extends Card {
 
 /** Used for cards that have "Arrives: (do something)" card text */
 export interface ArrivesHandler extends Card {
-    onArrives(arrival: Card): EventDescriptor;
+    onArrives(): EventDescriptor;
 }
 
 /** Used for cards that say something like "When an <X> enters play, (do something)" */

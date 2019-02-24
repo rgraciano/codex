@@ -71,7 +71,7 @@ export class GameServer {
             this.game.setupNewGame();
             startTurnAction(this.game);
 
-            return this.responseSuccess();
+            return this.wrapUp();
         }
         
         let state: (string | boolean) = GameServer.getAlNumProperty(context, 'state');
@@ -89,27 +89,27 @@ export class GameServer {
         }
    
         try {
-            let props: StringMap;
-            switch (action) {
-                case 'UpkeepChoice':
-                    props = GameServer.requiredAlnumProperties(context, ['cardId']);
-                    upkeepChoiceAction(this.game, props['cardId']);
-                    break;
-                case 'PlayCard':
-                    props = GameServer.requiredAlnumProperties(context, ['cardId']);
-                    playCardAction(this.game, props['cardId']);
-                    break;
-                case 'ArriveChoice':
-                    props = GameServer.requiredAlnumProperties(context, ['cardId']);
-                    arriveChoiceAction(this.game, props['cardId']);
-                    break;
-                default:
-                    this.responseError('Invalid action');
-            }
-
-            return this.responseSuccess();
+            let cardId = GameServer.requiredAlnumProperties(context, ['cardId'])['cardId'];
+            this.runAction(action, cardId);
+            return this.wrapUp();
         } catch (e) {
             return this.responseError(e.message);
+        }
+    }
+
+    runAction(action: string, cardId: string) {
+        switch (action) {
+            case 'UpkeepChoice':
+                upkeepChoiceAction(this.game, cardId);
+                break;
+            case 'PlayCard':
+                playCardAction(this.game, cardId);
+                break;
+            case 'ArriveChoice':
+                arriveChoiceAction(this.game, cardId);
+                break;
+            default:
+                this.responseError('Invalid action');
         }
     }
 
@@ -117,7 +117,25 @@ export class GameServer {
         return JSON.stringify( { error: error } );
     }
 
-    responseSuccess() {
+    wrapUp(): string {
+        this.cleanUpPhases();
+        return this.responseSuccess();
+    }
+    
+
+    // TODO: Do this as long as there's stuff to do... clear the whole stack. May matter due to death of cards
+    cleanUpPhases() {
+        this.game.phaseStack.resolveEmptyPhases();
+
+        // If there's only one action that can be performed, and the game knows how to perform that action, then we do it automatically now before
+        // returning to the user.  'PlayerChoice' indicates that the player MUST do something.
+        let topOfStack = this.game.phaseStack.topOfStack();
+        if (topOfStack.name != 'PlayerChoice' && topOfStack.validActions.length === 1 && topOfStack.mustResolveTuples.length === 1) {
+            this.runAction(topOfStack.validActions[0], topOfStack.mustResolveTuples[0][0]);
+        }
+    }
+
+    responseSuccess(): string {
         // TODO: This should turn into a game state sweep. Check dead things, check game end, etc.
         this.game.phaseStack.resolveEmptyPhases();
         let stringifiedGameState = JSON.stringify(this.game.serialize());
@@ -127,20 +145,6 @@ export class GameServer {
 
         return stringifiedGameState;
     }
-        /*
-game flow then...
-
-phase: new game (isapi)
-	- valid actions: pick specs etc
-phase: player1turnstart
-	- if turn 1, dont tech obv
-	- upkeep autohappens
-		- if upkeep triggers, begin phase upkeep_triggers. valid actions: choose upkeep
-			(keep nesting)
-		- leave upkeep phase when valid actions are gone
-	- valid actions: attack, patrol, ability, etc. also END TURN is a valid action.
-    - draw/discard, end turn trigger nest
-*/
 
     static requiredAlnumProperties(context: StringMap, requiredList: Array<string>): StringMap {
         let validated: StringMap = new StringMap();

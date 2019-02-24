@@ -45,7 +45,7 @@ export function arriveChoiceAction(game: Game, cardId: string): void {
 
     switch (mustResolveTuple[1]) {
         case 'onArrives':
-            game.addEvent((<ArrivesHandler>card).onArrives(card));
+            game.addEvent((<ArrivesHandler>card).onArrives());
             break;
         case 'onAnotherArrives':
             game.addEvent((<AnotherArrivesHandler>card).onAnotherArrives(card));

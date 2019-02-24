@@ -9,11 +9,17 @@ var gs: GameServer = new GameServer();
 
 //testSaveGameState(gs.gameStateId, gs.game);
 
-testPlayCard(gs);
+//testPlayCard(gs);
+
+testPlayArrivesCard(gs);
 
 function testPlayCard(gs: GameServer) {
    // player 1 start state: oXSYI0NAdh, card  vpfLoJHbHU
     console.log(gs.action('PlayCard', { 'state': 'oXSYI0NAdh', 'cardId': 'vpfLoJHbHU' }));
+}
+
+function testPlayArrivesCard(gs: GameServer) {
+    console.log(gs.action('PlayCard', { 'state': 'arrivesBeforePlay', 'cardId': 'arrivecard' }));
 }
 
 

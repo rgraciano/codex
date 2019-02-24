@@ -90,7 +90,7 @@ export class Game {
      */
     static findCardsWithHandlers(cards: Array<Card>, implementsFunction: string): Array<Card> {
         return cards.filter(card => {
-            return Reflect.has(card, implementsFunction);
+            return (card && Reflect.has(card, implementsFunction));
         });
     }
     
@@ -134,5 +134,5 @@ export class EventDescriptor {
         }
     }
 }
-export type ServerEvent = 'Error' | 'ClearPatrolZone' | 'CollectGold' | 'ReadyCard' | 'UpkeepChoices' | 'UpkeepOver' | 'PaidFor' | 'Arrives';
+export type ServerEvent = 'Error' | 'ClearPatrolZone' | 'CollectGold' | 'ReadyCard' | 'UpkeepChoices' | 'UpkeepOver' | 'PaidFor' | 'Arrives' | 'TokenOrRune';
 
