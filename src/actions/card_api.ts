@@ -1,7 +1,7 @@
 
 import { Game, EventDescriptor, RuneEvent } from '../game';
-import { Card, Attributes, FlavorType, Character } from '../cards/card';
-import { Phase, findCardsToResolve } from './phase';
+import { Card, Attributes, FlavorType, Character, GlobalBonusGiver } from '../cards/card';
+import { Phase } from './phase';
 
 /**
  * Everything in here is designed to be called by a card when something happens, e.g., something is made to arrive.
@@ -15,28 +15,37 @@ export class CardApi {
         let board = boards[0];
         let opponentBoard = boards[1];
     
-        // First, check if this card applies bonuses to other cards (possibly including or excluding self)
-        // Third, check if this card GETS bonuses FROM other cards...
 
-        // Second, enter the ARRIVES phase...
+        /**** GLOBAL BONUSES ****/
+        // First, check if this card applies bonuses to other cards (possibly including or excluding self)
+        if (Reflect.has(card, 'giveBonus'))
+            game.getAllActiveCards().map(boardCard => (<GlobalBonusGiver>card).giveBonus(boardCard));
+        
+        // Second, check if this card GETS bonuses FROM other cards...
+        let bonusGivers = <GlobalBonusGiver[]>(Game.findCardsWithHandlers(game.getAllActiveCards(), 'giveBonus'));
+        bonusGivers.map(giver => giver.giveBonus(card));
+
+
+        /**** ARRIVES PHASE ****/
         game.phaseStack.addToStack(new Phase('Arrives', [ 'ArriveChoice' ]));
 
-        let inPlayWithoutNewCard = board.inPlay;
-
-        // Add the card to "in play"
-        board.inPlay.push(card);
-
         // Add this card's "Arrives: ..." to the list of things to resolve
-        findCardsToResolve(game, [ card ], 'onArrives');
+        game.markMustResolveForHandlers([ card ], 'onArrives');
 
         // Add any of my cards' "When <x> enters play, (do something)" to the list of things to resolve
-        findCardsToResolve(game, inPlayWithoutNewCard.concat(board.getPatrolZoneAsArray(), board.effects), 'onAnotherArrives');
+        game.markMustResolveForHandlers(game.getAllActiveCards(board), 'onAnotherArrives');
 
         // Add any of my opponents cards' "When an opponent's <x> enters play, (do something)" to the list of things to resolve.
         // I don't know any cards that actually do this, but implementing it here means it will technically be possible 
-        findCardsToResolve(game, opponentBoard.inPlay.concat(opponentBoard.getPatrolZoneAsArray(), opponentBoard.effects), 'onOpponentArrives');
+        game.markMustResolveForHandlers(game.getAllActiveCards(opponentBoard), 'onOpponentArrives');
 
-        // All done! If there's more than one event to resolve from the above, the user will be asked to choose the order.
+
+        /**** CARD IS NOW ON THE BOARD */
+        board.inPlay.push(card);
+    }
+
+    static dies() {
+        // rememember to check if bonus giver, and to call the removeBonus function accordingly
     }
 
     /** Called when card text gives attributes to other cards with a flavor type. Example, Nimble Fencer: "Your Virtuosos gain haste" */
@@ -50,7 +59,7 @@ export class CardApi {
     }
 
     private static adjustPropertyOnYourCardsOfFlavorType(card: Character, yourPlayerNumber: number, flavorType: FlavorType, attribute: keyof Attributes, addOrSubtract: ('add' | 'subtract'), numToGain: number): EventDescriptor {
-        if (yourPlayerNumber === card.controller && card.flavorType === flavorType)
+        if (yourPlayerNumber === card.controller && card['flavorType'] && card.flavorType === flavorType)
             return (addOrSubtract == 'add') ? CardApi.gainProperty(card, attribute, numToGain) : CardApi.loseProperty(card, attribute, numToGain);
         else 
             return undefined;

@@ -3,7 +3,7 @@ import { Game, EventDescriptor } from '../game';
 import { Card } from '../cards/card';
 import { Board} from '../board';
 import { PatrolZone } from '../board';
-import { Phase, findCardsToResolve } from './phase';
+import { Phase } from './phase';
 import { UpkeepHandler } from '../cards/card';
 
 export function startTurnAction(game: Game): void {
@@ -29,7 +29,7 @@ export function startTurnAction(game: Game): void {
 
     // enter upkeep phase, process upkeep events. when this is resolved, we'll exit into the PlayerTurn phase just beneath
     game.phaseStack.addToStack(new Phase('Upkeep', [ 'UpkeepChoice' ]));
-    findCardsToResolve(game, game.getBoardAndOpponentBoard()[0].inPlay, 'onUpkeep');
+    game.markMustResolveForHandlers(game.getBoardAndOpponentBoard()[0].inPlay, 'onUpkeep');
 }
 
 export function upkeepChoiceAction(game: Game, cardId: string): void {
@@ -72,7 +72,7 @@ function readyAllCards(game: Game, board: Board): Array<EventDescriptor> {
             card.attributeModifiers.exhausted--; // decrement because adding to this means it's disabled or may have come into play exhausted
         
         card.attributeModifiers.arrivalFatigue = 0; // set to zero because you have arrival fatigue or you don't
-        return new EventDescriptor('ReadyCard', 'Readied ' + card.name, card.cardId);
+        return new EventDescriptor('ReadyCard', 'Readied ' + card.name, { cardId: card.cardId });
     };
     let matching = function(card: Card): boolean {
         let attrs = card.effective();

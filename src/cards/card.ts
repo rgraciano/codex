@@ -304,7 +304,7 @@ export interface OpponentArrivesHandler extends Card {
 }
 
 /** For cards like Abomination or Nimble Fencer, they modify card status all the time, according to some selection criteria (eg Fencer modifies Virtuosos) */
-export interface GivesGlobalBonusHandler extends Card {
+export interface GlobalBonusGiver extends Card {
     giveBonus(card: Card): EventDescriptor;
     removeBonus(card: Card): EventDescriptor; // when card dies, use this to remove the bonus we applied earlier
 }

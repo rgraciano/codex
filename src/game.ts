@@ -82,19 +82,34 @@ export class Game {
         this.events.push(...events);
     }
 
+    getAllActiveCards(useBoard?: Board): Card[] {
+        if (useBoard)
+            return useBoard.inPlay.concat(useBoard.getPatrolZoneAsArray(), useBoard.effects);
+        else
+            return this.player1Board.inPlay.concat(this.player1Board.getPatrolZoneAsArray(), this.player1Board.effects,
+                                                 this.player2Board.inPlay, this.player2Board.getPatrolZoneAsArray(), this.player2Board.effects);
+    }
+
+    markMustResolveForHandlers(space: Card[], handlerFnName: string) {
+        // find all of the cards with handlers that match
+        let foundCards: Card[] = Game.findCardsWithHandlers(space, handlerFnName);
+    
+        // add all of those cards to the list of allowedActions, automatically removing those that were already resolved and ensuring there are no duplicates
+        this.phaseStack.topOfStack().markMustResolve(foundCards, handlerFnName);
+    }
+    
+
     /** 
-     * Searches an array of cards for every card mapping to an interface (eg, implements onUpkeep).
+     * Searches an array of cards for every card mapping to an interface (eg, implements onUpkeep). For example, findCardsWithHandlers(board.InPlay, 'onUpkeep')
      * 
      * @param implementsFunction The function on an interface that would indicate this interface is implemented, eg, 'onUpkeep'
-     * 
-     * For example, findCardsWithHandlers(board.InPlay, 'onUpkeep')
      */
-    static findCardsWithHandlers(cards: Array<Card>, implementsFunction: string): Array<Card> {
+    static findCardsWithHandlers(cards: Card[], implementsFunction: string): Card[] {
         return cards.filter(card => {
             return (card && Reflect.has(card, implementsFunction));
         });
     }
-    
+
     /**
      * Finds cards matching arbitary criteria, does a thing to those cards, and returns EventDescriptors describing what we did.
      * 
@@ -102,16 +117,9 @@ export class Game {
      * @param matching do something if this returns true
      * @param andDo what do
      */
-    static findAndDoOnCards(cards: Array<Card>, matching: (card: Card) => boolean, andDo: (card: Card) => EventDescriptor) : Array<EventDescriptor> {          
-        let events: Array<EventDescriptor> = [];
-        
-        for (let card of cards) {
-            if (matching(card)) {
-                events.push(andDo(card));
-            }
-        }
-    
-        return events;
+    static findAndDoOnCards(space: Card[], matching: (card: Card) => boolean, andDo: (card: Card) => EventDescriptor) : Array<EventDescriptor> {
+        let cards = space.filter(matching);
+        return cards.map(andDo);       
     }
 }
 

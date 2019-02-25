@@ -1,9 +1,9 @@
 
-import { Character, Color, FlavorType, TechLevel, Attributes, Unit, GivesGlobalBonusHandler } from '../card';
+import { Character, Color, FlavorType, TechLevel, Attributes, Unit, GlobalBonusGiver } from '../card';
 import { EventDescriptor } from '../../game';
 import { CardApi } from '../../actions/card_api';
 
-export class NimbleFencerTest extends Unit implements GivesGlobalBonusHandler {
+export class NimbleFencerTest extends Unit implements GlobalBonusGiver {
     protected baseAttributes = new Attributes();
 
     color: Color = "Neutral";
