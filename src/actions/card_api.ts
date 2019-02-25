@@ -43,7 +43,7 @@ export class CardApi {
     static loseMarkerOrRune(card: Card, numRunes: number, runeProperty: keyof Attributes) {
         return this.adjustMarkerOrRune(card, numRunes, runeProperty, false);
     }
-    
+
     /** Use to put a rune of any type on a card. Handles all corresponding effects */
     static gainMarkerOrRune(card:Card, numRunes: number, runeProperty: keyof Attributes) {
         return this.adjustMarkerOrRune(card, numRunes, runeProperty, true);
@@ -59,8 +59,7 @@ export class CardApi {
                 card.attributeModifiers[runeProperty] = 0;
         }
 
-        let desc: string = add ? ' gained ' : ' removed ';
-        desc += numRunes + " ";
+        let desc: string = (add ? ' gained ' : ' removed ') + numRunes + " ";
 
         switch (runeProperty) {
             case 'timeRunes':
@@ -94,6 +93,6 @@ export class CardApi {
                 throw new Error('Tried to gain marker or rune but ' + runeProperty + ' was not recognized');
         }
 
-        return new EventDescriptor(<RuneEvent>runeProperty, this.name + desc);
+        return new EventDescriptor(<RuneEvent>runeProperty, this.name + desc, { cardId: card.cardId, gained: add, numRunes: numRunes });
     }   
 }

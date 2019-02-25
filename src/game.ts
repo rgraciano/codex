@@ -119,20 +119,15 @@ export class Game {
 export class EventDescriptor {
     eventType: ServerEvent;
 
-    cardId: string;
-    impactedCardIds: Array<string>;
+    // stores any additional data required to communicate this event to the client
+    context: ObjectMap;
 
-    text: string;
+    description: string;
 
-    constructor(eventType: ServerEvent, text: string, cardId?: string, impactedCardIds?: Array<string>) {
+    constructor(eventType: ServerEvent, description: string, context?: ObjectMap) {
         this.eventType = eventType;
-        this.text = text;
-
-        if (cardId)
-            this.cardId = cardId;
-        if (impactedCardIds) {
-            this.impactedCardIds = impactedCardIds;
-        }
+        this.description = description;
+        this.context = context ? context : {};
     }
 }
 export type ServerEvent = RuneEvent | 'Error' | 'ClearPatrolZone' | 'CollectGold' | 'ReadyCard' | 'UpkeepChoices' | 'UpkeepOver' | 'PaidFor' | 'Arrives' | 'TokenOrRune';
