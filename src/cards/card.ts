@@ -1,6 +1,6 @@
 
 import { anyid } from 'anyid';
-import { EventDescriptor } from '../game';
+import { EventDescriptor, RuneEvent } from '../game';
 import { ObjectMap } from '../game_server';
 
 export abstract class Card {
@@ -9,6 +9,7 @@ export abstract class Card {
     readonly abstract color: Color;
     
     readonly abstract name: string;
+    readonly abstract flavorType: FlavorType;
 
     // We need some way to identify active cards.  Note that we re-generate card objects when they are discarded
     readonly cardId: string;
@@ -41,6 +42,7 @@ export abstract class Card {
             cardType: this.cardType, // note that some of these things don't need to be saved for server state, but the client uses them so we serialize them
             color: this.color,
             name: this.name,
+            flavorType: this.flavorType,
             cardId: this.cardId,
             contains: Card.serializeCards(this.contains),
             owner: this.owner,
@@ -118,6 +120,74 @@ export abstract class Card {
     leavePlay(): void {
         this.attributeModifiers = new Attributes();
     }
+
+    /** If otherCard is actually this card, do something */
+    doIfThisCard(otherCard: Card, fn: (otherCard: Card) => EventDescriptor): EventDescriptor {
+        return (otherCard === this) ? fn(otherCard) : undefined;
+    }
+
+    /** When otherCard is controlled by the same player, and its FlavorType matches, run fn(otherCard) */
+    doIfYourCardAndFlavorType(otherCard: Card, flavorType: FlavorType, fn: (otherCard: Card) => EventDescriptor): EventDescriptor {
+        if (otherCard.controller === this.controller && otherCard.flavorType && otherCard.flavorType === flavorType)
+            return fn(otherCard);
+        else
+            return undefined;
+    }
+
+    /** Gains something like 'haste' or 'frenzy' */
+    gainProperty(property: keyof Attributes, numToGain = 1) {
+        return this.adjustProperty(numToGain, property, 'add');
+    }
+
+    /** Loses something like 'haste' or 'frenzy' */
+    loseProperty(property: keyof Attributes,  numToLose = 1) {
+        return this.adjustProperty(numToLose, property, 'subtract');
+    }
+
+    private adjustProperty(numToAdjust: number, runeProperty: keyof Attributes, addOrSubtract: ('add' | 'subtract')) {
+        let add = addOrSubtract == 'add';
+
+        if (add)
+            this.attributeModifiers[runeProperty] += numToAdjust;
+        else 
+            this.attributeModifiers[runeProperty] -= numToAdjust;
+
+        let desc: string = (add ? ' gained ' : ' removed ') + numToAdjust + " ";
+
+        switch (runeProperty) {
+            case 'timeRunes':
+                desc += 'time runes';
+                break;
+            case 'damage':
+                desc += 'damage';
+                break;
+            case 'plusOneOne':
+                desc += '+1/+1';
+                break;
+            case 'minusOneOne':
+                desc += '-1/-1';
+                break;
+            case 'featherRunes':
+                if (add)
+                    this.attributeModifiers.flying++;
+
+                if (this.attributeModifiers.flying > 0)
+                    desc += 'feather and is now flying';
+                else
+                    desc += 'feather and is no longer flying';
+                break;
+            case 'crumblingRunes':
+                if (add)
+                    desc += 'crumbling rune and can now die';
+                else   
+                    desc += 'crumbling rune';
+                break;
+            default:
+                throw new Error('Tried to gain marker or rune but ' + runeProperty + ' was not recognized');
+        }
+
+        return new EventDescriptor(<RuneEvent>runeProperty, this.name + desc, { cardId: this.cardId, gained: add, numChanged: numToAdjust });
+    }
 }
 
 // TODO
@@ -138,9 +208,7 @@ export abstract class Building extends Card {
 }
 
 /** Base class for heroes and units */
-export abstract class Character extends Card {
-    abstract flavorType: FlavorType;
-}
+export abstract class Character extends Card {}
 
 export abstract class Unit extends Character {
     abstract techLevel: TechLevel;
@@ -150,7 +218,6 @@ export abstract class Unit extends Character {
     serialize(): ObjectMap {
         let pojo = super.serialize();
         pojo.techLevel = this.techLevel;
-        pojo.flavorType = this.flavorType;
         return pojo;
     }
 
@@ -191,6 +258,7 @@ export class Effect extends Card {
     readonly cardType: 'None';
     readonly color: 'None';
     readonly name: 'Effect';
+    readonly flavorType: FlavorType = 'Effect';
 
     deserializeExtra(pojo: ObjectMap): void {}
 }
@@ -277,7 +345,7 @@ export type CardType = "Spell" | "Hero" | "Unit" | "Building" | "Upgrade" | "Eff
 export type Color = "Neutral" | "Red" | "Green" | "Black" | "White" | "Purple" | "Blue" | "None";
 export type TechLevel = "Tech 0" | "Tech 1" | "Tech 2" | "Tech 3";
 export type SpellType = "Burn" | "Buff" | "Debuff";
-export type FlavorType = "QA" | "Mercenary" | "Virtuoso" | "Drunkard" | "Cute Animal" | "Flagbearer" | "Ninja" | "Lizardman";
+export type FlavorType = "Effect" | "QA" | "Mercenary" | "Virtuoso" | "Drunkard" | "Cute Animal" | "Flagbearer" | "Ninja" | "Lizardman";
 
 
 export interface AttacksHandler extends Card {
@@ -288,19 +356,9 @@ export interface UpkeepHandler extends Card {
     onUpkeep(): EventDescriptor;
 }
 
-/** Used for cards that have "Arrives: (do something)" card text */
+/** When implemented, this is called when ANY card arrives, including this card */
 export interface ArrivesHandler extends Card {
-    onArrives(): EventDescriptor;
-}
-
-/** Used for cards that say something like "When an <X> enters play, (do something)" */
-export interface AnotherArrivesHandler extends Card {
-    onAnotherArrives(arrival: Card): EventDescriptor;
-}
-
-/** Used for triggers that work when an opponent's card arrives*/
-export interface OpponentArrivesHandler extends Card {
-    onOpponentArrives(arrival: Card): EventDescriptor;
+    onArrives(arrivingCard: Card): EventDescriptor;
 }
 
 /** For cards like Abomination or Nimble Fencer, they modify card status all the time, according to some selection criteria (eg Fencer modifies Virtuosos) */

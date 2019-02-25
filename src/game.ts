@@ -3,7 +3,7 @@
 
 import 'reflect-metadata';
 
-import { PhaseStack } from './actions/phase';
+import { PhaseStack, ResolveMap } from './actions/phase';
 
 import { Board } from './board';
 
@@ -90,12 +90,12 @@ export class Game {
                                                  this.player2Board.inPlay, this.player2Board.getPatrolZoneAsArray(), this.player2Board.effects);
     }
 
-    markMustResolveForHandlers(space: Card[], handlerFnName: string) {
+    markMustResolveForHandlers(space: Card[], handlerFnName: string, setExtraMapParams?: (map: ResolveMap) => ResolveMap) {
         // find all of the cards with handlers that match
         let foundCards: Card[] = Game.findCardsWithHandlers(space, handlerFnName);
     
         // add all of those cards to the list of allowedActions, automatically removing those that were already resolved and ensuring there are no duplicates
-        this.phaseStack.topOfStack().markMustResolve(foundCards, handlerFnName);
+        this.phaseStack.topOfStack().markMustResolve(foundCards, handlerFnName, setExtraMapParams);
     }
     
 

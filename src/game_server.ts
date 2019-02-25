@@ -141,8 +141,8 @@ export class GameServer {
             // If there's only one action that can be performed, and the game knows how to perform that action, then we do it automatically now before
             // returning to the user.  'PlayerChoice' indicates that the player MUST do something.
             let topOfStack = this.game.phaseStack.topOfStack();
-            if (topOfStack.name != 'PlayerChoice' && topOfStack.validActions.length === 1 && topOfStack.mustResolveTuples.length === 1) {
-                this.runAction(topOfStack.validActions[0], topOfStack.mustResolveTuples[0][0]);
+            if (topOfStack.name != 'PlayerChoice' && topOfStack.validActions.length === 1 && topOfStack.mustResolveMaps.length === 1) {
+                this.runAction(topOfStack.validActions[0], topOfStack.mustResolveMaps[0]['action']);
                 clearedSingleAction = true;
             }
             else 

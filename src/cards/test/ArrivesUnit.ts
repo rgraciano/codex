@@ -1,7 +1,6 @@
 
-import { Color, FlavorType, TechLevel, Attributes, Unit, ArrivesHandler } from '../card';
+import { Card, Color, FlavorType, TechLevel, Attributes, Unit, ArrivesHandler } from '../card';
 import { EventDescriptor } from '../../game';
-import { CardApi } from '../../actions/card_api';
 
 export class ArrivesUnit extends Unit implements ArrivesHandler {
     protected baseAttributes = new Attributes();
@@ -19,7 +18,7 @@ export class ArrivesUnit extends Unit implements ArrivesHandler {
         this.baseAttributes.cost = 1;
     }
 
-    onArrives(): EventDescriptor {
-        return CardApi.gainMarkerOrRune(this, 1, 'plusOneOne');
+    onArrives(arrivingCard: Card): EventDescriptor {
+        return this.doIfThisCard(arrivingCard, (arrivingCard) => arrivingCard.gainProperty('plusOneOne'));
     }
 }

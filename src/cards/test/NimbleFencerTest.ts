@@ -20,10 +20,10 @@ export class NimbleFencerTest extends Unit implements GlobalBonusGiver {
     }
 
     giveBonus(card: Character): EventDescriptor {
-        return CardApi.yourCardsOfFlavorTypeGainAttribute(card, this.controller, 'Virtuoso', 'haste');
+        return this.doIfYourCardAndFlavorType(card, 'Virtuoso', card => card.gainProperty('haste'));
     }
 
     removeBonus(card: Character): EventDescriptor {
-        return CardApi.yourCardsOfFlavorTypeLoseAttribute(card, this.controller, 'Virtuoso', 'haste');
+        return this.doIfYourCardAndFlavorType(card, 'Virtuoso', card => card.loseProperty('haste'));
     }
 }

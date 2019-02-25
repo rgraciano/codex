@@ -1,7 +1,6 @@
 
 import { Card } from '../cards/card';
-import { Game } from '../game';
-import { ObjectMap } from '../game_server';
+import { ObjectMap, StringMap } from '../game_server';
 
 export type PhaseName = 'PlayerTurn' | 'NewGame' | 'Upkeep' | 'Arrives' | 'PlayerChoice';
 export type ActionName = 'NewGame' | 'UpkeepChoice' | 'ArriveChoice' | TurnActionName;
@@ -58,7 +57,7 @@ export class PhaseStack {
             switch (phase.name) {
                 case 'Upkeep':
                 case 'Arrives':
-                    if (phase.mustResolveTuples.length === 0) {
+                    if (phase.mustResolveMaps.length === 0) {
                         return false;
                     }
                 default:
@@ -84,8 +83,11 @@ export class Phase {
     /* 
     * We both keep a list of cards we have to resolve still, 
     * as well as a list of resolved, because we will recalculate the list as we go.
+    * 
+    * Each map has:
+    * 'resolveId' 
     */
-    mustResolveTuples: Array<[string, string]> = [];
+    mustResolveMaps: ResolveMap[] = [];
     resolvedIds: Array<string> = [];
 
     constructor(name: PhaseName, validActions: Array<ActionName>) {
@@ -97,14 +99,14 @@ export class Phase {
         return { 
             name: this.name, 
             validActions: this.validActions,
-            mustResolveTuples: this.mustResolveTuples,
+            mustResolveMaps: this.mustResolveMaps,
             resolvedIds: this.resolvedIds
         };
     }
 
     static deserialize(pojo: ObjectMap): Phase {
         let phase = new Phase(<PhaseName>pojo.name, <Array<ActionName>>pojo.validActions);
-        phase.mustResolveTuples = <Array<[string, string]>>pojo.mustResolveTuples;
+        phase.mustResolveMaps = <ResolveMap[]>pojo.mustResolveMaps;
         phase.resolvedIds = <Array<string>>pojo.resovedIds;
         return phase;
     }
@@ -112,18 +114,24 @@ export class Phase {
     /** 
      * Adds cards that must be resolved.
      */
-    markMustResolve(cards: Array<Card>, handlerFnName: string): void {
-        this.mustResolveTuples.push(...cards.map(card => <[string,string]>[card.cardId, handlerFnName]));
+    markMustResolve(cards: Array<Card>, handlerFnName: string, markExtraParams?: (map: ResolveMap) => ResolveMap): void {
+        this.mustResolveMaps.push(...cards.map(card => {
+            let map = { 
+                resolveId: card.cardId,
+                action: handlerFnName
+            };
+            return markExtraParams ? markExtraParams(map) : map;
+        }));
     }
 
     /** @returns whether or not card can be found in list of must resolved */
     ifMustResolve(cardId: string): boolean {
-        return (this.mustResolveTuples.filter(tuple => tuple[0] === cardId)).length > 0;
+        return (this.mustResolveMaps.filter(map => map['resolveId'] === cardId)).length > 0;
     }
 
     /** @returns Tuple of [cardId, handlerFnName] if found in mustResolve list, or undefined if not */
-    getMustResolveTupleForCardId(cardId: string): [string, string] {
-        return this.mustResolveTuples.find(tuple => tuple[0] === cardId);
+    getMustResolveMapForCardId(cardId: string): ResolveMap {
+        return this.mustResolveMaps.find(map => map['resolveId'] === cardId);
     }
 
     isValidAction(action: ActionName): boolean {
@@ -133,9 +141,9 @@ export class Phase {
     markResolved(cardId: string) {
         this.resolvedIds.push(cardId);
 
-        let index = this.mustResolveTuples.findIndex(tuple => tuple[0] === cardId);
+        let index = this.mustResolveMaps.findIndex(map => map['resolveId'] === cardId);
         if (index > -1) {
-            this.mustResolveTuples.splice(index, 1);
+            this.mustResolveMaps.splice(index, 1);
         }
     }
 
@@ -146,4 +154,8 @@ export class Phase {
     finished(): boolean {
         return this.resolvedIds.length === 0;
     }
+}
+export class ResolveMap extends StringMap {
+    resolveId: string;
+    action: string;
 }
