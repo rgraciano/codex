@@ -147,11 +147,3 @@ export class Phase {
         return this.resolvedIds.length === 0;
     }
 }
-
-export function findCardsToResolve(game: Game, space: Array<Card>, handlerFnName: string) {
-    // find all of the cards with handlers that match
-    let foundCards: Array<Card> = Game.findCardsWithHandlers(space, handlerFnName);
-
-    // add all of those cards to the list of allowedActions, automatically removing those that were already resolved and ensuring there are no duplicates
-    game.phaseStack.topOfStack().markMustResolve(foundCards, handlerFnName);
-}
