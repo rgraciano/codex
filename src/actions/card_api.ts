@@ -90,12 +90,8 @@ export class CardApi {
 
         if (add)
             card.attributeModifiers[runeProperty] += numToAdjust;
-        else {
+        else 
             card.attributeModifiers[runeProperty] -= numToAdjust;
-
-            if (card.attributeModifiers[runeProperty] < 0)
-                card.attributeModifiers[runeProperty] = 0;
-        }
 
         let desc: string = (add ? ' gained ' : ' removed ') + numToAdjust + " ";
 
