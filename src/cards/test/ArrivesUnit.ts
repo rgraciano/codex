@@ -1,6 +1,7 @@
 
 import { Color, FlavorType, TechLevel, Attributes, Unit, ArrivesHandler } from '../card';
 import { EventDescriptor } from '../../game';
+import { CardApi } from '../../actions/card_api';
 
 export class ArrivesUnit extends Unit implements ArrivesHandler {
     protected baseAttributes = new Attributes();
@@ -19,7 +20,6 @@ export class ArrivesUnit extends Unit implements ArrivesHandler {
     }
 
     onArrives(): EventDescriptor {
-        this.attributeModifiers.plusOneOne++;
-        return new EventDescriptor('TokenOrRune', this.name + " gained a +1/+1 token");
+        return CardApi.gainMarkerOrRune(this, 1, 'plusOneOne');
     }
 }

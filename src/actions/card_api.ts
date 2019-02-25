@@ -1,6 +1,6 @@
 
-import { Game, EventDescriptor } from '../game';
-import { Card } from '../cards/card';
+import { Game, EventDescriptor, RuneEvent } from '../game';
+import { Card, Attributes } from '../cards/card';
 import { Phase, findCardsToResolve } from './phase';
 
 /**
@@ -8,6 +8,8 @@ import { Phase, findCardsToResolve } from './phase';
  */
 export class CardApi {
 
+
+    /** When you want something to arrive in play, use this */
     static cardArrivesInPlay(game: Game, card: Card): void {
         let boards = game.getBoardAndOpponentBoard();
         let board = boards[0];
@@ -36,4 +38,62 @@ export class CardApi {
 
         // All done! If there's more than one event to resolve from the above, the user will be asked to choose the order.
     }
+
+    /** Use to take a rune of any type off a card. Handles all corresponding effects */
+    static loseMarkerOrRune(card: Card, numRunes: number, runeProperty: keyof Attributes) {
+        return this.adjustMarkerOrRune(card, numRunes, runeProperty, false);
+    }
+    
+    /** Use to put a rune of any type on a card. Handles all corresponding effects */
+    static gainMarkerOrRune(card:Card, numRunes: number, runeProperty: keyof Attributes) {
+        return this.adjustMarkerOrRune(card, numRunes, runeProperty, true);
+    }
+
+    static adjustMarkerOrRune(card: Card, numRunes: number, runeProperty: keyof Attributes, add: boolean) {
+        if (add)
+            card.attributeModifiers[runeProperty] += numRunes;
+        else {
+            card.attributeModifiers[runeProperty] -= numRunes;
+
+            if (card.attributeModifiers[runeProperty] < 0)
+                card.attributeModifiers[runeProperty] = 0;
+        }
+
+        let desc: string = add ? ' gained ' : ' removed ';
+        desc += numRunes + " ";
+
+        switch (runeProperty) {
+            case 'timeRunes':
+                desc += 'time runes';
+                break;
+            case 'damage':
+                desc += 'damage';
+                break;
+            case 'plusOneOne':
+                desc += '+1/+1';
+                break;
+            case 'minusOneOne':
+                desc += '-1/-1';
+                break;
+            case 'featherRunes':
+                if (add)
+                    card.attributeModifiers.flying++;
+
+                if (card.attributeModifiers.flying > 0)
+                    desc += 'feather and is now flying';
+                else
+                    desc += 'feather and is no longer flying';
+                break;
+            case 'crumblingRunes':
+                if (add)
+                    desc += 'crumbling rune and can now die';
+                else   
+                    desc += 'crumbling rune';
+                break;
+            default:
+                throw new Error('Tried to gain marker or rune but ' + runeProperty + ' was not recognized');
+        }
+
+        return new EventDescriptor(<RuneEvent>runeProperty, this.name + desc);
+    }   
 }

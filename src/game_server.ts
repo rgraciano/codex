@@ -136,6 +136,8 @@ export class GameServer {
         do {
             clearedEmptyPhase = this.game.phaseStack.resolveEmptyPhases();
 
+            // TODO: Check game state here
+
             // If there's only one action that can be performed, and the game knows how to perform that action, then we do it automatically now before
             // returning to the user.  'PlayerChoice' indicates that the player MUST do something.
             let topOfStack = this.game.phaseStack.topOfStack();
