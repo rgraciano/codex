@@ -131,12 +131,12 @@ export class Game {
                                                  this.player2Board.inPlay, this.player2Board.getPatrolZoneAsArray(), this.player2Board.effects);
     }
 
-    markMustResolveForHandlers(space: Card[], handlerFnName: string, setExtraMapParams?: (map: ResolveMap) => ResolveMap) {
+    markMustResolveForHandlers(space: Card[], fnName: string, setExtraMapParams?: (map: ResolveMap) => ResolveMap) {
         // find all of the cards with handlers that match
-        let foundCards: Card[] = Game.findCardsWithHandlers(space, handlerFnName);
+        let foundCards: Card[] = Game.findCardsWithFunction(space, fnName);
     
         // add all of those cards to the list of allowedActions, automatically removing those that were already resolved and ensuring there are no duplicates
-        this.phaseStack.topOfStack().markMustResolve(foundCards, handlerFnName, setExtraMapParams);
+        this.phaseStack.topOfStack().markMustResolve(foundCards, fnName, setExtraMapParams);
     }
 
     /** 
@@ -144,7 +144,7 @@ export class Game {
      * 
      * @param implementsFunction The function on an interface that would indicate this interface is implemented, eg, 'onUpkeep'
      */
-    static findCardsWithHandlers(cards: Card[], implementsFunction: string): Card[] {
+    static findCardsWithFunction(cards: Card[], implementsFunction: string): Card[] {
         return cards.filter(card => {
             return (card && Reflect.has(card, implementsFunction));
         });
@@ -178,6 +178,7 @@ export class EventDescriptor {
         this.context = context ? context : {};
     }
 }
-export type ServerEvent = RuneEvent | 'Error' | 'ClearPatrolZone' | 'CollectGold' | 'ReadyCard' | 'UpkeepChoices' | 'UpkeepOver' | 'PaidFor' | 'Arrives' | 'TokenOrRune';
+export type ServerEvent = RuneEvent | 'Error' | 'ClearPatrolZone' | 'CollectGold' | 'ReadyCard' | 'UpkeepChoices' | 'UpkeepOver' 
+| 'PaidFor' | 'Arrives' | 'TokenOrRune' | 'WouldDie' | 'Scavenger' | 'Technician' | 'DiscardedCards' | 'Graveyard';
 export type RuneEvent =  'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 

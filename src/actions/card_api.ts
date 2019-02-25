@@ -1,7 +1,7 @@
 
-import { Game } from '../game';
+import { Game, EventDescriptor } from '../game';
 import { Board } from '../board';
-import { Card, GlobalBonusHook } from '../cards/card';
+import { Card, GlobalBonusHook, WouldDieHook, WouldDiscardHook } from '../cards/card';
 import { Phase } from './phase';
 
 /**
@@ -22,7 +22,7 @@ export class CardApi {
             game.getAllActiveCards().map(boardCard => (<GlobalBonusHook>card).giveBonus(boardCard));
         
         // Second, check if this card GETS bonuses FROM other cards...
-        let bonusGivers = <GlobalBonusHook[]>(Game.findCardsWithHandlers(game.getAllActiveCards(), 'giveBonus'));
+        let bonusGivers = <GlobalBonusHook[]>(Game.findCardsWithFunction(game.getAllActiveCards(), 'giveBonus'));
         bonusGivers.map(giver => giver.giveBonus(card));
 
 
@@ -39,25 +39,42 @@ export class CardApi {
 
     static cardDies(game: Game, card: Card) {
         // Set damage equal to health, as we can always tell something is dead that way. This is in case someone calls this method directly, e.g. by destroying a card
-        card.attributeModifiers.damage = card.effective().health;
+        let effective = card.effective();
+        if (effective.damage < effective.health)
+            card.attributeModifiers.damage = effective.health;
 
         /**** WOULD DIE ****/
         // We run all 'would die' handlers right away, because the user doesn't get to choose anything.  They just happen.  Order really does not matter.
-        let wouldDieHooks = Game.findCardsWithHandlers(game.getAllActiveCards(), 'wouldDie');
+        let wouldDieHooks = Game.findCardsWithFunction(game.getAllActiveCards(), 'wouldDie');
 
-        // look for wouldDie, have wouldDie do its thing. sometimes wouldDie will remove all attachments, e.g. as Indestructible does, in which case we'll need a function to do that.
-        //     other times, wouldDie might only remove the soul stone or whatever is keeping it alive.
+        wouldDieHooks.map(cardWithHook => {
+            let descriptor = (<WouldDieHook>cardWithHook).wouldDie(card);
+            game.addEvent(descriptor);
+            return descriptor;
+        });
 
+        // After the hooks are run, we again check whether or not this should die
+        effective = card.effective();
+        if (effective.health > 0 && effective.damage < effective.health) {
+            return;
+        }
 
-        // if we see that health is >0 and damage doesnt kill this, then don't die! leave here
+       
+        /**** DEAD. SO DEAD. ****/
+        game.phaseStack.addToStack(new Phase('Dies', [ 'DiesChoice' ]));
+        game.markMustResolveForHandlers(game.getAllActiveCards(), 'onDies', map => { map['dyingCardId'] = card.cardId; return map; });
 
-        // ... if not, we ded. look for onDies and trigger those things. attachments like Spirit of the Panda should have an OnDies that detects their attachment died, and then remove themselves
-        // from the game accordingly.
+        CardApi.discardCard(card, game);
 
-        // trigger any bonuses from ondies, e.g. patrol zone stuff
-
-        // rememember to check if bonus giver, and to call the removeBonus function accordingly
-
+        let board = card.controller == 1 ? game.player1Board : game.player2Board;
+        if (board.patrolZone.scavenger === card) {
+            board.gold++;
+            game.addEvent(new EventDescriptor('Scavenger', 'Player ' + card.controller + ' gains 1 gold for Scavenger'));
+        }
+        else if (board.patrolZone.technician === card) {
+            board.drawCards(1);
+            game.addEvent(new EventDescriptor('Technician', 'Player ' + card.controller + ' draws 1 card for Technician'));
+        }
         // call leavePlay with destination
     }
 
@@ -66,13 +83,29 @@ export class CardApi {
         // move card to destination
     }
 
-    /** Resets a card and sends it to the discard pile */
+    /** Resets a card and sends it to the discard pile.  On the way, this card may be captured by Graveyard */
     static discardCard(card: Card, game: Game): void {
         card.resetCard();
         game.removeCardFromPlay(card);
-        
-        let ownerBoard: Board = card.owner == 1 ? game.player1Board : game.player2Board;
-        ownerBoard.discard.push(card);
+
+        let wouldDiscardHooks = Game.findCardsWithFunction(game.getAllActiveCards(), 'wouldDiscard');
+        let needToDiscard = true;
+
+        if (wouldDiscardHooks) {
+            wouldDiscardHooks.map(hookCard => {
+                let result = (<WouldDiscardHook>hookCard).wouldDiscard(card);
+               
+                if (result) {
+                    game.addEvent(result);
+                    needToDiscard = false;
+                }   
+            });
+        }
+
+        if (needToDiscard) {
+            let ownerBoard: Board = card.owner == 1 ? game.player1Board : game.player2Board;
+            ownerBoard.discard.push(card);
+        }
     }
 }
 type Destination = 'Nowhere' | 'Hand' | 'Discard' | 'HeroZone';

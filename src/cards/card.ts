@@ -210,6 +210,7 @@ export abstract class Upgrade extends Card {
 
 // TODO
 export abstract class Building extends Card {
+    cardType: CardType = 'Building';
     deserializeExtra(pojo: ObjectMap): void {}
 }
 
@@ -218,12 +219,14 @@ export abstract class Character extends Card {}
 
 export abstract class Unit extends Character {
     abstract techLevel: TechLevel;
+    isToken: boolean = false;
 
     cardType: CardType = "Unit";
 
     serialize(): ObjectMap {
         let pojo = super.serialize();
         pojo.techLevel = this.techLevel;
+        pojo.isToken = this.isToken;
         return pojo;
     }
 
@@ -233,8 +236,9 @@ export abstract class Unit extends Character {
 // TODO
 export abstract class Hero extends Character {
     abstract level: number;
-    cardType: CardType = "Hero";
     justDied: boolean = false;
+
+    cardType: CardType = "Hero";
 
     serialize(): ObjectMap {
         let pojo = super.serialize();
@@ -362,18 +366,27 @@ export interface UpkeepHandler extends Card {
     onUpkeep(): EventDescriptor;
 }
 
-/** When implemented, this is called when ANY card arrives, including this card */
+/** Called when ANY card arrives, including this card */
 export interface ArrivesHandler extends Card {
     onArrives(arrivingCard: Card): EventDescriptor;
 }
 
 /** For cards like Abomination or Nimble Fencer, they modify card status all the time, according to some selection criteria (eg Fencer modifies Virtuosos) */
 export interface GlobalBonusHook extends Card {
-    giveBonus(card: Card): EventDescriptor;
+    giveBonus(card: Card): EventDescriptor; // call this to give the bonus to a card; usually called when this arrives or something else arrives
     removeBonus(card: Card): EventDescriptor; // when card dies, use this to remove the bonus we applied earlier
 }
 
 /** When a card is about to die, this can trigger to do something (e.g. save it) */
 export interface WouldDieHook extends Card {
     wouldDie(cardToDie: Card): EventDescriptor;
+}
+
+/** Called when ANY card dies, including this card */
+export interface DiesHandler extends Card {
+    onDies(dyingCardId: Card): EventDescriptor;
+}
+
+export interface WouldDiscardHook extends Card {
+    wouldDiscard(cardToDiscard: Card): EventDescriptor;
 }
