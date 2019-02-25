@@ -1,6 +1,6 @@
 
 import { Game, EventDescriptor, RuneEvent } from '../game';
-import { Card, Attributes } from '../cards/card';
+import { Card, Attributes, FlavorType, Character } from '../cards/card';
 import { Phase, findCardsToResolve } from './phase';
 
 /**
@@ -15,8 +15,8 @@ export class CardApi {
         let board = boards[0];
         let opponentBoard = boards[1];
     
-        // First, apply any bonuses this card may get from other cards in play
-        // TODO...
+        // First, check if this card applies bonuses to other cards (possibly including or excluding self)
+        // Third, check if this card GETS bonuses FROM other cards...
 
         // Second, enter the ARRIVES phase...
         game.phaseStack.addToStack(new Phase('Arrives', [ 'ArriveChoice' ]));
@@ -39,27 +39,56 @@ export class CardApi {
         // All done! If there's more than one event to resolve from the above, the user will be asked to choose the order.
     }
 
+    /** Called when card text gives attributes to other cards with a flavor type. Example, Nimble Fencer: "Your Virtuosos gain haste" */
+    static yourCardsOfFlavorTypeGainAttribute(card: Character, yourPlayerNumber: number, flavorType: FlavorType, attribute: keyof Attributes, numToGain = 1): EventDescriptor {
+        return this.adjustPropertyOnYourCardsOfFlavorType(card, yourPlayerNumber, flavorType, attribute, 'add', numToGain);
+    }
+
+    /** Called when a card that gives attributes to other cards with a flavor type dies. Example, when Nimble Fencer dies, undoes "Your Virtuosos gain haste" */
+    static yourCardsOfFlavorTypeLoseAttribute(card: Character, yourPlayerNumber: number, flavorType: FlavorType, attribute: keyof Attributes, numToGain = 1): EventDescriptor {
+        return this.adjustPropertyOnYourCardsOfFlavorType(card, yourPlayerNumber, flavorType, attribute, 'subtract', numToGain);
+    }
+
+    private static adjustPropertyOnYourCardsOfFlavorType(card: Character, yourPlayerNumber: number, flavorType: FlavorType, attribute: keyof Attributes, addOrSubtract: ('add' | 'subtract'), numToGain: number): EventDescriptor {
+        if (yourPlayerNumber === card.controller && card.flavorType === flavorType)
+            return (addOrSubtract == 'add') ? CardApi.gainProperty(card, attribute, numToGain) : CardApi.loseProperty(card, attribute, numToGain);
+        else 
+            return undefined;
+    }
+
+    /** Gains something like 'haste' or 'frenzy' */
+    static gainProperty(card: Card, property: keyof Attributes, numToGain = 1) {
+        return CardApi.adjustProperty(card, numToGain, property, 'add');
+    }
+
+    /** Loses something like 'haste' or 'frenzy' */
+    static loseProperty(card: Card, property: keyof Attributes,  numToLose = 1) {
+        return CardApi.adjustProperty(card, numToLose, property, 'subtract');
+    }
+
     /** Use to take a rune of any type off a card. Handles all corresponding effects */
     static loseMarkerOrRune(card: Card, numRunes: number, runeProperty: keyof Attributes) {
-        return this.adjustMarkerOrRune(card, numRunes, runeProperty, false);
+        return CardApi.adjustProperty(card, numRunes, runeProperty, 'add');
     }
 
     /** Use to put a rune of any type on a card. Handles all corresponding effects */
     static gainMarkerOrRune(card:Card, numRunes: number, runeProperty: keyof Attributes) {
-        return this.adjustMarkerOrRune(card, numRunes, runeProperty, true);
+        return CardApi.adjustProperty(card, numRunes, runeProperty, 'subtract');
     }
 
-    static adjustMarkerOrRune(card: Card, numRunes: number, runeProperty: keyof Attributes, add: boolean) {
+    private static adjustProperty(card: Card, numToAdjust: number, runeProperty: keyof Attributes, addOrSubtract: ('add' | 'subtract')) {
+        let add = addOrSubtract == 'add';
+
         if (add)
-            card.attributeModifiers[runeProperty] += numRunes;
+            card.attributeModifiers[runeProperty] += numToAdjust;
         else {
-            card.attributeModifiers[runeProperty] -= numRunes;
+            card.attributeModifiers[runeProperty] -= numToAdjust;
 
             if (card.attributeModifiers[runeProperty] < 0)
                 card.attributeModifiers[runeProperty] = 0;
         }
 
-        let desc: string = (add ? ' gained ' : ' removed ') + numRunes + " ";
+        let desc: string = (add ? ' gained ' : ' removed ') + numToAdjust + " ";
 
         switch (runeProperty) {
             case 'timeRunes':
@@ -93,6 +122,8 @@ export class CardApi {
                 throw new Error('Tried to gain marker or rune but ' + runeProperty + ' was not recognized');
         }
 
-        return new EventDescriptor(<RuneEvent>runeProperty, this.name + desc, { cardId: card.cardId, gained: add, numRunes: numRunes });
-    }   
+        return new EventDescriptor(<RuneEvent>runeProperty, this.name + desc, { cardId: card.cardId, gained: add, numChanged: numToAdjust });
+    }
+
+
 }

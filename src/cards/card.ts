@@ -138,11 +138,12 @@ export abstract class Building extends Card {
 }
 
 /** Base class for heroes and units */
-export abstract class Character extends Card {}
+export abstract class Character extends Card {
+    abstract flavorType: FlavorType;
+}
 
 export abstract class Unit extends Character {
     abstract techLevel: TechLevel;
-    abstract flavorType: FlavorType;
 
     cardType: CardType = "Unit";
 
@@ -300,4 +301,10 @@ export interface AnotherArrivesHandler extends Card {
 /** Used for triggers that work when an opponent's card arrives*/
 export interface OpponentArrivesHandler extends Card {
     onOpponentArrives(arrival: Card): EventDescriptor;
+}
+
+/** For cards like Abomination or Nimble Fencer, they modify card status all the time, according to some selection criteria (eg Fencer modifies Virtuosos) */
+export interface GivesGlobalBonusHandler extends Card {
+    giveBonus(card: Card): EventDescriptor;
+    removeBonus(card: Card): EventDescriptor; // when card dies, use this to remove the bonus we applied earlier
 }
