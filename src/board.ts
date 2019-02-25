@@ -1,6 +1,6 @@
 
 import { Card, Hero, Effect } from './cards/card';
-import { EventDescriptor } from './game';
+import { Game, EventDescriptor } from './game';
 import { ObjectMap } from './game_server';
 
 /** This class will essentially represent an entire player state */
@@ -68,21 +68,21 @@ export class Board {
         return pojo;
     }
 
-    static deserialize(pojo: ObjectMap): Board {
+    static deserialize(pojo: ObjectMap, game: Game): Board {
         let board = new Board(<number>pojo.playerNumber);
 
         board.turnCount = <number>pojo.turnCount;
         board.gold = <number>pojo.gold;
         board.baseHealth = <number>pojo.baseHealth;
 
-        board.hand = Card.deserializeCards(<Array<ObjectMap>>pojo.hand);
-        board.deck = Card.deserializeCards(<Array<ObjectMap>>pojo.deck);
-        board.discard = Card.deserializeCards(<Array<ObjectMap>>pojo.discard);
-        board.workers = Card.deserializeCards(<Array<ObjectMap>>pojo.workers);
-        board.heroZone = <Array<Hero>>Card.deserializeCards(<Array<ObjectMap>>pojo.heroZone);
-        board.inPlay = Card.deserializeCards(<Array<ObjectMap>>pojo.inPlay);
+        board.hand = Card.deserializeCards(<Array<ObjectMap>>pojo.hand, game);
+        board.deck = Card.deserializeCards(<Array<ObjectMap>>pojo.deck, game);
+        board.discard = Card.deserializeCards(<Array<ObjectMap>>pojo.discard, game);
+        board.workers = Card.deserializeCards(<Array<ObjectMap>>pojo.workers, game);
+        board.heroZone = <Array<Hero>>Card.deserializeCards(<Array<ObjectMap>>pojo.heroZone, game);
+        board.inPlay = Card.deserializeCards(<Array<ObjectMap>>pojo.inPlay, game);
 
-        board.patrolZone = PatrolZone.deserialize(<ObjectMap>pojo.patrolZone);
+        board.patrolZone = PatrolZone.deserialize(<ObjectMap>pojo.patrolZone, game);
 
         if (pojo.tech1) board.tech1 = TechBuilding.deserialize(<ObjectMap>pojo.tech1, board);
         if (pojo.tech2) board.tech2 = TechBuilding.deserialize(<ObjectMap>pojo.tech2, board);
@@ -270,10 +270,10 @@ export class PatrolZone {
         return objmap;
     }
 
-    static deserialize(pojo: ObjectMap): PatrolZone {
+    static deserialize(pojo: ObjectMap, game: Game): PatrolZone {
         let pz = new PatrolZone();
         for (let key in pojo) {
-            pz[key] = Card.deserialize(<ObjectMap>pojo[key]);
+            pz[key] = Card.deserialize(<ObjectMap>pojo[key], game);
         }
 
         return pz;

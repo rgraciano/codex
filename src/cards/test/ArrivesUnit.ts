@@ -1,6 +1,6 @@
 
 import { Card, Color, FlavorType, TechLevel, Attributes, Unit, ArrivesHandler } from '../card';
-import { EventDescriptor } from '../../game';
+import { Game, EventDescriptor } from '../../game';
 
 export class ArrivesUnit extends Unit implements ArrivesHandler {
     protected baseAttributes = new Attributes();
@@ -11,8 +11,8 @@ export class ArrivesUnit extends Unit implements ArrivesHandler {
     techLevel: TechLevel = "Tech 0";
     importPath: string = "./test";
 
-    constructor(owner: number, controller?: number, cardId?: string) {
-        super(owner, controller, cardId);
+    constructor(game: Game, owner: number, controller?: number, cardId?: string) {
+        super(game, owner, controller, cardId);
         this.baseAttributes.health = 1;
         this.baseAttributes.attack = 1;
         this.baseAttributes.cost = 1;

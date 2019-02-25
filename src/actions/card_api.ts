@@ -1,6 +1,7 @@
 
 import { Game } from '../game';
-import { Card, GlobalBonusGiver } from '../cards/card';
+import { Board } from '../board';
+import { Card, GlobalBonusHook } from '../cards/card';
 import { Phase } from './phase';
 
 /**
@@ -18,10 +19,10 @@ export class CardApi {
         /**** GLOBAL BONUSES ****/
         // First, check if this card applies bonuses to other cards (possibly including or excluding self)
         if (Reflect.has(card, 'giveBonus'))
-            game.getAllActiveCards().map(boardCard => (<GlobalBonusGiver>card).giveBonus(boardCard));
+            game.getAllActiveCards().map(boardCard => (<GlobalBonusHook>card).giveBonus(boardCard));
         
         // Second, check if this card GETS bonuses FROM other cards...
-        let bonusGivers = <GlobalBonusGiver[]>(Game.findCardsWithHandlers(game.getAllActiveCards(), 'giveBonus'));
+        let bonusGivers = <GlobalBonusHook[]>(Game.findCardsWithHandlers(game.getAllActiveCards(), 'giveBonus'));
         bonusGivers.map(giver => giver.giveBonus(card));
 
 
@@ -36,13 +37,42 @@ export class CardApi {
         game.markMustResolveForHandlers(game.getAllActiveCards(), 'onArrives', map => { map['arrivingCardId'] = card.cardId; return map; });
     }
 
-    static cardDies() {
-        // set damage == health as we can always tell something is dead that way. this ensures something always "dies" in the correct way
+    static cardDies(game: Game, card: Card) {
+        // Set damage equal to health, as we can always tell something is dead that way. This is in case someone calls this method directly, e.g. by destroying a card
+        card.attributeModifiers.damage = card.effective().health;
 
-        // look for onDies on this card to trigger
+        /**** WOULD DIE ****/
+        // We run all 'would die' handlers right away, because the user doesn't get to choose anything.  They just happen.  Order really does not matter.
+        let wouldDieHooks = Game.findCardsWithHandlers(game.getAllActiveCards(), 'wouldDie');
 
-        // look for anotherDies  
+        // look for wouldDie, have wouldDie do its thing. sometimes wouldDie will remove all attachments, e.g. as Indestructible does, in which case we'll need a function to do that.
+        //     other times, wouldDie might only remove the soul stone or whatever is keeping it alive.
+
+
+        // if we see that health is >0 and damage doesnt kill this, then don't die! leave here
+
+        // ... if not, we ded. look for onDies and trigger those things. attachments like Spirit of the Panda should have an OnDies that detects their attachment died, and then remove themselves
+        // from the game accordingly.
+
+        // trigger any bonuses from ondies, e.g. patrol zone stuff
 
         // rememember to check if bonus giver, and to call the removeBonus function accordingly
+
+        // call leavePlay with destination
+    }
+
+    static cardLeavesPlay(card: Card, destination: Destination) {
+        // call any leaves play handlers
+        // move card to destination
+    }
+
+    /** Resets a card and sends it to the discard pile */
+    static discardCard(card: Card, game: Game): void {
+        card.resetCard();
+        game.removeCardFromPlay(card);
+        
+        let ownerBoard: Board = card.owner == 1 ? game.player1Board : game.player2Board;
+        ownerBoard.discard.push(card);
     }
 }
+type Destination = 'Nowhere' | 'Hand' | 'Discard' | 'HeroZone';

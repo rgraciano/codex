@@ -31,13 +31,13 @@ export class Game {
         this.player1Board = new Board(1);
         this.player2Board = new Board(2);
 
-        this.player1Board.discard = [new Tenderfoot(1), new TimelyMessenger(1), new OlderBrother(1), 
-            new FruitNinja(1), new Tenderfoot(1), new TimelyMessenger(1),
-            new OlderBrother(1), new FruitNinja(1), new Tenderfoot(1), new TimelyMessenger(1)];
+        this.player1Board.discard = [new Tenderfoot(this, 1), new TimelyMessenger(this, 1), new OlderBrother(this, 1), 
+            new FruitNinja(this, 1), new Tenderfoot(this, 1), new TimelyMessenger(this, 1),
+            new OlderBrother(this, 1), new FruitNinja(this, 1), new Tenderfoot(this, 1), new TimelyMessenger(this, 1)];
 
-        this.player2Board.discard = [new Tenderfoot(2), new TimelyMessenger(2), new OlderBrother(2), 
-                new FruitNinja(2), new Tenderfoot(2), new TimelyMessenger(2),
-                new OlderBrother(2), new FruitNinja(2), new Tenderfoot(2), new TimelyMessenger(2)];
+        this.player2Board.discard = [new Tenderfoot(this, 2), new TimelyMessenger(this, 2), new OlderBrother(this, 2), 
+                new FruitNinja(this, 2), new Tenderfoot(this, 2), new TimelyMessenger(this, 2),
+                new OlderBrother(this, 2), new FruitNinja(this, 2), new Tenderfoot(this, 2), new TimelyMessenger(this, 2)];
 
         this.player1Board.drawCards(5);
         this.player2Board.drawCards(5);
@@ -59,8 +59,8 @@ export class Game {
     static deserialize(pojo: ObjectMap): Game {
         let game: Game = new Game();
         game.activePlayer = <number>pojo.activePlayer;
-        game.player1Board = Board.deserialize(<ObjectMap>pojo.player1Board);
-        game.player2Board = Board.deserialize(<ObjectMap>pojo.player2Board);
+        game.player1Board = Board.deserialize(<ObjectMap>pojo.player1Board, game);
+        game.player2Board = Board.deserialize(<ObjectMap>pojo.player2Board, game);
         game.phaseStack = PhaseStack.deserialize(<ObjectMap>pojo.phaseStack);
         return game;
     }
@@ -82,6 +82,47 @@ export class Game {
         this.events.push(...events);
     }
 
+    /** Find a card, wherever it may be, and remove it from play. Card MUST be removed or this will throw an error */
+    removeCardFromPlay(card: Card) {
+        let found = false;
+
+        if (!this.removeCardFromBoard(this.player1Board, card))
+            found = this.removeCardFromBoard(this.player2Board, card);
+        else
+            found = true;
+
+        if (!found)
+            throw new Error('Tried to remove ' + card.cardId + ' from play, but could not find it');
+    }
+
+    removeCardFromBoard(board: Board, card: Card): boolean {
+        for (let i in board.patrolZone) {
+            if (board.patrolZone[i] == card) {
+                board.patrolZone[i] = null;
+                return true;
+            }
+        }
+
+        if (this.removeCardFromSpace(board.inPlay, card))
+            return true;
+        if (this.removeCardFromSpace(board.effects, card))
+            return true;
+        if (this.removeCardFromSpace(board.hand, card))
+            return true;
+
+        return false;
+    }
+
+    removeCardFromSpace(space: Card[], card: Card): boolean {
+        let index = space.findIndex(curCard => curCard == card);
+        if (index >= 0) {
+            space.splice(index);
+            return true;
+        }
+        else
+            return false;
+    }
+
     getAllActiveCards(useBoard?: Board): Card[] {
         if (useBoard)
             return useBoard.inPlay.concat(useBoard.getPatrolZoneAsArray(), useBoard.effects);
@@ -97,7 +138,6 @@ export class Game {
         // add all of those cards to the list of allowedActions, automatically removing those that were already resolved and ensuring there are no duplicates
         this.phaseStack.topOfStack().markMustResolve(foundCards, handlerFnName, setExtraMapParams);
     }
-    
 
     /** 
      * Searches an array of cards for every card mapping to an interface (eg, implements onUpkeep). For example, findCardsWithHandlers(board.InPlay, 'onUpkeep')
@@ -120,7 +160,7 @@ export class Game {
     static findAndDoOnCards(space: Card[], matching: (card: Card) => boolean, andDo: (card: Card) => EventDescriptor) : Array<EventDescriptor> {
         let cards = space.filter(matching);
         return cards.map(andDo);       
-    }
+    }    
 }
 
 /** Describes something that happened in the game, so the UI can tell the user later and perhaps do something visually  */

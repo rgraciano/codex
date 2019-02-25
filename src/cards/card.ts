@@ -1,6 +1,6 @@
 
 import { anyid } from 'anyid';
-import { EventDescriptor, RuneEvent } from '../game';
+import { Game, EventDescriptor, RuneEvent } from '../game';
 import { ObjectMap } from '../game_server';
 
 export abstract class Card {
@@ -26,10 +26,14 @@ export abstract class Card {
 
     importPath: string = '';
 
-    constructor(owner: number, controller?: number, cardId?: string) {
+    game: Game;
+
+    constructor(game: Game, owner: number, controller?: number, cardId?: string) {
         this.cardId = cardId ? cardId : anyid().encode('Aa0').length(10).random().id();
         Card.cardToIdMap.set(this, this.cardId);
         Card.idToCardMap.set(this.cardId, this);
+
+        this.game = game;
 
         this.owner = owner;
         this.controller = this.controller ? this.controller : this.owner;
@@ -56,13 +60,13 @@ export abstract class Card {
         return cards.map(cardInstance => cardInstance.serialize());
     }
 
-    static deserializeCards(pojoCards: ObjectMap[]): Array<Card> {
-        return pojoCards.map(pojoCard => Card.deserialize(pojoCard));
+    static deserializeCards(pojoCards: ObjectMap[], game: Game): Array<Card> {
+        return pojoCards.map(pojoCard => Card.deserialize(pojoCard, game));
     }
 
     abstract deserializeExtra(pojo: ObjectMap): void;
 
-    static deserialize(pojo: ObjectMap): Card {
+    static deserialize(pojo: ObjectMap, game: Game): Card {
         // Reason #32452345 this project would've been easier in Java. This is a hack-y way of figuring out which specific card we're trying to
         // instantiate, and doing that dynamically. We have to use the Node.js global context to find the class we want, by the name we stored in 
         // the POJO, then call new with the relevant arguments.
@@ -71,11 +75,11 @@ export abstract class Card {
 
         if ((<string>pojo.importPath).length > 0) {
             ns = require(<string>pojo.importPath + '/' + <string>pojo.constructorName + '.js'); 
-            card = new ns[<string>pojo.constructorName](pojo.owner, pojo.controller, pojo.cardId);
+            card = new ns[<string>pojo.constructorName](game, pojo.owner, pojo.controller, pojo.cardId);
         }
         else {
             ns = module;
-            card = new ns['exports'][<string>pojo.constructorName](pojo.owner, pojo.controller, pojo.cardId);
+            card = new ns['exports'][<string>pojo.constructorName](game, pojo.owner, pojo.controller, pojo.cardId);
         }
 
         card.deserializeExtra(pojo);
@@ -117,7 +121,9 @@ export abstract class Card {
     }
 
     /** Resets this card - takes off all tokens, resets all attributes, etc.  Happens when putting back into hand, putting into discard, and so on */
-    leavePlay(): void {
+    resetCard(): void {
+        this.controller = this.owner;
+        this.contains = [];
         this.attributeModifiers = new Attributes();
     }
 
@@ -362,7 +368,12 @@ export interface ArrivesHandler extends Card {
 }
 
 /** For cards like Abomination or Nimble Fencer, they modify card status all the time, according to some selection criteria (eg Fencer modifies Virtuosos) */
-export interface GlobalBonusGiver extends Card {
+export interface GlobalBonusHook extends Card {
     giveBonus(card: Card): EventDescriptor;
     removeBonus(card: Card): EventDescriptor; // when card dies, use this to remove the bonus we applied earlier
+}
+
+/** When a card is about to die, this can trigger to do something (e.g. save it) */
+export interface WouldDieHook extends Card {
+    wouldDie(cardToDie: Card): EventDescriptor;
 }

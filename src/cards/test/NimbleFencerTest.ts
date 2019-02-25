@@ -1,9 +1,9 @@
 
-import { Character, Color, FlavorType, TechLevel, Attributes, Unit, GlobalBonusGiver } from '../card';
-import { EventDescriptor } from '../../game';
+import { Character, Color, FlavorType, TechLevel, Attributes, Unit, GlobalBonusHook } from '../card';
+import { Game, EventDescriptor } from '../../game';
 import { CardApi } from '../../actions/card_api';
 
-export class NimbleFencerTest extends Unit implements GlobalBonusGiver {
+export class NimbleFencerTest extends Unit implements GlobalBonusHook {
     protected baseAttributes = new Attributes();
 
     color: Color = "Neutral";
@@ -12,8 +12,8 @@ export class NimbleFencerTest extends Unit implements GlobalBonusGiver {
     techLevel: TechLevel = "Tech 0";
     importPath: string = "./test";
 
-    constructor(owner: number, controller?: number, cardId?: string) {
-        super(owner, controller, cardId);
+    constructor(game: Game, owner: number, controller?: number, cardId?: string) {
+        super(game, owner, controller, cardId);
         this.baseAttributes.health = 2;
         this.baseAttributes.attack = 3;
         this.baseAttributes.cost = 2;
