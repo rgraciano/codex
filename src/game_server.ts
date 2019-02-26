@@ -90,16 +90,28 @@ export class GameServer {
    
         try {
             let cardId = GameServer.requiredAlnumProperties(context, ['cardId'])['cardId'];
-            this.runAction(action, cardId);
+            this.runAction(action, cardId, context);
             return this.wrapUp();
         } catch (e) {
             return this.responseError(e.message);
         }
     }
 
-    runAction(action: string, cardId: string) {
+    runAction(action: string, cardId: string, context: StringMap) {
         if (action.endsWith('Choice')) {
-            choiceAction(this.game, cardId);
+            let safeContext: StringMap = {};
+
+            if (action == 'AttackCardsOrBuildingsChoice') {
+                let buildingChoice = GameServer.getAlNumProperty(context, 'building');
+                let cardChoice = GameServer.getAlNumProperty(context, 'validCardTargetId');
+                
+                if (buildingChoice) safeContext.building = buildingChoice;
+                else if (cardChoice) safeContext.validCardTargetId = cardChoice;
+            }
+            else if (action == 'AttackCardsChoice') {
+                safeContext.validCardTargetId = GameServer.requiredAlnumProperties(context, [ 'validCardTargetId' ])['validCardTargetId'];
+            }
+            choiceAction(this.game, cardId, <ActionName>action, safeContext);
         }
         else switch(action) {
             case 'PlayCard':
@@ -151,7 +163,7 @@ export class GameServer {
                 return;
 
             if (topOfStack.name != 'PlayerPrompt' && topOfStack.validActions.length === 1 && topOfStack.mustResolveMaps.length === 1) {
-                this.runAction(topOfStack.validActions[0], topOfStack.mustResolveMaps[0]['resolveId']);
+                this.runAction(topOfStack.validActions[0], <string>topOfStack.mustResolveMaps[0]['resolveId'], {});
                 clearedSingleAction = true;
             }
             else 
@@ -172,16 +184,14 @@ export class GameServer {
             if (context.hasOwnProperty(req) && !( /[^a-zA-Z0-9]/.test(context[req]) )) {
                 validated[req] = context[req];
             }
-            else {
-                throw new Error('Missing parameter: ' + req); // TODO: this doesn't map to error handling elsewhere, but it's easy to manage...
-            }
+            else throw new Error('Missing parameter: ' + req); // TODO: this doesn't map to error handling elsewhere, but it's easy to manage...
         }
 
         return validated;
     }
 
     // TODO: Replace later; will pick some kind of framework that does this boilerplate stuff for us
-    static getAlNumProperty(context: StringMap, property: string): (string | boolean) {
+    static getAlNumProperty(context: StringMap, property: string): (string | false) {
         if (context.hasOwnProperty(property) && !( /[^a-zA-Z0-9]/.test(context[property]) )) {
             return context[property];
         }

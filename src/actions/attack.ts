@@ -102,10 +102,11 @@ export function prepareAttackTargetsAction(attackerId: string) {
     if (patrollersAbleToBlock.length === 0 || unstoppable) {
         let defenderCards = game.getAllActiveCards(attacker.oppositionalControllerBoard);
         let defenderAttackableCards = game.getAllAttackableCards(defenderCards);
+        let defenderIds = defenderAttackableCards.map(localCard => localCard.cardId);
 
         game.phaseStack.addToStack(new Phase('AttackDestination', [ 'AttackCardsOrBuildingsChoice' ]));
-        game.phaseStack.topOfStack().markMustResolve(defenderAttackableCards, { attackerId: attackerId });
-        game.addEvent(new EventDescriptor('PossibleAttackTargets', 'No blockers are available. All attack destinations are valid', { buildings: true, targets: [ defenderAttackableCards.map(card => card.cardId )]}))
+        game.phaseStack.topOfStack().markMustResolve([ attacker ], { validCardTargetIds: defenderIds });
+        game.addEvent(new EventDescriptor('PossibleAttackTargets', 'No blockers are available. All attack destinations are valid', { buildings: true, validCardTargetIds: [ defenderIds ]}))
     }
     
     // if a patroller can block, then return the possible patrollers we can attack
@@ -114,13 +115,14 @@ export function prepareAttackTargetsAction(attackerId: string) {
 
         // check squad leader first
         if (patrollersAbleToBlock.find(patroller => patroller === attacker.oppositionalControllerBoard.patrolZone.squadLeader)) {
-            game.phaseStack.topOfStack().markMustResolve([ attacker.oppositionalControllerBoard.patrolZone.squadLeader ], { attackerId: attackerId });
-            game.addEvent(new EventDescriptor('PossibleAttackTargets', 'The squad leader must be attacked first', { buldings: false, targets: [ attacker.oppositionalControllerBoard.patrolZone.squadLeader.cardId] }))
+            game.phaseStack.topOfStack().markMustResolve([ attacker ], { validCardTargetIds: [ attacker.oppositionalControllerBoard.patrolZone.squadLeader.cardId ] });
+            game.addEvent(new EventDescriptor('PossibleAttackTargets', 'The squad leader must be attacked first', { buldings: false, validCardTargetIds: [ attacker.oppositionalControllerBoard.patrolZone.squadLeader.cardId ] }))
         }
         // if no squad leader can block, all patrollers are fair game
         else {
-            game.phaseStack.topOfStack().markMustResolve(patrollersAbleToBlock, { attackerId: attackerId });
-            game.addEvent(new EventDescriptor('PossibleAttackTargets', 'A patroller must be attacked first', { buildings: true, targets: patrollersAbleToBlock.map(card => card.cardId) }))
+            let patrollerIds = patrollersAbleToBlock.map(card => card.cardId);
+            game.phaseStack.topOfStack().markMustResolve([ attacker ], { validCardTargetIds: patrollerIds });
+            game.addEvent(new EventDescriptor('PossibleAttackTargets', 'A patroller must be attacked first', { buildings: true, validCardTargetIds: patrollerIds }))
         }
     }
 }
@@ -141,7 +143,7 @@ function checkPatrollerCanBlockAttacker(attackerAttrs: Attributes, patroller: Ca
     return false;
 }
 
-export function attackChosenTarget() {
+export function attackChosenTarget(attacker: Card, building?: string, validCardTargetId?: string) {
     // check what was chosen. is it attackable? if not, throw an error. note buildings can be attacked as well
 
     // enter phase that is empty, to resolve the attack. give it one resolveId (attacker) so it will execute

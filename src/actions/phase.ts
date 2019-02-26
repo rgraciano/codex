@@ -156,5 +156,5 @@ export class Phase {
     }
 }
 export class ResolveMap {
-    [s: string]: string;
+    [s: string]: Object;
 }
