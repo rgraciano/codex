@@ -2,9 +2,12 @@
 import { Card } from '../cards/card';
 import { ObjectMap } from '../game_server';
 
-export type PhaseName = 'PlayerTurn' | 'NewGame' | 'Upkeep' | 'Arrives' | 'DiesOrLeaves' | 'PlayerPrompt' | 'GameOver' | 'Destroy';
-export type ActionName = 'NewGame' | 'UpkeepChoice' | 'ArrivesChoice' | 'DiesOrLeavesChoice' | 'DestroyChoice' | TurnActionName;
-export type TurnActionName = 'PlayCard' | 'Worker' | 'Tech' | 'BuildTech' | 'BuildAddOn' | 'Patrol' | 'Ability' | 'Attack' | 'HeroSummon' | 'HeroLevel' | 'EndTurn';
+export type PhaseName = 'PlayerTurn' | 'NewGame' | 'Upkeep' | 'Arrives' | 'DiesOrLeaves' | 'PlayerPrompt' 
+                        | 'GameOver' | 'Destroy' | 'Attack' | 'PrepareAttackTargets'; 
+export type ActionName = 'NewGame' | 'UpkeepChoice' | 'ArrivesChoice' | 'DiesOrLeavesChoice' | 'DestroyChoice' 
+                        | 'AttacksChoice' | 'PrepareAttackTargets' | TurnActionName;
+export type TurnActionName = 'PlayCard' | 'Worker' | 'Tech' | 'BuildTech' | 'BuildAddOn' | 'Patrol' | 'Ability' 
+                        | 'Attack' | 'HeroSummon' | 'HeroLevel' | 'EndTurn';
 
 // note patrol and un-patrol will need to be options, or attack/ability/exhaust will need to check if patrolling and
 // remove from that state

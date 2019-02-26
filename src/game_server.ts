@@ -1,12 +1,12 @@
 
-import { Game, EventDescriptor } from './game';
-import { Board } from './board';
+import { Game } from './game';
 import { anyid } from 'anyid';
 import * as fs from 'fs';
-import { Phase, ActionName } from './actions/phase';
+import { ActionName } from './actions/phase';
 import { startTurnAction } from './actions/start_turn';
 import { playCardAction } from './actions/play_card';
 import { choiceAction } from './actions/choice';
+import { attackAction, prepareAttackTargetsAction } from './actions/attack';
 
 /*
 Here's how the game server works:
@@ -105,6 +105,12 @@ export class GameServer {
             case 'PlayCard':
                 playCardAction(this.game, cardId);
                 break;
+            case 'Attack':
+                attackAction(cardId);
+                break;
+            case 'PrepareAttackTargets':
+                prepareAttackTargetsAction(cardId);
+                break;
             default:
                 this.responseError('Invalid action');
         }
@@ -154,12 +160,8 @@ export class GameServer {
     }
 
     responseSuccess(): string {
-        // TODO: This should turn into a game state sweep. Check dead things, check game end, etc.
         let stringifiedGameState = JSON.stringify(this.game.serialize());
         this.saveGameState(stringifiedGameState);
-
-        let topOfStack: Phase = this.game.phaseStack.topOfStack();
-
         return stringifiedGameState;
     }
 

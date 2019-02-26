@@ -213,11 +213,19 @@ export abstract class Building extends Card {
 }
 
 /** Base class for heroes and units */
-export abstract class Character extends Card {}
+export abstract class Character extends Card {
+    readonly attacksPerTurn: number = 1;
+
+    serialize(): ObjectMap {
+        let pojo = super.serialize();
+        pojo.attacksPerTurn = this.attacksPerTurn;
+        return pojo;
+    }
+}
 
 export abstract class Unit extends Character {
     abstract techLevel: TechLevel;
-    isToken: boolean = false;
+    readonly isToken: boolean = false;
 
     cardType: CardType = "Unit";
 
@@ -225,6 +233,7 @@ export abstract class Unit extends Character {
         let pojo = super.serialize();
         pojo.techLevel = this.techLevel;
         pojo.isToken = this.isToken;
+        pojo.attacksPerTurn = this.attacksPerTurn;
         return pojo;
     }
 
@@ -398,5 +407,10 @@ export interface WouldDiscardHook extends Card {
 
 /** Called when ANY card leaves play, including this card */
 export interface LeavesHandler extends Card {
-    onLeaves(leavingCardId: Card): EventDescriptor;
+    onLeaves(leavingCard: Card): EventDescriptor;
+}
+
+/** Called when ANY card attacks, including this card */
+export interface AttacksHandler extends Card {
+    onAttacks(attackingCard: Card): EventDescriptor;
 }

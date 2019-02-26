@@ -17,8 +17,8 @@ import { Card } from './cards/card';
 import { ObjectMap } from './game_server';
 
 export type ServerEvent = RuneEvent | 'Error' | 'ClearPatrolZone' | 'CollectGold' | 'ReadyCard' | 'UpkeepChoices' | 'UpkeepOver' 
-| 'PaidFor' | 'Arrives' | 'TokenOrRune' | 'WouldDie' | 'Scavenger' | 'Technician' | 'DiscardedCards' | 'Graveyard' | 'PutInHand' | 'ReturnToHeroZone'
-| 'BuildingDamage' | 'GameOver' | 'BuildingDestroyed' | 'CardToDestroy';
+                        | 'PaidFor' | 'Arrives' | 'TokenOrRune' | 'WouldDie' | 'Scavenger' | 'Technician' | 'DiscardedCards' | 'Graveyard' | 'PutInHand' | 'ReturnToHeroZone'
+                        | 'BuildingDamage' | 'GameOver' | 'BuildingDestroyed' | 'CardToDestroy' | 'AttackComplete';
 export type RuneEvent =  'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
 export class Game {
@@ -133,6 +133,18 @@ export class Game {
 
         if (!found)
             throw new Error('Tried to remove ' + card.cardId + ' from play, but could not find it');
+    }
+
+    cardIsInAnActiveSpace(board: Board, card: Card): boolean {
+        return board.getPatrolZoneAsArray().concat(...board.inPlay, board.effects).filter(localCard => localCard === card).length > 0;
+    }
+
+    cardIsPatrolling(board: Board, card: Card): boolean {
+        return board.getPatrolZoneAsArray().filter(localCard => localCard === card).length > 0;
+    }
+
+    cardIsInPlay(board: Board, card: Card): boolean {
+        return board.inPlay.filter(localCard => localCard === card).length > 0;
     }
 
     removeCardFromBoard(board: Board, card: Card): boolean {

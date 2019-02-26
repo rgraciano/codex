@@ -29,7 +29,7 @@ export function startTurnAction(game: Game): void {
 
     // enter upkeep phase, process upkeep events. when this is resolved, we'll exit into the PlayerTurn phase just beneath
     game.phaseStack.addToStack(new Phase('Upkeep', [ 'UpkeepChoice' ]));
-    game.markMustResolveForHandlers(game.getBoardAndOpponentBoard()[0].inPlay, 'onUpkeep');
+    game.markMustResolveForCardsWithFnName(game.getBoardAndOpponentBoard()[0].inPlay, 'onUpkeep');
 }
 
 export function upkeepChoiceAction(game: Game, cardId: string): void {

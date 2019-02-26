@@ -1,6 +1,6 @@
 
 import { Game, EventDescriptor } from '../game';
-import { Card, ArrivesHandler } from '../cards/card';
+import { Card } from '../cards/card';
 import { CardApi } from '../cards/card_api';
 
 export function playCardAction(game: Game, cardId: string): void {
@@ -28,20 +28,5 @@ export function playCardAction(game: Game, cardId: string): void {
 
     // TODO: Add spell support. Spells don't "arrive"
     CardApi.arriveCardIntoPlay(cardToPlay);
-}
-
-export function arriveChoiceAction(game: Game, cardId: string): void {
-    let phase = game.phaseStack.topOfStack();
-
-    let mustResolveMap = phase.getMustResolveMapForCardId(cardId);
-
-    if (phase.name != 'Arrives' || !mustResolveMap) {
-        throw new Error('Arrives is not valid for ID ' + cardId);
-    }
-
-    phase.markResolved(cardId);
-
-    let card: Card = Card.idToCardMap.get(cardId);
-    game.addEvent((<ArrivesHandler>card).onArrives(Card.idToCardMap.get(mustResolveMap['arrivingCardId'])));
 }
 

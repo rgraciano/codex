@@ -1,22 +1,70 @@
 
 
-import { Game } from '../game';
-import { Card } from '../cards/card';
+import { Card, Character, Attributes } from '../cards/card';
+import { Phase } from '../actions/phase';
+import { EventDescriptor } from '../game';
 
-export function attackAction(attacker: Card) {
+function getAttackerFromId(attackerId: string): Character {
     // choose attacker
-    // mark stats accordingly (has attacked, etc). use readiness to potentially exhaust
+    let card = Card.idToCardMap.get(attackerId);
+
+    // must be a hero, must be a unit
+    if (!card || !(card.cardType == 'Hero' || card.cardType == 'Unit')) {
+        throw new Error('Invalid attacker: ' + attackerId);
+    }
+
+    return <Character>card;
+}
+
+/** First phase of an attack: Choose the attacker, validate they can attack, and process all onAttacks handlers */
+export function attackAction(attackerId: string) {
+    let attacker = getAttackerFromId(attackerId);
+    let attrs: Attributes = attacker.effective();
+    let game = attacker.game;
+
+    // verify attacker is alive
+    if (!game.cardIsInPlay(attacker.controllerBoard, attacker)) {
+        throw new Error('Attacker must be in the "In Play" space');
+    }
+
+    // verify this attacker is able to attack
+    if (attrs.exhausted)
+        throw new Error('Can not attack with exhausted card ' + attackerId);
+
+    if (attrs.haveAttackedThisTurn < attacker.attacksPerTurn) // cards like Rampaging Elephant set this to 2. cards that can't attack set it to 0
+        throw new Error('This card has already attacked once this turn');
+
+    // mark that we have attacked, so we can't attack again
+    attacker.attributeModifiers.haveAttackedThisTurn++;
+
+    // exhaust card, unless we have readiness, or if we have attacks left
+    if (!attrs.readiness || attacker.attributeModifiers.haveAttackedThisTurn < attacker.attacksPerTurn)
+        attacker.attributeModifiers.exhausted++;
 
     // enter phase that is empty, to choose the target of the attack. give it one resolveId (attacker) so that it will auto-execute 
         // when the attack handlers are all done
 
+    game.phaseStack.addToStack(new Phase('PrepareAttackTargets', [ 'PrepareAttackTargets' ]));
+    game.phaseStack.topOfStack().markMustResolve([ attacker ]);
+
     // enter phase for attack handlers
     // fire attacks, obliterate handlers. cards may modify attacks, e.g. safe attacking, giving temporary 'while attacking' stats
         // .. how to handle armor? we need to track armor in the duration of a turn
+    game.phaseStack.addToStack(new Phase('Attack', [ 'AttacksChoice' ]));
+    game.markMustResolveForCardsWithFnName(game.getAllActiveCards(), 'onAttacks', map => { map['attackingCardId'] = attacker.cardId; return map; })
 }
 
-export function chooseTarget() {
+/** Second phase of an attack: prepare a list of possible defenders and ask the user to choose their attack target */
+export function prepareAttackTargetsAction(attackerId: string) {
+    let attacker: Character = getAttackerFromId(attackerId);
+    let game = attacker.game;
+
     // check if attacker still alive; if not, we can simply exit this phase indicating that attacker is dead and therefore attack has stopped
+    if (!game.cardIsInPlay(attacker.controllerBoard, attacker)) {
+        game.phaseStack.endCurrentPhase();
+        game.addEvent(new EventDescriptor('AttackComplete', 'Attacker is no longer in play, so the attack is now completed', { attackerId: attackerId }));
+        return;
+    }
 
     // if alive, prepare a list of possible defenders and return them to the user for selection. note buildings can be attacked as well.
         // this is where we account for stealth, flying, unstoppable, invisible. need to account for tower 

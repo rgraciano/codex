@@ -1,6 +1,6 @@
 
 import { Game } from '../game';
-import { Card, ArrivesHandler, DiesHandler, LeavesHandler, UpkeepHandler } from '../cards/card';
+import { Card, ArrivesHandler, DiesHandler, LeavesHandler, UpkeepHandler, AttacksHandler } from '../cards/card';
 import { CardApi } from '../cards/card_api';
 
 export function choiceAction(game: Game, cardId: string): void {
@@ -34,6 +34,9 @@ export function choiceAction(game: Game, cardId: string): void {
             break;
         case 'Destroy':
             CardApi.destroyCard(Card.idToCardMap.get(mustResolveMap['resolveId']));
+            break;
+        case 'Attack':
+            game.addEvent((<AttacksHandler>card).onAttacks(Card.idToCardMap.get(mustResolveMap['attackingCardId'])));
             break;
         case 'PlayerPrompt':
         default:
