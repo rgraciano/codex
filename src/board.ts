@@ -1,7 +1,9 @@
 
 import { Card, Hero, Effect } from './cards/card';
 import { Game, EventDescriptor } from './game';
-import { ObjectMap } from './game_server';
+import { ObjectMap, StringMap } from './game_server';
+
+export type BuildingType = 'Base' | 'Tech 1' | 'Tech 2' | 'Tech 3' | 'AddOn';
 
 /** This class will essentially represent an entire player state */
 export class Board {
@@ -91,6 +93,57 @@ export class Board {
         if (pojo.addOn) board.addOn = AddOn.deserialize(<ObjectMap>pojo.addOn);
 
         return board;
+    }
+
+    destroyIfRequired(building: BuildingType): EventDescriptor[]  {
+        switch (building) {
+            case 'Base':
+                return this.base.shouldBeDestroyed() ? this.destroyBuilding('Base') : [];
+                    
+            case 'Tech 1':
+                return (this.tech1 && this.tech1.shouldBeDestroyed()) ? this.destroyBuilding('Tech 1') : [];
+
+            case 'Tech 2':
+                return (this.tech2 && this.tech2.shouldBeDestroyed()) ? this.destroyBuilding('Tech 2') : [];
+
+            case 'Tech 3':
+                return (this.tech3 && this.tech3.shouldBeDestroyed()) ? this.destroyBuilding('Tech 3') : [];
+
+            case 'AddOn':
+                return (this.addOn && this.addOn.shouldBeDestroyed()) ? this.destroyBuilding('AddOn') : [];
+            
+            default:
+                return [];
+        }
+    }
+
+    destroyBuilding(building: BuildingType): EventDescriptor[] {
+        let events: EventDescriptor[] = [];
+
+        if (building == 'Base') {
+            events.push(new EventDescriptor('GameOver', 'Player ' + this.playerNumber + " base is destroyed! The game is over", { destroyed: this.playerNumber }));
+        }
+        else {
+            events.push(this.base.damage(2));
+
+            if (building.startsWith('Tech')) {
+                let buildingNumber: string;
+                
+                switch(building) {
+                    case 'Tech 1': this.tech1.destroy(); buildingNumber = '1'; break;
+                    case 'Tech 2': this.tech2.destroy(); buildingNumber = '2'; break;
+                    case 'Tech 3': this.tech3.destroy(); buildingNumber = '3'; break;
+                }
+
+                events.push(new EventDescriptor('BuildingDestroyed', 'Player ' + this.playerNumber + ' Tech ' + buildingNumber + ' building was destroyed', { destroyed: building }));
+            }
+            else if (building == 'AddOn') {
+                events.push(new EventDescriptor('BuildingDestroyed', 'Player ' + this.playerNumber + ' add on building was destroyed', { destroyed: building }));
+                this.addOn = null;
+            }
+        }
+
+        return events;
     }
 
     drawCards(howMany: number) {
@@ -200,16 +253,39 @@ export class BoardBuilding {
         bb.constructionInProgress = <boolean>pojo.constructionInProgress;
     }
 
+    shouldBeDestroyed(): boolean {
+        return this._health <= 0;
+    }
+
     /** Upon taking damage, reduce health. Don't check destroyed here; we'll do that in the game state loop  */
-    damage(amt: number, attributeTo: Card): EventDescriptor {
+    damage(amt: number, attributeTo?: Card): EventDescriptor {
         this._health -= amt;
-        return new EventDescriptor('BuildingDamage', this.name + ' took ' + amt + ' damage from ' + attributeTo.name, { amount: amt, attributeTo: attributeTo.cardId });
+
+        let description = this.name + ' took ' + amt + ' damage';
+
+        let context: ObjectMap = { amount: amt };
+
+        if (attributeTo) {
+            description += ' from ' + attributeTo.name;
+            context.attributeTo = attributeTo.cardId;
+        }
+
+        return new EventDescriptor('BuildingDamage', description, context);
+    }
+
+    get health(): number {
+        return this._health;
+    }
+
+    resetHealth() {
+        this._health = this.maxHealth;
     }
 
     /** At the end of the player's turn, finish construction */
     finishConstruction() {
         this.constructionInProgress = false;
-        this._health = this.maxHealth;
+        this.destroyed = false;
+        this.resetHealth();
     }
 }
 
@@ -236,6 +312,11 @@ class TechBuilding extends BoardBuilding {
         let pojo: ObjectMap = super.serialize();
         pojo.level = this.level;
         return pojo;
+    }
+
+    destroy() {
+        this.destroyed = true;
+        this.resetHealth();
     }
 
     static deserialize(pojo: ObjectMap): TechBuilding {

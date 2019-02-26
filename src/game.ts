@@ -3,9 +3,9 @@
 
 import 'reflect-metadata';
 
-import { PhaseStack, ResolveMap } from './actions/phase';
+import { PhaseStack, Phase, ResolveMap } from './actions/phase';
 
-import { Board, BoardBuilding } from './board';
+import { Board, BoardBuilding, BuildingType } from './board';
 
 import { FruitNinja } from './cards/neutral/FruitNinja';
 import { Tenderfoot } from './cards/neutral/Tenderfoot';
@@ -16,6 +16,10 @@ import { Card } from './cards/card';
 
 import { ObjectMap } from './game_server';
 
+export type ServerEvent = RuneEvent | 'Error' | 'ClearPatrolZone' | 'CollectGold' | 'ReadyCard' | 'UpkeepChoices' | 'UpkeepOver' 
+| 'PaidFor' | 'Arrives' | 'TokenOrRune' | 'WouldDie' | 'Scavenger' | 'Technician' | 'DiscardedCards' | 'Graveyard' | 'PutInHand' | 'ReturnToHeroZone'
+| 'BuildingDamage' | 'GameOver' | 'BuildingDestroyed';
+export type RuneEvent =  'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
 export class Game {
     player1Board: Board;
@@ -66,6 +70,27 @@ export class Game {
         game.player2Board = Board.deserialize(<ObjectMap>pojo.player2Board, game);
         game.phaseStack = PhaseStack.deserialize(<ObjectMap>pojo.phaseStack);
         return game;
+    }
+
+    processGameState(board: Board): EventDescriptor[] {
+        let results: EventDescriptor[] = [];
+
+        // check base buildings. if base blown up, gg!
+        results = board.destroyIfRequired('Base');
+        if (results) {
+            this.phaseStack.addToStack(new Phase('GameOver', []));
+            return results; // if the game is over, no need to figure everything else out. just end it
+        }
+        
+        // check other buildings. if health is <= 0, destroy() and do damage to base
+        let buildingsToCheck: BuildingType[] = <BuildingType[]>[ 'Tech 1', 'Tech 2', 'Tech 3', 'AddOn' ];
+
+        for (let building in buildingsToCheck) 
+            results.push(...board.destroyIfRequired(<BuildingType>building));
+
+        // check everything in play to see if anything has died. if it has, create a new phase like Destroy and have a DestroyChoice
+        // for everything we see as dying simultaneously.  cleanUpPhases() should then be able to trigger dies() for our DestroyChoice,
+        // which will trigger some stuff and life will go on
     }
 
     getBoardAndOpponentBoard(): Array<Board> {
@@ -181,8 +206,4 @@ export class EventDescriptor {
         this.context = context ? context : {};
     }
 }
-export type ServerEvent = RuneEvent | 'Error' | 'ClearPatrolZone' | 'CollectGold' | 'ReadyCard' | 'UpkeepChoices' | 'UpkeepOver' 
-| 'PaidFor' | 'Arrives' | 'TokenOrRune' | 'WouldDie' | 'Scavenger' | 'Technician' | 'DiscardedCards' | 'Graveyard' | 'PutInHand' | 'ReturnToHeroZone'
-| 'BuildingDamage';
-export type RuneEvent =  'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 

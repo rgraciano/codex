@@ -1,5 +1,6 @@
 
-import { Game } from './game';
+import { Game, EventDescriptor } from './game';
+import { Board } from './board';
 import { anyid } from 'anyid';
 import * as fs from 'fs';
 import { Phase, ActionName } from './actions/phase';
@@ -132,11 +133,17 @@ export class GameServer {
         do {
             clearedEmptyPhase = this.game.phaseStack.resolveEmptyPhases();
 
-            // TODO: Check game state here
+            // Must happen after we clear empty phases, because GameOver is an empty phase
+            this.game.addEvents(this.game.processGameState(this.game.player1Board));
+            this.game.addEvents(this.game.processGameState(this.game.player2Board));
 
             // If there's only one action that can be performed, and the game knows how to perform that action, then we do it automatically now before
             // returning to the user.  'PlayerChoice' indicates that the player MUST do something.
             let topOfStack = this.game.phaseStack.topOfStack();
+            
+            if (topOfStack.name == 'GameOver')
+                return;
+
             if (topOfStack.name != 'PlayerPrompt' && topOfStack.validActions.length === 1 && topOfStack.mustResolveMaps.length === 1) {
                 this.runAction(topOfStack.validActions[0], topOfStack.mustResolveMaps[0]['resolveId']);
                 clearedSingleAction = true;
@@ -144,16 +151,6 @@ export class GameServer {
             else 
                 clearedSingleAction = false;
         } while(clearedEmptyPhase || clearedSingleAction);
-    }
-
-    checkGameState() {
-        // check base buildings. if base blown up, gg!
-
-        // check other buildings. if health is <= 0, destroy() and do damage to base
-
-        // check everything in play to see if anything has died. if it has, create a new phase like Destroy and have a DestroyChoice
-        // for everything we see as dying simultaneously.  cleanUpPhases() should then be able to trigger dies() for our DestroyChoice,
-        // which will trigger some stuff and life will go on
     }
 
     responseSuccess(): string {
