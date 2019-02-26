@@ -146,6 +146,16 @@ export class GameServer {
         } while(clearedEmptyPhase || clearedSingleAction);
     }
 
+    checkGameState() {
+        // check base buildings. if base blown up, gg!
+
+        // check other buildings. if health is <= 0, destroy() and do damage to base
+
+        // check everything in play to see if anything has died. if it has, create a new phase like Destroy and have a DestroyChoice
+        // for everything we see as dying simultaneously.  cleanUpPhases() should then be able to trigger dies() for our DestroyChoice,
+        // which will trigger some stuff and life will go on
+    }
+
     responseSuccess(): string {
         // TODO: This should turn into a game state sweep. Check dead things, check game end, etc.
         let stringifiedGameState = JSON.stringify(this.game.serialize());

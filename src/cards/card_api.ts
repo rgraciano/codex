@@ -59,13 +59,13 @@ export class CardApi {
         if (effective.health > 0 && effective.damage < effective.health) {
             return;
         }
-
        
         /**** DEAD. SO DEAD. ****/
         game.phaseStack.addToStack(new Phase('DiesOrLeaves', [ 'DiesOrLeavesChoice' ]));
         game.markMustResolveForHandlers(game.getAllActiveCards(), 'onDies', map => { map['dyingCardId'] = card.cardId; return map; });
 
-        CardApi.discardCardFromPlay(card);
+        CardApi.leavePlay(card, 'Discard', true); // TODO: Add Hero logic, which may also necessitate player choices
+
 
         let board = card.controller == 1 ? game.player1Board : game.player2Board;
         if (board.patrolZone.scavenger === card) {
@@ -76,9 +76,6 @@ export class CardApi {
             board.drawCards(1);
             game.addEvent(new EventDescriptor('Technician', 'Player ' + card.controller + ' draws 1 card for Technician'));
         }
-        
-        // We already discarded this card, as we needed to do so to make the Technician work, so we set destination to 'Nowhere' as the card has been moved already
-        this.leavePlay(card, 'Nowhere', true);
     }
 
     /** Called specifically when a card leaves play, such as when Undo is used to bounce a card to hand */

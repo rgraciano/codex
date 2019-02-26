@@ -182,6 +182,7 @@ export class BoardBuilding {
         return {
             maxHealth: this.maxHealth,
             _health: this._health,
+            name: this.name,
             destroyed: this.destroyed,
             constructionInProgress: this.constructionInProgress
         };  
