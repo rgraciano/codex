@@ -32,7 +32,7 @@ export class CardApi {
         card.game.phaseStack.addToStack(new Phase('Arrives', [ 'ArrivesChoice' ]));
 
         // Resolve any handlers that happen when a card arrives
-        card.game.markMustResolveForCardsWithFnName(card.game.getAllActiveCards(), 'onArrives', map => { map['arrivingCardId'] = card.cardId; return map; });
+        card.game.markMustResolveForCardsWithFnName(card.game.getAllActiveCards(), 'onArrives', { arrivingCardId: card.cardId });
     }
 
     /** Does everything needed to destroy a card.  Triggers Dies, Leaves Play, & Would Discard. */
@@ -62,7 +62,7 @@ export class CardApi {
        
         /**** DEAD. SO DEAD. ****/
         game.phaseStack.addToStack(new Phase('DiesOrLeaves', [ 'DiesOrLeavesChoice' ]));
-        game.markMustResolveForCardsWithFnName(game.getAllActiveCards(), 'onDies', map => { map['dyingCardId'] = card.cardId; return map; });
+        game.markMustResolveForCardsWithFnName(game.getAllActiveCards(), 'onDies', { dyingCardId: card.cardId });
 
         CardApi.leavePlay(card, 'Discard', true); // TODO: Add Hero logic, which may also necessitate player choices
 
@@ -85,7 +85,7 @@ export class CardApi {
         if (!afterDies)
             game.phaseStack.addToStack(new Phase('DiesOrLeaves', [ 'DiesOrLeavesChoice' ]));
 
-        game.markMustResolveForCardsWithFnName(game.getAllActiveCards(), 'onLeaves', map => { map['leavingCardId'] = card.cardId; return map; });
+        game.markMustResolveForCardsWithFnName(game.getAllActiveCards(), 'onLeaves',  { leavingCardId: card.cardId });
 
         switch (destination) {
             case 'Hand':
@@ -103,9 +103,8 @@ export class CardApi {
     }
 
     /** Will NOT trigger leaves play and similar handlers.  Is supposed to be called directly by that sort of thing */
-    private static putCardBackInHeroZone(card: Hero, justDied = false) {
+    private static putCardBackInHeroZone(card: Hero) {
         card.resetCard();
-        card.justDied = justDied;
         card.game.removeCardFromPlay(card);
         card.ownerBoard.heroZone.push(card);
         card.game.addEvent(new EventDescriptor('ReturnToHeroZone', card.name + " was returned to hero zone", { cardId: card.cardId }));

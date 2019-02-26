@@ -19,10 +19,20 @@ export function startTurnAction(game: Game): void {
     // ready everything
     game.addEvents(readyAllCards(game, board));
 
-    // TODO: tick off hero availability when heroes are implemented
+    // mark recently deceased heroes as being one turn closer to available
+    board.heroZone.map(hero => 
+        { 
+            if (hero.turnsTilAvailable > 0)
+                hero.turnsTilAvailable--;
+            return hero;
+        });
 
     // collect gold
     game.addEvent(board.collectGold());
+
+    // reset tower ability
+    if (board.addOn && board.addOn.addOnType == 'Tower')
+        board.addOn.towerDetectedThisTurn = false;
 
     // enter player turn phase
     game.phaseStack.addToStack(new Phase('PlayerTurn', [ 'PlayCard', 'Worker', 'Tech', 'BuildTech', 'BuildAddOn', 'Patrol', 'Ability', 'Attack', 'HeroSummon', 'HeroLevel', 'EndTurn']));

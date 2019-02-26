@@ -243,25 +243,30 @@ export abstract class Unit extends Character {
 // TODO
 export abstract class Hero extends Character {
     abstract level: number;
-    justDied: boolean = false;
+    turnsTilAvailable: number = 0;
 
     cardType: CardType = "Hero";
 
     serialize(): ObjectMap {
         let pojo = super.serialize();
         pojo.level = this.level;
-        pojo.justDied = this.justDied;
+        pojo.turnsTilAvailable = this.turnsTilAvailable;
         return pojo;
     }
 
     deserializeExtra(pojo: ObjectMap): void {
         this.level = <number>pojo.level;
-        this.justDied = <boolean>pojo.justDied;
+        this.turnsTilAvailable = <number>pojo.turnsTilAvailable;
     }
 
+    markCantBeSummonedNextTurn() {
+        this.turnsTilAvailable = 2;
+    }
+
+    /** Note that for heroes, this makes them available immediately */
     resetCard() {
         super.resetCard();
-        this.justDied = false;
+        this.turnsTilAvailable = 0;
         this.level = 1;
     }
 }
@@ -317,6 +322,8 @@ export class Attributes {
     overpower: number = 0;
     readiness: number = 0;
     haste: number = 0;
+    unattackable: number = 0;
+    detector: number = 0;
 
     // Counting how many runes are on the card
     timeRunes: number = 0;

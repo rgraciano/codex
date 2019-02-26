@@ -1,7 +1,7 @@
 
 import { Card, Hero, Effect } from './cards/card';
 import { Game, EventDescriptor } from './game';
-import { ObjectMap, StringMap } from './game_server';
+import { ObjectMap } from './game_server';
 
 export type BuildingType = 'Base' | 'Tech 1' | 'Tech 2' | 'Tech 3' | 'AddOn';
 
@@ -291,13 +291,29 @@ export class BoardBuilding {
 
 class AddOn extends BoardBuilding {
     readonly maxHealth: number = 4;
+    addOnType: AddOnType;
+    towerDetectedThisTurn: boolean = false;
+    techLabSpec: Spec;
+
+    serialize(): ObjectMap {
+        let pojo: ObjectMap = super.serialize();
+        pojo.addOnType = this.addOnType;
+        pojo.towerDetectedThisTurn = this.towerDetectedThisTurn;
+        pojo.techLabSpec = this.techLabSpec;
+        return pojo;
+    }
 
     static deserialize(pojo: ObjectMap): AddOn {
         let ao = new AddOn(<string>pojo.name);
         BoardBuilding.deserializeCommonProperties(ao, pojo);
+        ao.addOnType = <AddOnType>pojo.addOnType;
+        ao.towerDetectedThisTurn = <boolean>pojo.towerDetectedThisTurn;
+        ao.techLabSpec = <Spec>pojo.techLabSpec;
         return ao;
     }
 }
+type AddOnType = 'Tower' | 'Heroes Hall' | 'Surplus' | 'Tech Lab';
+type Spec = ''; // TODO: This will move...
 
 class TechBuilding extends BoardBuilding {
     level: number;

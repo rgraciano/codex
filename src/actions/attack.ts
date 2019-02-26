@@ -51,7 +51,7 @@ export function attackAction(attackerId: string) {
     // fire attacks, obliterate handlers. cards may modify attacks, e.g. safe attacking, giving temporary 'while attacking' stats
         // .. how to handle armor? we need to track armor in the duration of a turn
     game.phaseStack.addToStack(new Phase('Attack', [ 'AttacksChoice' ]));
-    game.markMustResolveForCardsWithFnName(game.getAllActiveCards(), 'onAttacks', map => { map['attackingCardId'] = attacker.cardId; return map; })
+    game.markMustResolveForCardsWithFnName(game.getAllActiveCards(), 'onAttacks', { attackingCardId: attacker.cardId })
 }
 
 /** Second phase of an attack: prepare a list of possible defenders and ask the user to choose their attack target */
@@ -66,9 +66,79 @@ export function prepareAttackTargetsAction(attackerId: string) {
         return;
     }
 
+
     // if alive, prepare a list of possible defenders and return them to the user for selection. note buildings can be attacked as well.
         // this is where we account for stealth, flying, unstoppable, invisible. need to account for tower 
         // detecting the FIRST stealth attacker; track that on tower probably? perhaps use turn number?
+    let attackerAttrs = attacker.effective();
+
+    // first - are we unstoppable? OR, are we stealth and invisible and there's no detector? if so, go bananas
+    let unstoppable = false;
+
+    if (attackerAttrs.stealth || attackerAttrs.invisible) {
+        unstoppable = true;
+
+        // if the opponent has a card working as a detector...
+        if (game.getAllActiveCards(attacker.oppositionalControllerBoard).filter(card => card.effective().detector).length === 0)
+            unstoppable = false;
+        
+        // if the opponent has a tower that can detect the attacker
+        let addOn = attacker.oppositionalControllerBoard.addOn;
+        if (addOn && addOn.addOnType === 'Tower' && addOn.towerDetectedThisTurn === false) {
+            unstoppable = false;
+            addOn.towerDetectedThisTurn = true;
+            game.addEvent(new EventDescriptor('TowerDetected', 'Tower detected ' + attacker.name, { attackerId: attackerId }));
+        }
+    }
+
+    if (attackerAttrs.unstoppable) {
+        unstoppable = true;
+    }
+
+    // check if any patrollers can stop us...
+    let patrollersAbleToBlock = attacker.oppositionalControllerBoard.getPatrolZoneAsArray().filter(patroller => checkPatrollerCanBlockAttacker(attackerAttrs, patroller));
+
+    // if nobody can block, then the attacker can choose to attack any valid target
+    if (patrollersAbleToBlock.length === 0 || unstoppable) {
+        let defenderCards = game.getAllActiveCards(attacker.oppositionalControllerBoard);
+        let defenderAttackableCards = game.getAllAttackableCards(defenderCards);
+
+        game.phaseStack.addToStack(new Phase('AttackDestination', [ 'AttackCardsOrBuildingsChoice' ]));
+        game.phaseStack.topOfStack().markMustResolve(defenderAttackableCards, { attackerId: attackerId });
+        game.addEvent(new EventDescriptor('PossibleAttackTargets', 'No blockers are available. All attack destinations are valid', { buildings: true, targets: [ defenderAttackableCards.map(card => card.cardId )]}))
+    }
+    
+    // if a patroller can block, then return the possible patrollers we can attack
+    else {
+        game.phaseStack.addToStack(new Phase('AttackDestination', [ 'AttackCardsChoice' ]));
+
+        // check squad leader first
+        if (patrollersAbleToBlock.find(patroller => patroller === attacker.oppositionalControllerBoard.patrolZone.squadLeader)) {
+            game.phaseStack.topOfStack().markMustResolve([ attacker.oppositionalControllerBoard.patrolZone.squadLeader ], { attackerId: attackerId });
+            game.addEvent(new EventDescriptor('PossibleAttackTargets', 'The squad leader must be attacked first', { buldings: false, targets: [ attacker.oppositionalControllerBoard.patrolZone.squadLeader.cardId] }))
+        }
+        // if no squad leader can block, all patrollers are fair game
+        else {
+            game.phaseStack.topOfStack().markMustResolve(patrollersAbleToBlock, { attackerId: attackerId });
+            game.addEvent(new EventDescriptor('PossibleAttackTargets', 'A patroller must be attacked first', { buildings: true, targets: patrollersAbleToBlock.map(card => card.cardId) }))
+        }
+    }
+}
+
+/** Only takes into account flying & not flying. Stealth, invisible, etc is handled elsewhere */
+function checkPatrollerCanBlockAttacker(attackerAttrs: Attributes, patroller: Card): boolean {
+    if (!patroller)
+        return false;
+    
+    let patrollerAttrs = patroller.effective();
+
+    if (attackerAttrs.flying && patrollerAttrs.flying)
+        return true;
+    
+    if (!attackerAttrs.flying && !patrollerAttrs.flying)
+        return true;
+    
+    return false;
 }
 
 export function attackChosenTarget() {
@@ -85,6 +155,7 @@ export function resolveAttack() {
     // check if attacker still alive; if not, we can simply exit this phase indicating that attacker is dead and therefore attack has stopped
 
     // attacker and defender now deal damage simultaneously to each other
+        // tower also does damage
         // account for swift strike. account for anti-air also hitting fliers
     
     // if there's overpower and there's excess damage to be done, we'll add the overpower phase now, because we want it to be in

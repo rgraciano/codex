@@ -18,7 +18,8 @@ import { ObjectMap } from './game_server';
 
 export type ServerEvent = RuneEvent | 'Error' | 'ClearPatrolZone' | 'CollectGold' | 'ReadyCard' | 'UpkeepChoices' | 'UpkeepOver' 
                         | 'PaidFor' | 'Arrives' | 'TokenOrRune' | 'WouldDie' | 'Scavenger' | 'Technician' | 'DiscardedCards' | 'Graveyard' | 'PutInHand' | 'ReturnToHeroZone'
-                        | 'BuildingDamage' | 'GameOver' | 'BuildingDestroyed' | 'CardToDestroy' | 'AttackComplete';
+                        | 'BuildingDamage' | 'GameOver' | 'BuildingDestroyed' | 'CardToDestroy' | 'AttackComplete' | 'TowerDetected'
+                        | 'PossibleAttackTargets';
 export type RuneEvent =  'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
 export class Game {
@@ -183,7 +184,21 @@ export class Game {
                                                  this.player2Board.inPlay, this.player2Board.getPatrolZoneAsArray(), this.player2Board.effects);
     }
 
-    markMustResolveForCardsWithFnName(space: Card[], fnName: string, setExtraMapParams?: (map: ResolveMap) => ResolveMap) {
+    getAllAttackableCards(space: Card[]): Card[] {
+        return space.filter(card => {
+            if (card.cardType != 'Hero' && card.cardType != 'Unit' && card.cardType != 'Building')
+                return false;
+
+            let attrs = card.effective();
+            
+            if (attrs.invisible || attrs.unattackable)
+                return false;
+
+            return true;
+        })
+    }
+
+    markMustResolveForCardsWithFnName(space: Card[], fnName: string, setExtraMapParams?: ResolveMap) {
         // find all of the cards with handlers that match
         let foundCards: Card[] = Game.findCardsWithFunction(space, fnName);
     

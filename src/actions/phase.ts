@@ -3,9 +3,10 @@ import { Card } from '../cards/card';
 import { ObjectMap } from '../game_server';
 
 export type PhaseName = 'PlayerTurn' | 'NewGame' | 'Upkeep' | 'Arrives' | 'DiesOrLeaves' | 'PlayerPrompt' 
-                        | 'GameOver' | 'Destroy' | 'Attack' | 'PrepareAttackTargets'; 
+                        | 'GameOver' | 'Destroy' | 'Attack' | 'PrepareAttackTargets' | 'AttackDestination';                        
 export type ActionName = 'NewGame' | 'UpkeepChoice' | 'ArrivesChoice' | 'DiesOrLeavesChoice' | 'DestroyChoice' 
-                        | 'AttacksChoice' | 'PrepareAttackTargets' | TurnActionName;
+                        | 'AttacksChoice' | 'PrepareAttackTargets' | 'AttackCardsChoice' | 'AttackCardsOrBuildingsChoice' 
+                        | TurnActionName;
 export type TurnActionName = 'PlayCard' | 'Worker' | 'Tech' | 'BuildTech' | 'BuildAddOn' | 'Patrol' | 'Ability' 
                         | 'Attack' | 'HeroSummon' | 'HeroLevel' | 'EndTurn';
 
@@ -114,15 +115,12 @@ export class Phase {
         return phase;
     }
 
-    /** 
-     * Adds cards that must be resolved.
-     */
-    markMustResolve(cards: Array<Card>, markExtraParams?: (map: ResolveMap) => ResolveMap): void {
+    markMustResolve(cards: Array<Card>, markExtraParams?: ResolveMap): void {
         this.mustResolveMaps.push(...cards.map(card => {
             let map = { 
                 resolveId: card.cardId
             };
-            return markExtraParams ? markExtraParams(map) : map;
+            return markExtraParams ? Object.assign(map, markExtraParams): map;
         }));
     }
 
@@ -159,5 +157,4 @@ export class Phase {
 }
 export class ResolveMap {
     [s: string]: string;
-    resolveId: string;
 }
