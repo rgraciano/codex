@@ -138,7 +138,7 @@ export class GameServer {
             // returning to the user.  'PlayerChoice' indicates that the player MUST do something.
             let topOfStack = this.game.phaseStack.topOfStack();
             if (topOfStack.name != 'PlayerPrompt' && topOfStack.validActions.length === 1 && topOfStack.mustResolveMaps.length === 1) {
-                this.runAction(topOfStack.validActions[0], topOfStack.mustResolveMaps[0]['action']);
+                this.runAction(topOfStack.validActions[0], topOfStack.mustResolveMaps[0]['resolveId']);
                 clearedSingleAction = true;
             }
             else 

@@ -6,7 +6,7 @@ export class ArrivesUnit extends Unit implements ArrivesHandler {
     protected baseAttributes = new Attributes();
 
     color: Color = "Neutral";
-    flavorType: FlavorType = "QA";
+    flavorType: FlavorType = "Virtuoso";
     name: string = "Mr Arrives";
     techLevel: TechLevel = "Tech 0";
     importPath: string = "./test";

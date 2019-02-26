@@ -1,6 +1,6 @@
 
 import { Card } from '../cards/card';
-import { ObjectMap, StringMap } from '../game_server';
+import { ObjectMap } from '../game_server';
 
 export type PhaseName = 'PlayerTurn' | 'NewGame' | 'Upkeep' | 'Arrives' | 'DiesOrLeaves' | 'PlayerPrompt';
 export type ActionName = 'NewGame' | 'UpkeepChoice' | 'ArrivesChoice' | 'DiesOrLeavesChoice' | TurnActionName;
@@ -155,7 +155,8 @@ export class Phase {
         return this.resolvedIds.length === 0;
     }
 }
-export class ResolveMap extends StringMap {
+export class ResolveMap {
+    [s: string]: string;
     resolveId: string;
     action: string;
 }

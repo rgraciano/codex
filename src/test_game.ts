@@ -11,7 +11,9 @@ var gs: GameServer = new GameServer();
 
 //testPlayCard(gs);
 
-testPlayArrivesCard(gs);
+//testPlayArrivesCard(gs);
+
+testGiveBonus(gs);
 
 function testPlayCard(gs: GameServer) {
    // player 1 start state: oXSYI0NAdh, card  vpfLoJHbHU
@@ -20,6 +22,10 @@ function testPlayCard(gs: GameServer) {
 
 function testPlayArrivesCard(gs: GameServer) {
     console.log(gs.action('PlayCard', { 'state': 'arrivesBeforePlay', 'cardId': 'arrivecard' }));
+}
+
+function testGiveBonus(gs: GameServer) {
+    console.log(gs.action('PlayCard', { 'state': 'giveBonus', 'cardId': 'arrivecard' }));
 }
 
 

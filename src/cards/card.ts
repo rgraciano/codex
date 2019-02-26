@@ -165,39 +165,7 @@ export abstract class Card {
         else 
             this.attributeModifiers[runeProperty] -= numToAdjust;
 
-        let desc: string = (add ? ' gained ' : ' removed ') + numToAdjust + " ";
-
-        switch (runeProperty) {
-            case 'timeRunes':
-                desc += 'time runes';
-                break;
-            case 'damage':
-                desc += 'damage';
-                break;
-            case 'plusOneOne':
-                desc += '+1/+1';
-                break;
-            case 'minusOneOne':
-                desc += '-1/-1';
-                break;
-            case 'featherRunes':
-                if (add)
-                    this.attributeModifiers.flying++;
-
-                if (this.attributeModifiers.flying > 0)
-                    desc += 'feather and is now flying';
-                else
-                    desc += 'feather and is no longer flying';
-                break;
-            case 'crumblingRunes':
-                if (add)
-                    desc += 'crumbling rune and can now die';
-                else   
-                    desc += 'crumbling rune';
-                break;
-            default:
-                throw new Error('Tried to gain marker or rune but ' + runeProperty + ' was not recognized');
-        }
+        let desc: string = (add ? ' gained ' : ' removed ') + numToAdjust + " " + runeProperty;
 
         return new EventDescriptor(<RuneEvent>runeProperty, this.name + desc, { cardId: this.cardId, gained: add, numChanged: numToAdjust });
     }
