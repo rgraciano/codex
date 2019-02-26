@@ -21,7 +21,7 @@ export class CardApi {
         
         // Second, check if this card GETS bonuses FROM other cards...
         let bonusGivers = <GlobalBonusHook[]>(Game.findCardsWithFunction(card.game.getAllActiveCards(), 'giveBonus'));
-        bonusGivers.map(giver => giver.giveBonus(card));
+        bonusGivers.map(giver => card.game.addEvent(giver.giveBonus(card)));
 
 
         /**** CARD IS NOW ON THE BOARD */
