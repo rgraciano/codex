@@ -29,7 +29,7 @@ export class CardApi {
 
 
         /**** ARRIVES PHASE ****/
-        card.game.phaseStack.addToStack(new Phase('Arrives', [ 'ArriveChoice' ]));
+        card.game.phaseStack.addToStack(new Phase('Arrives', [ 'ArrivesChoice' ]));
 
         // Resolve any handlers that happen when a card arrives
         card.game.markMustResolveForHandlers(card.game.getAllActiveCards(), 'onArrives', map => { map['arrivingCardId'] = card.cardId; return map; });

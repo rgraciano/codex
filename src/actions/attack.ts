@@ -4,6 +4,8 @@ import { Game } from '../game';
 import { Card } from '../cards/card';
 
 export function attack(game: Game, attacker: Card, defender: Card) {
+    // check BloomingElm.ts for description of temporary stats and how they should work before implementing this
+    
     // first process onAttack triggers; these can be re-ordered
     // re-ordering stops here
 

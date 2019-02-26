@@ -2,8 +2,8 @@
 import { Card } from '../cards/card';
 import { ObjectMap, StringMap } from '../game_server';
 
-export type PhaseName = 'PlayerTurn' | 'NewGame' | 'Upkeep' | 'Arrives' | 'DiesOrLeaves' | 'PlayerChoice';
-export type ActionName = 'NewGame' | 'UpkeepChoice' | 'ArriveChoice' | 'DiesOrLeavesChoice' | TurnActionName;
+export type PhaseName = 'PlayerTurn' | 'NewGame' | 'Upkeep' | 'Arrives' | 'DiesOrLeaves' | 'PlayerPrompt';
+export type ActionName = 'NewGame' | 'UpkeepChoice' | 'ArrivesChoice' | 'DiesOrLeavesChoice' | TurnActionName;
 export type TurnActionName = 'PlayCard' | 'Worker' | 'Tech' | 'BuildTech' | 'BuildAddOn' | 'Patrol' | 'Ability' | 'Attack' | 'HeroSummon' | 'HeroLevel' | 'EndTurn';
 
 // note patrol and un-patrol will need to be options, or attack/ability/exhaust will need to check if patrolling and

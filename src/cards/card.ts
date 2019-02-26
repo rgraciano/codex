@@ -27,6 +27,7 @@ export abstract class Card {
 
     importPath: string = '';
 
+    // Keeping references here seems janky, but we need them sooo often. Being able to reverse-lookup which board owns this card is useful consistently
     game: Game;
     ownerBoard: Board;
     controllerBoard: Board;

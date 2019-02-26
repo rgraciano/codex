@@ -3,8 +3,9 @@ import { Game } from './game';
 import { anyid } from 'anyid';
 import * as fs from 'fs';
 import { Phase, ActionName } from './actions/phase';
-import { startTurnAction, upkeepChoiceAction } from './actions/start_turn';
-import { playCardAction, arriveChoiceAction } from './actions/play_card';
+import { startTurnAction } from './actions/start_turn';
+import { playCardAction } from './actions/play_card';
+import { choiceAction } from './actions/choice';
 
 /*
 Here's how the game server works:
@@ -55,8 +56,6 @@ export class GameServer {
     }
 
     loadGameState(gameStateId: string) {
-        // this is going to need to create objects. maybe https://github.com/typestack/class-transformer ?
-        // i'm thinking likely best thing to do would be to separate data and behavior as much as possible so it's not as much of an issue
         let path = 'e:\\saved_gamestates\\' + gameStateId + '.json';
         if (fs.existsSync(path))
             this.game = Game.deserialize(JSON.parse(fs.readFileSync(path, 'utf-8')));
@@ -98,15 +97,12 @@ export class GameServer {
     }
 
     runAction(action: string, cardId: string) {
-        switch (action) {
-            case 'UpkeepChoice':
-                upkeepChoiceAction(this.game, cardId);
-                break;
+        if (action.endsWith('Choice')) {
+            choiceAction(this.game, cardId);
+        }
+        else switch(action) {
             case 'PlayCard':
                 playCardAction(this.game, cardId);
-                break;
-            case 'ArriveChoice':
-                arriveChoiceAction(this.game, cardId);
                 break;
             default:
                 this.responseError('Invalid action');
@@ -141,7 +137,7 @@ export class GameServer {
             // If there's only one action that can be performed, and the game knows how to perform that action, then we do it automatically now before
             // returning to the user.  'PlayerChoice' indicates that the player MUST do something.
             let topOfStack = this.game.phaseStack.topOfStack();
-            if (topOfStack.name != 'PlayerChoice' && topOfStack.validActions.length === 1 && topOfStack.mustResolveMaps.length === 1) {
+            if (topOfStack.name != 'PlayerPrompt' && topOfStack.validActions.length === 1 && topOfStack.mustResolveMaps.length === 1) {
                 this.runAction(topOfStack.validActions[0], topOfStack.mustResolveMaps[0]['action']);
                 clearedSingleAction = true;
             }
