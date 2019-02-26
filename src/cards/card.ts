@@ -30,7 +30,9 @@ export abstract class Card {
     // Keeping references here seems janky, but we need them sooo often. Being able to reverse-lookup which board owns this card is useful consistently
     game: Game;
     ownerBoard: Board;
+    opponentBoard: Board;
     controllerBoard: Board;
+    oppositionalControllerBoard: Board;
 
     constructor(game: Game, owner: number, controller?: number, cardId?: string) {
         this.cardId = cardId ? cardId : anyid().encode('Aa0').length(10).random().id();
@@ -42,8 +44,23 @@ export abstract class Card {
         this.owner = owner;
         this.controller = this.controller ? this.controller : this.owner;
 
-        this.ownerBoard = this.owner === 1 ? this.game.player1Board : this.game.player2Board;
-        this.controllerBoard = this.controller === 1 ? this.game.player1Board : this.game.player2Board;
+        if (this.owner === 1) {
+            this.ownerBoard = this.game.player1Board;
+            this.opponentBoard = this.game.player2Board;
+        }
+        else {
+            this.ownerBoard = this.game.player2Board;
+            this.opponentBoard = this.game.player1Board;
+        }
+
+        if (this.controller === 1) {
+            this.controllerBoard = this.game.player1Board;
+            this.oppositionalControllerBoard = this.game.player2Board
+        }
+        else {
+            this.controllerBoard = this.game.player2Board;
+            this.oppositionalControllerBoard = this.game.player1Board;
+        }
     }
 
     serialize(): ObjectMap {
@@ -336,7 +353,7 @@ export type CardType = "Spell" | "Hero" | "Unit" | "Building" | "Upgrade" | "Eff
 export type Color = "Neutral" | "Red" | "Green" | "Black" | "White" | "Purple" | "Blue" | "None";
 export type TechLevel = "Tech 0" | "Tech 1" | "Tech 2" | "Tech 3";
 export type SpellType = "Burn" | "Buff" | "Debuff";
-export type FlavorType = "Effect" | "QA" | "Mercenary" | "Virtuoso" | "Drunkard" | "Cute Animal" | "Flagbearer" | "Ninja" | "Lizardman";
+export type FlavorType = "Effect" | "QA" | "Mercenary" | "Virtuoso" | "Drunkard" | "Cute Animal" | "Flagbearer" | "Ninja" | "Lizardman" | "Beast";
 
 
 export interface AttacksHandler extends Card {
@@ -365,7 +382,7 @@ export interface WouldDieHook extends Card {
 
 /** Called when ANY card dies, including this card */
 export interface DiesHandler extends Card {
-    onDies(dyingCardId: Card): EventDescriptor;
+    onDies(dyingCard: Card): EventDescriptor;
 }
 
 /** Called when ANY card would be discarded, including this card */

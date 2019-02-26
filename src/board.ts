@@ -23,7 +23,7 @@ export class Board {
     effects: Array<Effect> = [];
     patrolZone: PatrolZone = new PatrolZone();
 
-    baseHealth: number = 20;
+    base: BoardBuilding;
 
     tech1: TechBuilding = null;
     tech2: TechBuilding = null;
@@ -47,7 +47,7 @@ export class Board {
             playerNumber: this.playerNumber,
             turnCount: this.turnCount,
             gold: this.gold,
-            baseHealth: this.baseHealth,
+            base: this.base.serialize(),
 
             hand: Card.serializeCards(this.hand),
             deck: Card.serializeCards(this.deck),
@@ -73,7 +73,7 @@ export class Board {
 
         board.turnCount = <number>pojo.turnCount;
         board.gold = <number>pojo.gold;
-        board.baseHealth = <number>pojo.baseHealth;
+        board.base = BoardBuilding.deserialize(<ObjectMap>pojo.base);
 
         board.hand = Card.deserializeCards(<Array<ObjectMap>>pojo.hand, game);
         board.deck = Card.deserializeCards(<Array<ObjectMap>>pojo.deck, game);
@@ -84,11 +84,11 @@ export class Board {
 
         board.patrolZone = PatrolZone.deserialize(<ObjectMap>pojo.patrolZone, game);
 
-        if (pojo.tech1) board.tech1 = TechBuilding.deserialize(<ObjectMap>pojo.tech1, board);
-        if (pojo.tech2) board.tech2 = TechBuilding.deserialize(<ObjectMap>pojo.tech2, board);
-        if (pojo.tech3) board.tech3 = TechBuilding.deserialize(<ObjectMap>pojo.tech3, board);
+        if (pojo.tech1) board.tech1 = TechBuilding.deserialize(<ObjectMap>pojo.tech1);
+        if (pojo.tech2) board.tech2 = TechBuilding.deserialize(<ObjectMap>pojo.tech2);
+        if (pojo.tech3) board.tech3 = TechBuilding.deserialize(<ObjectMap>pojo.tech3);
 
-        if (pojo.addOn) board.addOn = AddOn.deserialize(<ObjectMap>pojo.addOn, board);
+        if (pojo.addOn) board.addOn = AddOn.deserialize(<ObjectMap>pojo.addOn);
 
         return board;
     }
@@ -164,18 +164,15 @@ export class Board {
 }
 
 /** Works differently from card buildings in pretty much every respect */
-abstract class BoardBuilding {
-    readonly abstract maxHealth: number;
-    health: number;
+export class BoardBuilding {
+    readonly maxHealth: number = 20; // base health by default
+    private _health: number = this.maxHealth;
     destroyed = false;
     constructionInProgress = true;
-    
-    protected playerBoard: Board;
+    name: string;
 
-    constructor(playerBoard: Board, buildInstantly: boolean = false) {
-        // Need this to decrement base health when buildings blow up
-        this.playerBoard = playerBoard;
-
+    constructor(name: string, buildInstantly: boolean = false) {
+        this.name = name;
         if (buildInstantly) {
             this.constructionInProgress = false;
         }
@@ -184,42 +181,42 @@ abstract class BoardBuilding {
     serialize(): ObjectMap {
         return {
             maxHealth: this.maxHealth,
-            health: this.health,
+            _health: this._health,
             destroyed: this.destroyed,
             constructionInProgress: this.constructionInProgress
         };  
     }
 
+    static deserialize(pojo: ObjectMap): BoardBuilding {
+        let bb = new BoardBuilding(<string>pojo.name);
+        BoardBuilding.deserializeCommonProperties(bb, pojo);
+        return bb;
+    }
+
     static deserializeCommonProperties(bb: BoardBuilding, pojo: ObjectMap): void {
-        bb.health = <number>pojo.health;
+        bb._health = <number>pojo._health;
         bb.destroyed = <boolean>pojo.destroyed;
         bb.constructionInProgress = <boolean>pojo.constructionInProgress;
     }
 
     /** Upon taking damage, reduce health. Don't check destroyed here; we'll do that in the game state loop  */
-    damage(amt: number) {
-        this.health -= amt;
-    }
-
-    /** Upon destruction, we mark the building destroyed and decrement base health */
-    destroy() {
-        this.destroyed = true;
-        this.playerBoard.baseHealth -= 2;
-        // new construction will begin at the start of the player's next turn
+    damage(amt: number, attributeTo: Card): EventDescriptor {
+        this._health -= amt;
+        return new EventDescriptor('BuildingDamage', this.name + ' took ' + amt + ' damage from ' + attributeTo.name, { amount: amt, attributeTo: attributeTo.cardId });
     }
 
     /** At the end of the player's turn, finish construction */
     finishConstruction() {
         this.constructionInProgress = false;
-        this.health = this.maxHealth;
+        this._health = this.maxHealth;
     }
 }
 
 class AddOn extends BoardBuilding {
     readonly maxHealth: number = 4;
 
-    static deserialize(pojo: ObjectMap, playerBoard: Board): AddOn {
-        let ao = new AddOn(playerBoard);
+    static deserialize(pojo: ObjectMap): AddOn {
+        let ao = new AddOn(<string>pojo.name);
         BoardBuilding.deserializeCommonProperties(ao, pojo);
         return ao;
     }
@@ -229,8 +226,8 @@ class TechBuilding extends BoardBuilding {
     level: number;
     readonly maxHealth: number = 5;
 
-    constructor(level: number, playerBoard: Board, buildInstantly: boolean = false) {
-        super(playerBoard, buildInstantly);
+    constructor(name: string, level: number, buildInstantly: boolean = false) {
+        super(name, buildInstantly);
         this.level = level;
     }
 
@@ -240,8 +237,8 @@ class TechBuilding extends BoardBuilding {
         return pojo;
     }
 
-    static deserialize(pojo: ObjectMap, playerBoard: Board): TechBuilding {
-        let tb = new TechBuilding(<number>pojo.level, playerBoard);
+    static deserialize(pojo: ObjectMap): TechBuilding {
+        let tb = new TechBuilding(<string>pojo.name, <number>pojo.level);
         BoardBuilding.deserializeCommonProperties(tb, pojo);
         return tb;
     }

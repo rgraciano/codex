@@ -5,7 +5,7 @@ import 'reflect-metadata';
 
 import { PhaseStack, ResolveMap } from './actions/phase';
 
-import { Board } from './board';
+import { Board, BoardBuilding } from './board';
 
 import { FruitNinja } from './cards/neutral/FruitNinja';
 import { Tenderfoot } from './cards/neutral/Tenderfoot';
@@ -30,6 +30,9 @@ export class Game {
     setupNewGame() {
         this.player1Board = new Board(1);
         this.player2Board = new Board(2);
+
+        this.player1Board.base = new BoardBuilding('Base', true);
+        this.player2Board.base = new BoardBuilding('Base', true);
 
         this.player1Board.discard = [new Tenderfoot(this, 1), new TimelyMessenger(this, 1), new OlderBrother(this, 1), 
             new FruitNinja(this, 1), new Tenderfoot(this, 1), new TimelyMessenger(this, 1),
@@ -179,6 +182,7 @@ export class EventDescriptor {
     }
 }
 export type ServerEvent = RuneEvent | 'Error' | 'ClearPatrolZone' | 'CollectGold' | 'ReadyCard' | 'UpkeepChoices' | 'UpkeepOver' 
-| 'PaidFor' | 'Arrives' | 'TokenOrRune' | 'WouldDie' | 'Scavenger' | 'Technician' | 'DiscardedCards' | 'Graveyard' | 'PutInHand' | 'ReturnToHeroZone';
+| 'PaidFor' | 'Arrives' | 'TokenOrRune' | 'WouldDie' | 'Scavenger' | 'Technician' | 'DiscardedCards' | 'Graveyard' | 'PutInHand' | 'ReturnToHeroZone'
+| 'BuildingDamage';
 export type RuneEvent =  'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
