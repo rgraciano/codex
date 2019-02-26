@@ -73,10 +73,13 @@ export function prepareAttackTargetsAction(attackerId: string) {
     let attackerAttrs = attacker.effective();
 
     // first - are we unstoppable? OR, are we stealth and invisible and there's no detector? if so, go bananas
-    let unstoppable = false;
+    if (attackerAttrs.unstoppable) {
+        sendAllTargetsAreValid(attacker);
+        return;
+    }
 
     if (attackerAttrs.stealth || attackerAttrs.invisible) {
-        unstoppable = true;
+        let unstoppable = true;
 
         // if the opponent has a card working as a detector...
         if (game.getAllActiveCards(attacker.oppositionalControllerBoard).filter(card => card.effective().detector).length === 0)
@@ -89,24 +92,20 @@ export function prepareAttackTargetsAction(attackerId: string) {
             addOn.towerDetectedThisTurn = true;
             game.addEvent(new EventDescriptor('TowerDetected', 'Tower detected ' + attacker.name, { attackerId: attackerId }));
         }
-    }
 
-    if (attackerAttrs.unstoppable) {
-        unstoppable = true;
+        if (unstoppable) {
+            sendAllTargetsAreValid(attacker);
+            return;
+        }
     }
 
     // check if any patrollers can stop us...
     let patrollersAbleToBlock = attacker.oppositionalControllerBoard.getPatrolZoneAsArray().filter(patroller => checkPatrollerCanBlockAttacker(attackerAttrs, patroller));
 
     // if nobody can block, then the attacker can choose to attack any valid target
-    if (patrollersAbleToBlock.length === 0 || unstoppable) {
-        let defenderCards = game.getAllActiveCards(attacker.oppositionalControllerBoard);
-        let defenderAttackableCards = game.getAllAttackableCards(defenderCards);
-        let defenderIds = defenderAttackableCards.map(localCard => localCard.cardId);
-
-        game.phaseStack.addToStack(new Phase('AttackDestination', [ 'AttackCardsOrBuildingsChoice' ]));
-        game.phaseStack.topOfStack().markMustResolve([ attacker ], { validCardTargetIds: defenderIds });
-        game.addEvent(new EventDescriptor('PossibleAttackTargets', 'No blockers are available. All attack destinations are valid', { buildings: true, validCardTargetIds: [ defenderIds ]}))
+    if (patrollersAbleToBlock.length === 0) {
+        sendAllTargetsAreValid(attacker);
+        return;
     }
     
     // if a patroller can block, then return the possible patrollers we can attack
@@ -127,6 +126,18 @@ export function prepareAttackTargetsAction(attackerId: string) {
     }
 }
 
+function sendAllTargetsAreValid(attacker: Character) {
+    let game = attacker.game;
+
+    let defenderCards = game.getAllActiveCards(attacker.oppositionalControllerBoard);
+    let defenderAttackableCards = game.getAllAttackableCards(defenderCards);
+    let defenderIds = defenderAttackableCards.map(localCard => localCard.cardId);
+
+    game.phaseStack.addToStack(new Phase('AttackDestination', [ 'AttackCardsOrBuildingsChoice' ]));
+    game.phaseStack.topOfStack().markMustResolve([ attacker ], { validCardTargetIds: defenderIds });
+    game.addEvent(new EventDescriptor('PossibleAttackTargets', 'No blockers are available. All attack destinations are valid', { buildings: true, validCardTargetIds: [ defenderIds ]}));
+}
+
 /** Only takes into account flying & not flying. Stealth, invisible, etc is handled elsewhere */
 function checkPatrollerCanBlockAttacker(attackerAttrs: Attributes, patroller: Card): boolean {
     if (!patroller)
@@ -144,16 +155,14 @@ function checkPatrollerCanBlockAttacker(attackerAttrs: Attributes, patroller: Ca
 }
 
 export function attackChosenTarget(attacker: Card, building?: string, validCardTargetId?: string) {
-    // check what was chosen. is it attackable? if not, throw an error. note buildings can be attacked as well
+    // check what was chosen. if it's a card then it should be in the resolveMap.  if it's a building then it should be not destroyed
 
     // enter phase that is empty, to resolve the attack. give it one resolveId (attacker) so it will execute
 
     // a defender was chosen; fire any defense handlers
         // I think Debilitator Alpha is the only card in the game that is impacted here.  There's no "Safe Defending" card
-        // No harm in implementing this as a standard handling thing anyway...
-}
+        // Thus, we implement this as a hook that takes effect immediately. no choosing done by the user
 
-export function resolveAttack() {
     // check if attacker still alive; if not, we can simply exit this phase indicating that attacker is dead and therefore attack has stopped
 
     // attacker and defender now deal damage simultaneously to each other
