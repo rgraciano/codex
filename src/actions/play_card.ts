@@ -1,7 +1,7 @@
 
 import { Game, EventDescriptor } from '../game';
 import { Card, ArrivesHandler } from '../cards/card';
-import { CardApi } from './card_api';
+import { CardApi } from '../cards/card_api';
 
 export function playCardAction(game: Game, cardId: string): void {
     let boards = game.getBoardAndOpponentBoard();
@@ -27,7 +27,7 @@ export function playCardAction(game: Game, cardId: string): void {
     board.moveCard(board.hand, cardToPlay);
 
     // TODO: Add spell support. Spells don't "arrive"
-    CardApi.cardArrivesInPlay(game, cardToPlay);
+    CardApi.arriveCardIntoPlay(cardToPlay);
 }
 
 export function arriveChoiceAction(game: Game, cardId: string): void {

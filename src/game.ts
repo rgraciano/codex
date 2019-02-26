@@ -179,6 +179,6 @@ export class EventDescriptor {
     }
 }
 export type ServerEvent = RuneEvent | 'Error' | 'ClearPatrolZone' | 'CollectGold' | 'ReadyCard' | 'UpkeepChoices' | 'UpkeepOver' 
-| 'PaidFor' | 'Arrives' | 'TokenOrRune' | 'WouldDie' | 'Scavenger' | 'Technician' | 'DiscardedCards' | 'Graveyard';
+| 'PaidFor' | 'Arrives' | 'TokenOrRune' | 'WouldDie' | 'Scavenger' | 'Technician' | 'DiscardedCards' | 'Graveyard' | 'PutInHand' | 'ReturnToHeroZone';
 export type RuneEvent =  'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 

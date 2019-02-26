@@ -1,7 +1,7 @@
 
 import { Character, Color, FlavorType, TechLevel, Attributes, Unit, GlobalBonusHook } from '../card';
 import { Game, EventDescriptor } from '../../game';
-import { CardApi } from '../../actions/card_api';
+import { CardApi } from '../card_api';
 
 export class NimbleFencerTest extends Unit implements GlobalBonusHook {
     protected baseAttributes = new Attributes();

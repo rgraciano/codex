@@ -2,6 +2,7 @@
 import { anyid } from 'anyid';
 import { Game, EventDescriptor, RuneEvent } from '../game';
 import { ObjectMap } from '../game_server';
+import { Board } from '../board';
 
 export abstract class Card {
 
@@ -27,6 +28,8 @@ export abstract class Card {
     importPath: string = '';
 
     game: Game;
+    ownerBoard: Board;
+    controllerBoard: Board;
 
     constructor(game: Game, owner: number, controller?: number, cardId?: string) {
         this.cardId = cardId ? cardId : anyid().encode('Aa0').length(10).random().id();
@@ -37,6 +40,9 @@ export abstract class Card {
 
         this.owner = owner;
         this.controller = this.controller ? this.controller : this.owner;
+
+        this.ownerBoard = this.owner === 1 ? this.game.player1Board : this.game.player2Board;
+        this.controllerBoard = this.controller === 1 ? this.game.player1Board : this.game.player2Board;
     }
 
     serialize(): ObjectMap {
@@ -251,6 +257,12 @@ export abstract class Hero extends Character {
         this.level = <number>pojo.level;
         this.justDied = <boolean>pojo.justDied;
     }
+
+    resetCard() {
+        super.resetCard();
+        this.justDied = false;
+        this.level = 1;
+    }
 }
 
 /** 
@@ -387,6 +399,12 @@ export interface DiesHandler extends Card {
     onDies(dyingCardId: Card): EventDescriptor;
 }
 
+/** Called when ANY card would be discarded, including this card */
 export interface WouldDiscardHook extends Card {
     wouldDiscard(cardToDiscard: Card): EventDescriptor;
+}
+
+/** Called when ANY card leaves play, including this card */
+export interface LeavesHandler extends Card {
+    onLeaves(leavingCardId: Card): EventDescriptor;
 }

@@ -19,18 +19,16 @@ export class GraveyardTest extends Building implements WouldDiscardHook {
     }
 
     wouldDiscard(cardToDiscard: Card): EventDescriptor {
-        let discard: Card[] = cardToDiscard.controller == 1 ? this.game.player1Board.discard : this.game.player2Board.discard;
-
         if (cardToDiscard.controller === this.controller && cardToDiscard.cardType == 'Unit' && !(<Unit>cardToDiscard).isToken) {
             if (this.contains.length == 3) {
-                discard.push(this);
-                discard.push(cardToDiscard);
+                this.ownerBoard.discard.push(this);
+                cardToDiscard.ownerBoard.discard.push(this);
 
                 let discardedCards = this.name + ', ' + cardToDiscard.name;
                 let discardedIds: String[] = [ this.cardId, cardToDiscard.cardId ];
 
                 this.contains.map(buried => { 
-                    discard.push(buried); 
+                    buried.ownerBoard.discard.push(buried);
                     discardedCards += ', ' + buried.name;  
                     discardedIds.push(buried.cardId);
                 });

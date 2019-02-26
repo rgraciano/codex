@@ -2,7 +2,7 @@
 
 import { Card, Spell, Color, FlavorType, Attributes, WouldDieHook } from '../card';
 import { Game, EventDescriptor } from '../../game';
-import { CardApi } from '../../actions/card_api';
+import { CardApi } from '../card_api';
 
 export class SoulStoneTest extends Spell implements WouldDieHook {
     protected baseAttributes = new Attributes();
@@ -22,7 +22,8 @@ export class SoulStoneTest extends Spell implements WouldDieHook {
            cardToDie.attributeModifiers.damage = 0;
            cardToDie.attributeModifiers.plusOneOne--;
            
-           CardApi.discardCard(this, this.game);
+           this.game.removeCardFromPlay(this);
+           this.ownerBoard.discard.push(this);
            return new EventDescriptor('WouldDie', 'Soul Stone prevented the death of ' + cardToDie.cardId);
         }
         return undefined;
