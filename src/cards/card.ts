@@ -144,6 +144,12 @@ export abstract class Card {
         return attrSum;
     }
 
+    /** When this card's health is zero, or its damage meets or exceeds its health, return true */
+    shouldDestroy(): boolean {
+        let attributes: Attributes = this.effective();
+        return (attributes.health <= 0 || attributes.health <= attributes.damage)
+    }
+
     /** Resets this card - takes off all tokens, resets all attributes, etc.  Happens when putting back into hand, putting into discard, and so on */
     resetCard(): void {
         this.controller = this.owner;

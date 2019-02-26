@@ -1,6 +1,7 @@
 
 import { Game } from '../game';
 import { Card, ArrivesHandler, DiesHandler, LeavesHandler, UpkeepHandler } from '../cards/card';
+import { CardApi } from '../cards/card_api';
 
 export function choiceAction(game: Game, cardId: string): void {
     let phase = game.phaseStack.topOfStack();
@@ -30,6 +31,9 @@ export function choiceAction(game: Game, cardId: string): void {
             break;
         case 'Upkeep':
             game.addEvent((<UpkeepHandler>card).onUpkeep());
+            break;
+        case 'Destroy':
+            CardApi.destroyCard(Card.idToCardMap.get(mustResolveMap['resolveId']));
             break;
         case 'PlayerPrompt':
         default:

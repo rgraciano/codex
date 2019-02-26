@@ -32,7 +32,7 @@ export class CardApi {
         card.game.phaseStack.addToStack(new Phase('Arrives', [ 'ArrivesChoice' ]));
 
         // Resolve any handlers that happen when a card arrives
-        card.game.markMustResolveForHandlers(card.game.getAllActiveCards(), 'onArrives', map => { map['arrivingCardId'] = card.cardId; return map; });
+        card.game.markMustResolveForCardsWithFnName(card.game.getAllActiveCards(), 'onArrives', map => { map['arrivingCardId'] = card.cardId; return map; });
     }
 
     /** Does everything needed to destroy a card.  Triggers Dies, Leaves Play, & Would Discard. */
@@ -62,7 +62,7 @@ export class CardApi {
        
         /**** DEAD. SO DEAD. ****/
         game.phaseStack.addToStack(new Phase('DiesOrLeaves', [ 'DiesOrLeavesChoice' ]));
-        game.markMustResolveForHandlers(game.getAllActiveCards(), 'onDies', map => { map['dyingCardId'] = card.cardId; return map; });
+        game.markMustResolveForCardsWithFnName(game.getAllActiveCards(), 'onDies', map => { map['dyingCardId'] = card.cardId; return map; });
 
         CardApi.leavePlay(card, 'Discard', true); // TODO: Add Hero logic, which may also necessitate player choices
 
@@ -85,7 +85,7 @@ export class CardApi {
         if (!afterDies)
             game.phaseStack.addToStack(new Phase('DiesOrLeaves', [ 'DiesOrLeavesChoice' ]));
 
-        game.markMustResolveForHandlers(game.getAllActiveCards(), 'onLeaves', map => { map['leavingCardId'] = card.cardId; return map; });
+        game.markMustResolveForCardsWithFnName(game.getAllActiveCards(), 'onLeaves', map => { map['leavingCardId'] = card.cardId; return map; });
 
         switch (destination) {
             case 'Hand':

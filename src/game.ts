@@ -18,7 +18,7 @@ import { ObjectMap } from './game_server';
 
 export type ServerEvent = RuneEvent | 'Error' | 'ClearPatrolZone' | 'CollectGold' | 'ReadyCard' | 'UpkeepChoices' | 'UpkeepOver' 
 | 'PaidFor' | 'Arrives' | 'TokenOrRune' | 'WouldDie' | 'Scavenger' | 'Technician' | 'DiscardedCards' | 'Graveyard' | 'PutInHand' | 'ReturnToHeroZone'
-| 'BuildingDamage' | 'GameOver' | 'BuildingDestroyed';
+| 'BuildingDamage' | 'GameOver' | 'BuildingDestroyed' | 'CardToDestroy';
 export type RuneEvent =  'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
 export class Game {
@@ -91,6 +91,18 @@ export class Game {
         // check everything in play to see if anything has died. if it has, create a new phase like Destroy and have a DestroyChoice
         // for everything we see as dying simultaneously.  cleanUpPhases() should then be able to trigger dies() for our DestroyChoice,
         // which will trigger some stuff and life will go on
+        let cardsToDestroy: Card[] = this.getAllActiveCards().filter(card => 
+            { 
+                if ((card.cardType == 'Hero' || card.cardType == 'Unit') && card.shouldDestroy()) {
+                    results.push(new EventDescriptor('CardToDestroy', card.name + ' will be destroyed', { cardId: card.cardId }));
+                    return true;
+                }
+            });
+
+        if (cardsToDestroy.length > 0) {
+            this.phaseStack.addToStack(new Phase('Destroy', [ 'DestroyChoice']));
+            this.phaseStack.topOfStack().markMustResolve(cardsToDestroy);
+        }
     }
 
     getBoardAndOpponentBoard(): Array<Board> {
@@ -159,12 +171,12 @@ export class Game {
                                                  this.player2Board.inPlay, this.player2Board.getPatrolZoneAsArray(), this.player2Board.effects);
     }
 
-    markMustResolveForHandlers(space: Card[], fnName: string, setExtraMapParams?: (map: ResolveMap) => ResolveMap) {
+    markMustResolveForCardsWithFnName(space: Card[], fnName: string, setExtraMapParams?: (map: ResolveMap) => ResolveMap) {
         // find all of the cards with handlers that match
         let foundCards: Card[] = Game.findCardsWithFunction(space, fnName);
     
         // add all of those cards to the list of allowedActions, automatically removing those that were already resolved and ensuring there are no duplicates
-        this.phaseStack.topOfStack().markMustResolve(foundCards, fnName, setExtraMapParams);
+        this.phaseStack.topOfStack().markMustResolve(foundCards, setExtraMapParams);
     }
 
     /** 
