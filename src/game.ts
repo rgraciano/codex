@@ -77,24 +77,27 @@ export class Game {
         let results: EventDescriptor[] = [];
 
         // check base buildings. if base blown up, gg!
-        results = board.destroyIfRequired('Base');
-        if (results) {
+        let baseDestroyed = board.destroyIfRequired('Base');
+        if (baseDestroyed) {
             this.phaseStack.addToStack(new Phase('GameOver', []));
-            return results; // if the game is over, no need to figure everything else out. just end it
+            return baseDestroyed; // if the game is over, no need to figure everything else out. just end it
         }
         
         // check other buildings. if health is <= 0, destroy() and do damage to base
         let buildingsToCheck: BuildingType[] = <BuildingType[]>[ 'Tech 1', 'Tech 2', 'Tech 3', 'AddOn' ];
 
-        for (let building in buildingsToCheck) 
-            results.push(...board.destroyIfRequired(<BuildingType>building));
+        for (let building in buildingsToCheck) {
+            let bldgDestroyed = board.destroyIfRequired(<BuildingType>building);
+            if (bldgDestroyed)
+                results.push(...bldgDestroyed);
+        }
 
         // check everything in play to see if anything has died. if it has, create a new phase like Destroy and have a DestroyChoice
         // for everything we see as dying simultaneously.  cleanUpPhases() should then be able to trigger dies() for our DestroyChoice,
         // which will trigger some stuff and life will go on
         let cardsToDestroy: Card[] = this.getAllActiveCards().filter(card => 
             { 
-                if ((card.cardType == 'Hero' || card.cardType == 'Unit') && card.shouldDestroy()) {
+                if (card && (card.cardType == 'Hero' || card.cardType == 'Unit') && card.shouldDestroy()) {
                     results.push(new EventDescriptor('CardToDestroy', card.name + ' will be destroyed', { cardId: card.cardId }));
                     return true;
                 }
@@ -116,11 +119,11 @@ export class Game {
     }
 
     addEvent(event: EventDescriptor): void {
-        this.events.push(event);
+        if (event) this.events.push(event);
     }
 
     addEvents(events: Array<EventDescriptor>): void {
-        this.events.push(...events);
+        if (events && events.length > 0) this.events.push(...events);
     }
 
     /** Find a card, wherever it may be, and remove it from play. Card MUST be removed or this will throw an error */

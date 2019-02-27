@@ -65,7 +65,7 @@ export class GameServer {
     }
 
     // TODO: likely to replace the skeleton with some framework here...
-    action(action: ActionName, context: StringMap): string {
+    action(action: ActionName, context: StringMap): ObjectMap {
         if (action == 'NewGame') {
             this.game = new Game();
             this.game.setupNewGame();
@@ -129,10 +129,10 @@ export class GameServer {
     }
 
     responseError(error: string) {
-        return JSON.stringify( { error: error } );
+        return { error: error };
     }
 
-    wrapUp(): string {
+    wrapUp(): ObjectMap {
         this.cleanUpPhases();
         return this.responseSuccess();
     }
@@ -171,10 +171,10 @@ export class GameServer {
         } while(clearedEmptyPhase || clearedSingleAction);
     }
 
-    responseSuccess(): string {
-        let stringifiedGameState = JSON.stringify(this.game.serialize());
-        this.saveGameState(stringifiedGameState);
-        return stringifiedGameState;
+    responseSuccess(): ObjectMap {
+        let serialized = this.game.serialize();
+        this.saveGameState(JSON.stringify(serialized));
+        return serialized;
     }
 
     static requiredAlnumProperties(context: StringMap, requiredList: Array<string>): StringMap {

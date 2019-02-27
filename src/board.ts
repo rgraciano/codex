@@ -95,22 +95,22 @@ export class Board {
         return board;
     }
 
-    destroyIfRequired(building: BuildingType): EventDescriptor[]  {
+    destroyIfRequired(building: BuildingType): (EventDescriptor[] | false) {
         switch (building) {
             case 'Base':
-                return this.base.shouldBeDestroyed() ? this.destroyBuilding('Base') : [];
+                return this.base.shouldBeDestroyed() ? this.destroyBuilding('Base') : false;
                     
             case 'Tech 1':
-                return (this.tech1 && this.tech1.shouldBeDestroyed()) ? this.destroyBuilding('Tech 1') : [];
+                return (this.tech1 && this.tech1.shouldBeDestroyed()) ? this.destroyBuilding('Tech 1') : false;
 
             case 'Tech 2':
-                return (this.tech2 && this.tech2.shouldBeDestroyed()) ? this.destroyBuilding('Tech 2') : [];
+                return (this.tech2 && this.tech2.shouldBeDestroyed()) ? this.destroyBuilding('Tech 2') : false;
 
             case 'Tech 3':
-                return (this.tech3 && this.tech3.shouldBeDestroyed()) ? this.destroyBuilding('Tech 3') : [];
+                return (this.tech3 && this.tech3.shouldBeDestroyed()) ? this.destroyBuilding('Tech 3') : false;
 
             case 'AddOn':
-                return (this.addOn && this.addOn.shouldBeDestroyed()) ? this.destroyBuilding('AddOn') : [];
+                return (this.addOn && this.addOn.shouldBeDestroyed()) ? this.destroyBuilding('AddOn') : false;
             
             default:
                 return [];

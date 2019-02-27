@@ -18,7 +18,9 @@
   "homepage": "https://github.com/rgraciano/codex#readme",
   "dependencies": {
     "@types/node": "^11.9.0",
+    "@types/restify": "^7.2.8",
     "anyid": "^1.0.6",
-    "reflect-metadata": "^0.1.13"
+    "reflect-metadata": "^0.1.13",
+    "restify": "^8.0.0"
   }
 }
