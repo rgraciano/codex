@@ -32,6 +32,8 @@ export class Game {
 
     events: Array<EventDescriptor> = [];
 
+    gameStateId: string; // used at the end of turn to save this game
+
     setupNewGame() {
         this.player1Board = new Board(1);
         this.player2Board = new Board(2);
@@ -60,7 +62,8 @@ export class Game {
             activePlayer: this.activePlayer,
             player1Board: this.player1Board.serialize(),
             player2Board: this.player2Board.serialize(),
-            phaseStack: this.phaseStack.serialize()
+            phaseStack: this.phaseStack.serialize(),
+            gameStateId: this.gameStateId
         };
     }
 

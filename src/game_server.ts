@@ -39,21 +39,17 @@ export class GameServer {
     // Unique link to the current game state, can be passed around.  We encourage the user to pass this around at
     // beginning of turn, but technically you could pass it around whenever you want.  We also use this to branch 
     // (create multiple game states/outcomes) and avoid collisions.
-    gameStateId: string;
 
     private generateGameStateId(): string {
-        this.gameStateId = anyid().encode('Aa0').length(10).random().id();
-        return this.gameStateId;
+        return anyid().encode('Aa0').length(10).random().id();
     }
 
     /** Creates a new game state ID for the current game state and saves it to the filesystem
      * TODO: Move this to something cloud-friendly; FS is fine for debugging
      */
-    private saveGameState(stringifiedGameState: string): string {
-        this.generateGameStateId();
+    private saveGameState(gameStateId: string, serializedState: ObjectMap) {
         // TODO: error handling would be good
-        fs.writeFileSync('e:\\saved_gamestates\\' + this.gameStateId + '.json', stringifiedGameState);
-        return this.gameStateId;
+        fs.writeFileSync('e:\\saved_gamestates\\' + gameStateId + '.json', JSON.stringify(serializedState));
     }
 
     loadGameState(gameStateId: string) {
@@ -172,8 +168,9 @@ export class GameServer {
     }
 
     responseSuccess(): ObjectMap {
+        this.game.gameStateId = this.generateGameStateId();
         let serialized = this.game.serialize();
-        this.saveGameState(JSON.stringify(serialized));
+        this.saveGameState(this.game.gameStateId, serialized);
         return serialized;
     }
 
