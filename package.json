@@ -19,8 +19,10 @@
   "dependencies": {
     "@types/node": "^11.9.0",
     "@types/restify": "^7.2.8",
+    "@types/restify-cors-middleware": "^1.0.1",
     "anyid": "^1.0.6",
     "reflect-metadata": "^0.1.13",
-    "restify": "^8.0.0"
+    "restify": "^8.0.0",
+    "restify-cors-middleware": "^1.1.1"
   }
 }

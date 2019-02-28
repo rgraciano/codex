@@ -70,7 +70,7 @@ export class GameServer {
             return this.wrapUp();
         }
         
-        let state: (string | boolean) = GameServer.getAlNumProperty(context, 'state');
+        let state: (string | boolean) = GameServer.getAlNumProperty(context, 'gameStateId');
         
         if (!state) {
             return this.responseError('No state specified');

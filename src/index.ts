@@ -1,5 +1,6 @@
 
 import { Request, Response, Next } from 'restify';
+import * as corsMiddleware from 'restify-cors-middleware';
 import * as restify from 'restify';
 import { GameServer } from './game_server';
 
@@ -8,9 +9,6 @@ let gameServer = new GameServer();
 function handleNewGame(req: Request, res: Response, next: Next) {
     let serializedGame = gameServer.action('NewGame', {});
     res.contentType = 'application/json';
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "X-Requested-With");
-    res.header("Access-Control-Allow-Credentials", true);
     res.send(serializedGame);
     next();
 };
@@ -32,15 +30,19 @@ function handleAction(req: Request, res: Response, next: Next) {
         serializedGame = { error: 'No action' };
     
     res.contentType = 'application/json';
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "X-Requested-With");
-    res.header("Access-Control-Allow-Credentials", true);
     res.send(serializedGame);
     next();
 }
 
 let server = restify.createServer();
 
+const cors = corsMiddleware({
+    origins: ['*'],
+    allowHeaders: ['X-Requested-With'],
+    exposeHeaders: []
+});
+server.pre(cors.preflight);
+server.use(cors.actual);
 server.use(restify.plugins.bodyParser({
     maxBodySize: 1000000,
     mapParams: true,
@@ -51,6 +53,7 @@ server.use(restify.plugins.bodyParser({
     rejectUnknown: true,
     reviver: JSON
  }));
+
 server.get('/newgame', handleNewGame);
 server.post('/action', handleAction);
 server.listen(8080, function() {
