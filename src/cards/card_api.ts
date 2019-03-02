@@ -30,9 +30,10 @@ export class CardApi {
 
         /**** ARRIVES PHASE ****/
         card.game.phaseStack.addToStack(new Phase('Arrives', [ 'ArrivesChoice' ]));
+        card.game.phaseStack.topOfStack().extraState.arrivingCardId = card.cardId;
 
         // Resolve any handlers that happen when a card arrives
-        card.game.markMustResolveForCardsWithFnName(card.game.getAllActiveCards(), 'onArrives', { arrivingCardId: card.cardId });
+        card.game.markMustResolveForCardsWithFnName(card.game.getAllActiveCards(), 'onArrives');
     }
 
     /** Does everything needed to destroy a card.  Triggers Dies, Leaves Play, & Would Discard. */
@@ -62,7 +63,8 @@ export class CardApi {
        
         /**** DEAD. SO DEAD. ****/
         game.phaseStack.addToStack(new Phase('DiesOrLeaves', [ 'DiesOrLeavesChoice' ]));
-        game.markMustResolveForCardsWithFnName(game.getAllActiveCards(), 'onDies', { dyingCardId: card.cardId });
+        game.phaseStack.topOfStack().extraState.dyingCardId = card.cardId;
+        game.markMustResolveForCardsWithFnName(game.getAllActiveCards(), 'onDies');
 
         CardApi.leavePlay(card, 'Discard', true); // TODO: Add Hero logic, which may also necessitate player choices
 
@@ -82,10 +84,12 @@ export class CardApi {
     static leavePlay(card: Card, destination: Destination, afterDies = false) {
         let game: Game = card.game;
 
-        if (!afterDies)
+        if (!afterDies) {
             game.phaseStack.addToStack(new Phase('DiesOrLeaves', [ 'DiesOrLeavesChoice' ]));
+            game.phaseStack.topOfStack().extraState.dyingCardId = card.cardId;
+        }
 
-        game.markMustResolveForCardsWithFnName(game.getAllActiveCards(), 'onLeaves',  { leavingCardId: card.cardId });
+        game.markMustResolveForCardsWithFnName(game.getAllActiveCards(), 'onLeaves');
 
         switch (destination) {
             case 'Hand':

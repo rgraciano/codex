@@ -15,31 +15,32 @@ export function choiceAction(game: Game, cardId: string, action: ActionName, con
         throw new Error('Could not find card ' + cardId);
     }
 
-    let mustResolveMap = phase.getMustResolveMapForCardId(cardId);
-
-    if (!mustResolveMap)
+    if (!phase.ifToResolve(cardId))
         throw new Error('No resolve map in this phase');
 
     switch (phase.name) {
         case 'Arrives':
-            game.addEvent((<ArrivesHandler>card).onArrives(Card.idToCardMap.get(<string>mustResolveMap['arrivingCardId'])));
+            game.addEvent((<ArrivesHandler>card).onArrives(Card.idToCardMap.get(phase.extraState['arrivingCardId'])));
             break;
         case 'DiesOrLeaves':
-            if (mustResolveMap['dyingCardId'])
-                game.addEvent((<DiesHandler>card).onDies(Card.idToCardMap.get(<string>mustResolveMap['dyingCardId'])));
-            else if (mustResolveMap['leavingCardId'])
-                game.addEvent((<LeavesHandler>card).onLeaves(Card.idToCardMap.get(<string>mustResolveMap['leavingCardId'])));
-            else
-                throw new Error('Could not find corresponding ID for DiesOrLeaves');
+            if (!phase.actionsForIds['cardId'])
+                throw new Error('Card ' + cardId + ' is not valid for DiesOrLeaves');
+            
+            let dyingOrLeavingCard = Card.idToCardMap.get(phase.extraState['dyingCardId']);
+
+            if (phase.actionsForIds['cardId'] == 'onDies') 
+                game.addEvent((<DiesHandler>card).onDies(dyingOrLeavingCard));
+            else 
+                game.addEvent((<LeavesHandler>card).onLeaves(dyingOrLeavingCard));
             break;
         case 'Upkeep':
             game.addEvent((<UpkeepHandler>card).onUpkeep());
             break;
         case 'Destroy':
-            CardApi.destroyCard(Card.idToCardMap.get(<string>mustResolveMap['resolveId']));
+            CardApi.destroyCard(Card.idToCardMap.get(cardId));
             break;
         case 'Attack':
-            game.addEvent((<AttacksHandler>card).onAttacks(Card.idToCardMap.get(<string>mustResolveMap['attackingCardId'])));
+            game.addEvent((<AttacksHandler>card).onAttacks(Card.idToCardMap.get(phase.extraState['attackingCardId'])));
             break;
         case 'PrepareAttackTargets':
             if (action == 'AttackCardsOrBuildingsChoice') {

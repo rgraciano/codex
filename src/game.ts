@@ -3,7 +3,7 @@
 
 import 'reflect-metadata';
 
-import { PhaseStack, Phase, ResolveMap } from './actions/phase';
+import { PhaseStack, Phase } from './actions/phase';
 
 import { Board, BoardBuilding, BuildingType } from './board';
 
@@ -108,7 +108,7 @@ export class Game {
 
         if (cardsToDestroy.length > 0) {
             this.phaseStack.addToStack(new Phase('Destroy', [ 'DestroyChoice']));
-            this.phaseStack.topOfStack().markMustResolve(cardsToDestroy);
+            this.phaseStack.topOfStack().markCardsToResolve(cardsToDestroy);
         }
     }
 
@@ -204,12 +204,12 @@ export class Game {
         })
     }
 
-    markMustResolveForCardsWithFnName(space: Card[], fnName: string, setExtraMapParams?: ResolveMap) {
+    markMustResolveForCardsWithFnName(space: Card[], fnName: string) {
         // find all of the cards with handlers that match
         let foundCards: Card[] = Game.findCardsWithFunction(space, fnName);
     
         // add all of those cards to the list of allowedActions, automatically removing those that were already resolved and ensuring there are no duplicates
-        this.phaseStack.topOfStack().markMustResolve(foundCards, setExtraMapParams);
+        this.phaseStack.topOfStack().markCardsToResolve(foundCards, fnName);
     }
 
     /** 

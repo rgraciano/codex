@@ -45,13 +45,14 @@ export function attackAction(attackerId: string) {
         // when the attack handlers are all done
 
     game.phaseStack.addToStack(new Phase('PrepareAttackTargets', [ 'PrepareAttackTargets' ]));
-    game.phaseStack.topOfStack().markMustResolve([ attacker ]);
+    game.phaseStack.topOfStack().markIdsToResolve([ attacker.cardId ]);
 
     // enter phase for attack handlers
     // fire attacks, obliterate handlers. cards may modify attacks, e.g. safe attacking, giving temporary 'while attacking' stats
         // .. how to handle armor? we need to track armor in the duration of a turn
     game.phaseStack.addToStack(new Phase('Attack', [ 'AttacksChoice' ]));
-    game.markMustResolveForCardsWithFnName(game.getAllActiveCards(), 'onAttacks', { attackingCardId: attacker.cardId })
+    game.phaseStack.topOfStack().extraState.attackingCardId = attacker.cardId;
+    game.markMustResolveForCardsWithFnName(game.getAllActiveCards(), 'onAttacks')
 }
 
 /** Second phase of an attack: prepare a list of possible defenders and ask the user to choose their attack target */
@@ -114,13 +115,13 @@ export function prepareAttackTargetsAction(attackerId: string) {
 
         // check squad leader first
         if (patrollersAbleToBlock.find(patroller => patroller === attacker.oppositionalControllerBoard.patrolZone.squadLeader)) {
-            game.phaseStack.topOfStack().markMustResolve([ attacker ], { validCardTargetIds: [ attacker.oppositionalControllerBoard.patrolZone.squadLeader.cardId ] });
+            game.phaseStack.topOfStack().markIdsToResolve([ attacker.oppositionalControllerBoard.patrolZone.squadLeader.cardId ] );
             game.addEvent(new EventDescriptor('PossibleAttackTargets', 'The squad leader must be attacked first', { buldings: false, validCardTargetIds: [ attacker.oppositionalControllerBoard.patrolZone.squadLeader.cardId ] }))
         }
         // if no squad leader can block, all patrollers are fair game
         else {
             let patrollerIds = patrollersAbleToBlock.map(card => card.cardId);
-            game.phaseStack.topOfStack().markMustResolve([ attacker ], { validCardTargetIds: patrollerIds });
+            game.phaseStack.topOfStack().markIdsToResolve(patrollerIds);
             game.addEvent(new EventDescriptor('PossibleAttackTargets', 'A patroller must be attacked first', { buildings: true, validCardTargetIds: patrollerIds }))
         }
     }
@@ -134,7 +135,7 @@ function sendAllTargetsAreValid(attacker: Character) {
     let defenderIds = defenderAttackableCards.map(localCard => localCard.cardId);
 
     game.phaseStack.addToStack(new Phase('AttackDestination', [ 'AttackCardsOrBuildingsChoice' ]));
-    game.phaseStack.topOfStack().markMustResolve([ attacker ], { validCardTargetIds: defenderIds });
+    game.phaseStack.topOfStack().markIdsToResolve(defenderIds);
     game.addEvent(new EventDescriptor('PossibleAttackTargets', 'No blockers are available. All attack destinations are valid', { buildings: true, validCardTargetIds: [ defenderIds ]}));
 }
 

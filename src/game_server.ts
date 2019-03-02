@@ -8,6 +8,8 @@ import { playCardAction } from './actions/play_card';
 import { choiceAction } from './actions/choice';
 import { attackAction, prepareAttackTargetsAction } from './actions/attack';
 
+const savePath = '/Users/rg/gamestates';
+
 /*
 Here's how the game server works:
 
@@ -49,11 +51,11 @@ export class GameServer {
      */
     private saveGameState(gameStateId: string, serializedState: ObjectMap) {
         // TODO: error handling would be good
-        fs.writeFileSync('e:\\saved_gamestates\\' + gameStateId + '.json', JSON.stringify(serializedState));
+        fs.writeFileSync(savePath + '/' + gameStateId + '.json', JSON.stringify(serializedState));
     }
 
     loadGameState(gameStateId: string) {
-        let path = 'e:\\saved_gamestates\\' + gameStateId + '.json';
+        let path = savePath + '/' + gameStateId + '.json';
         if (fs.existsSync(path))
             this.game = Game.deserialize(JSON.parse(fs.readFileSync(path, 'utf-8')));
         else
@@ -158,8 +160,8 @@ export class GameServer {
             if (topOfStack.name == 'GameOver')
                 return;
 
-            if (topOfStack.name != 'PlayerPrompt' && topOfStack.validActions.length === 1 && topOfStack.mustResolveMaps.length === 1) {
-                this.runAction(topOfStack.validActions[0], <string>topOfStack.mustResolveMaps[0]['resolveId'], {});
+            if (topOfStack.name != 'PlayerPrompt' && topOfStack.validActions.length === 1 && topOfStack.idsToResolve.length === 1) {
+                this.runAction(topOfStack.validActions[0], <string>topOfStack.idsToResolve[0], {});
                 clearedSingleAction = true;
             }
             else 

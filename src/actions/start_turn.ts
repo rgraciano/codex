@@ -46,7 +46,7 @@ export function upkeepChoiceAction(game: Game, cardId: string): void {
 
     let phase = game.phaseStack.topOfStack();
 
-    if (phase.name != 'Upkeep' || !phase.ifMustResolve(cardId)) {
+    if (phase.name != 'Upkeep' || !phase.ifToResolve(cardId)) {
         game.addEvent(new EventDescriptor('Error', 'Upkeep is not valid for ID ' + cardId));
         return;
     }

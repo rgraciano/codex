@@ -1,16 +1,22 @@
 
 import { Card } from '../cards/card';
-import { ObjectMap } from '../game_server';
+import { ObjectMap, StringMap } from '../game_server';
 
+// Phase names have no meaning to the client. They could actually be empty or removed altogether, 
+// but naming the phases makes it a little easier to debug the stack and follow what's going on.
+// The game server does use phase names a little, primarily to figure out how many actions it should
+// currently be seeing and whether or not it can auto-resolve this phase.
 export type PhaseName = 'PlayerTurn' | 'NewGame' | 'Upkeep' | 'Arrives' | 'DiesOrLeaves' | 'PlayerPrompt' 
                         | 'GameOver' | 'Destroy' | 'Attack' | 'PrepareAttackTargets' | 'AttackDestination';                        
+
+// The client uses Actions to understand what API calls are currently valid, and how to present possible actions to the user.
 export type ActionName = 'NewGame' | 'UpkeepChoice' | 'ArrivesChoice' | 'DiesOrLeavesChoice' | 'DestroyChoice' 
                         | 'AttacksChoice' | 'PrepareAttackTargets' | 'AttackCardsChoice' | 'AttackCardsOrBuildingsChoice' 
                         | TurnActionName;
 export type TurnActionName = 'PlayCard' | 'Worker' | 'Tech' | 'BuildTech' | 'BuildAddOn' | 'Patrol' | 'Ability' 
                         | 'Attack' | 'HeroSummon' | 'HeroLevel' | 'EndTurn';
 
-// note patrol and un-patrol will need to be options, or attack/ability/exhaust will need to check if patrolling and
+// note patrol and un-patrol will BOTH need to be options, or attack/ability/exhaust will need to check if patrolling and
 // remove from that state
 
 /**
@@ -61,7 +67,7 @@ export class PhaseStack {
             switch (phase.name) {
                 case 'Upkeep':
                 case 'Arrives':
-                    if (phase.mustResolveMaps.length === 0) {
+                    if (phase.idsToResolve.length === 0) {
                         return false;
                     }
                 default:
@@ -88,11 +94,27 @@ export class Phase {
     * We both keep a list of cards we have to resolve still, 
     * as well as a list of resolved, because we will recalculate the list as we go.
     * 
+    * In some actions, it will be mandatory to resolve all of them to move forward.
+    * In other actions, it will be a choice between things to resolve.
+    * 
+    * The client doesn't need to know or care either way. It highlights everything
+    * in the list, and when the user clicks something in the list, the back-end 
+    * updates the list by either clearing it or removing the option they just resolved.
+    * The client then simply (dumbly) again highlights the whatever is on the list.
+    * 
     * Each map has:
     * 'resolveId' 
     */
-    mustResolveMaps: ResolveMap[] = [];
+    idsToResolve: string[] = [];
     resolvedIds: Array<string> = [];
+    
+    // In some cases, we may do different things based on which ID is selected.
+    // If necessary, we record the thing to do for each ID here.
+    actionsForIds: StringMap = {};
+
+    // This is used to track any information an action needs to carry forward in this phase,
+    // e.g., which attacker we're currently resolving.
+    extraState: StringMap = {};
 
     constructor(name: PhaseName, validActions: Array<ActionName>) {
         this.name = name;
@@ -103,35 +125,32 @@ export class Phase {
         return { 
             name: this.name, 
             validActions: this.validActions,
-            mustResolveMaps: this.mustResolveMaps,
+            idsToResolve: this.idsToResolve,
             resolvedIds: this.resolvedIds
         };
     }
 
     static deserialize(pojo: ObjectMap): Phase {
         let phase = new Phase(<PhaseName>pojo.name, <Array<ActionName>>pojo.validActions);
-        phase.mustResolveMaps = <ResolveMap[]>pojo.mustResolveMaps;
+        phase.idsToResolve = <string[]>pojo.mustResolveMaps;
         phase.resolvedIds = <Array<string>>pojo.resovedIds;
         return phase;
     }
 
-    markMustResolve(cards: Array<Card>, markExtraParams?: ResolveMap): void {
-        this.mustResolveMaps.push(...cards.map(card => {
-            let map = { 
-                resolveId: card.cardId
-            };
-            return markExtraParams ? Object.assign(map, markExtraParams): map;
-        }));
+    markCardsToResolve(cards: Card[], action?: string): void {
+        this.markIdsToResolve(cards.map(card => card.cardId), action);
+    }
+
+    markIdsToResolve(cardIds: string[], action?: string): void {
+        this.idsToResolve.push(...cardIds);
+
+        if (action)
+            cardIds.map(id => this.actionsForIds[id] = action);
     }
 
     /** @returns whether or not card can be found in list of must resolved */
-    ifMustResolve(cardId: string): boolean {
-        return (this.mustResolveMaps.filter(map => map['resolveId'] === cardId)).length > 0;
-    }
-
-    /** @returns Tuple of [cardId, handlerFnName] if found in mustResolve list, or undefined if not */
-    getMustResolveMapForCardId(cardId: string): ResolveMap {
-        return this.mustResolveMaps.find(map => map['resolveId'] === cardId);
+    ifToResolve(cardId: string): boolean {
+        return (this.idsToResolve.filter(thisId => thisId === cardId)).length > 0;
     }
 
     isValidAction(action: ActionName): boolean {
@@ -141,9 +160,9 @@ export class Phase {
     markResolved(cardId: string) {
         this.resolvedIds.push(cardId);
 
-        let index = this.mustResolveMaps.findIndex(map => map['resolveId'] === cardId);
+        let index = this.idsToResolve.findIndex(thisId => thisId === cardId);
         if (index > -1) {
-            this.mustResolveMaps.splice(index, 1);
+            this.idsToResolve.splice(index, 1);
         }
     }
 
@@ -154,7 +173,4 @@ export class Phase {
     finished(): boolean {
         return this.resolvedIds.length === 0;
     }
-}
-export class ResolveMap {
-    [s: string]: Object;
 }
