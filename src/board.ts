@@ -2,12 +2,16 @@
 import { Card, Hero, TechLevel } from './cards/card';
 import { Game, EventDescriptor } from './game';
 import { ObjectMap } from './game_server';
+import { Spec } from './cards/color';
 
 export type BuildingType = 'Base' | 'Tech 1' | 'Tech 2' | 'Tech 3' | 'AddOn';
 
 /** This class will essentially represent an entire player state */
 export class Board {
     playerNumber: number;
+    chosenSpecs: Spec[];
+    multiColor: boolean = false;
+
     turnCount: number = 0;
 
     gold: number = 0;
@@ -47,6 +51,9 @@ export class Board {
     serialize(): ObjectMap {
         let pojo: ObjectMap = {
             playerNumber: this.playerNumber,
+            chosenSpecs: this.chosenSpecs,
+            multiColor: this.multiColor,
+
             turnCount: this.turnCount,
             gold: this.gold,
             base: this.base.serialize(),
@@ -72,6 +79,9 @@ export class Board {
 
     static deserialize(pojo: ObjectMap, game: Game): Board {
         let board = new Board(<number>pojo.playerNumber);
+
+        board.chosenSpecs = <Spec[]>pojo.chosenSpecs;
+        board.multiColor = <boolean>pojo.boolean;
 
         board.turnCount = <number>pojo.turnCount;
         board.gold = <number>pojo.gold;
@@ -328,7 +338,6 @@ class AddOn extends BoardBuilding {
     }
 }
 type AddOnType = 'Tower' | 'Heroes Hall' | 'Surplus' | 'Tech Lab';
-type Spec = ''; // TODO: This will move...
 
 class TechBuilding extends BoardBuilding {
     level: number;

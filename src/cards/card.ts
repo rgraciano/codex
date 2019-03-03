@@ -7,21 +7,22 @@ import * as Color from './color';
 
 export type CardType = "Spell" | "Hero" | "Unit" | "Building" | "Upgrade" | "Effect" | "None";
 export type TechLevel = "Tech 0" | "Tech 1" | "Tech 2" | "Tech 3";
+export type SpellLevel = "Tech 0" | "Normal" | "Ultimate"; 
 export type SpellType = "Burn" | "Buff" | "Debuff";
 export type FlavorType = "Effect" | "QA" | "Mercenary" | "Virtuoso" | "Drunkard" | "Cute Animal" | "Flagbearer" | "Ninja" | "Lizardman" | "Beast";
 
 export abstract class Card {
 
     readonly abstract cardType: CardType;
+    
+    readonly abstract techLevel: TechLevel;
     readonly abstract color: Color.ColorName;
+    readonly abstract spec: Color.Spec;
     
     readonly abstract name: string;
     readonly abstract flavorType: FlavorType;
 
-    abstract techLevel: TechLevel;
-    abstract spec: Color.Spec;
-
-    // We need some way to identify active cards.  Note that we re-generate card objects when they are discarded
+    // Identifies cards uniquely, for client<->server communication
     readonly cardId: string;
 
     /** Some cards, like Jail or Graveyard, are containers for other cards */
@@ -34,7 +35,8 @@ export abstract class Card {
     owner: number;
     controller: number;
 
-    importPath: string = '';
+    // Path to card javascript file, so we can dynamically import and instantiate cards
+    abstract importPath: string = '';
 
     // Keeping references here seems janky, but we need them sooo often. Being able to reverse-lookup which board owns this card is useful consistently
     game: Game;
@@ -76,6 +78,7 @@ export abstract class Card {
         return {
             constructorName: this.constructor.name,
             importPath: this.importPath,
+            techLevel: this.techLevel,
             cardType: this.cardType, // note that some of these things don't need to be saved for server state, but the client uses them so we serialize them
             color: this.color,
             name: this.name,
@@ -99,6 +102,7 @@ export abstract class Card {
         return pojoCards.map(pojoCard => Card.deserialize(pojoCard, game));
     }
 
+    /** Any state implemented by descendants that isn't readonly should be deserialized in here */
     abstract deserializeExtra(pojo: ObjectMap): void;
 
     static deserialize(pojo: ObjectMap, game: Game): Card {
@@ -181,7 +185,6 @@ export abstract class Card {
         return true;
     }
 
-    // probably needs to be modified for Graveyard etc at some point
     canPlay(): boolean {
         if (!this.game.cardIsInHand(this.controllerBoard, this)) {
             return false;
@@ -192,11 +195,16 @@ export abstract class Card {
         if (attrs.cost > this.controllerBoard.gold)
             return false;
         
-        if (this.techLevel && this.techLevel.startsWith('Tech') && !this.controllerBoard.techBuildingIsActive(this.techLevel))
+        // most cards have this basic tech check
+        if ((this.cardType != 'Spell' && this.cardType != 'Hero') 
+                && this.techLevel && this.techLevel.startsWith('Tech') 
+                && !this.controllerBoard.techBuildingIsActive(this.techLevel))
             return false;
 
+        // to play a hero, max heroes must not be exceeded, and this hero can't have died recently or otherwise been made unavailable
         if (this.cardType == 'Hero') {
             let hero: Hero = <Hero><unknown>this;
+
             let heroesInPlay: number = this.game.getAllActiveCards(this.controllerBoard).filter(h => h.cardType == 'Hero').length;
             let maxHeroesInPlay = 1;
             
@@ -210,6 +218,33 @@ export abstract class Card {
                 maxHeroesInPlay = (maxHeroesInPlay == 3) ? 3 : maxHeroesInPlay + 1;
 
             return hero.turnsTilAvailable === 0 && heroesInPlay < maxHeroesInPlay;
+        }
+
+        // spells can be played if a hero of the same type is out there, or if we have any hero out there for tech 0 spells
+        if (this.cardType == 'Spell') {
+            let heroesInPlay: Hero[] = <Hero[]>this.game.getAllActiveCards(this.controllerBoard).filter(h => (h.cardType == 'Hero'));
+
+            // when no heroes in play, we can't cast spells
+            if (heroesInPlay.length === 0)
+                return false;
+
+            // we can always cast tech0. note there's a gold penalty for multi-color decks, but that's already handled
+            // by the Spell class in its cost calculation
+            if (this.techLevel == 'Tech 0') {
+                return true;
+            }
+
+            // for all other spells, the spec must match
+            let heroesOfMatchingSpec = heroesInPlay.filter(h => (h.spec == this.spec));
+            if (heroesOfMatchingSpec.length < 1)
+                return false;
+
+            // finally for ultimate spells, the hero of matching spec must be able to cast them
+            let spell: Spell = <Spell><unknown>this;
+            if (spell.spellLevel == 'Ultimate')
+                return (heroesOfMatchingSpec.filter(h => h.canCastUltimate()).length > 0);
+            else
+                return true;
         }
     }
 
@@ -269,25 +304,50 @@ export abstract class Card {
 
 // TODO
 export abstract class Spell extends Card {
-    cardType: CardType = "Spell";
+    readonly cardType: CardType = "Spell";
+    
+    readonly abstract spellLevel: SpellLevel;
+    
+    serialize(): ObjectMap {
+        let pojo = super.serialize();
+        pojo.spellLevel = this.spellLevel;
+        return pojo;
+    }
+
     deserializeExtra(pojo: ObjectMap): void {}
+
+    effective(): Attributes {
+        let attrs = super.effective();
+
+        if (!this.controllerBoard.multiColor || !(this.techLevel == 'Tech 0'))
+            return attrs;
+
+        // we only have Tech 0 spells for our chosen starting color, and if we're multi-color,
+        // casting them with a different colored hero costs 1 extra gold
+        let sameColorHeroes = this.game.getAllActiveCards(this.controllerBoard).filter(h => (h.cardType == 'Hero' && (h.color == this.color)));
+
+        if (sameColorHeroes.length === 0)
+            attrs.cost++;
+        
+        return attrs;
+    }
 }
 
 // TODO
 export abstract class Upgrade extends Card {
-    cardType: CardType = "Upgrade";
+    readonly cardType: CardType = "Upgrade";
     deserializeExtra(pojo: ObjectMap): void {}
 }
 
 // TODO
 export abstract class Building extends Card {
-    cardType: CardType = 'Building';
+    readonly cardType: CardType = 'Building';
     deserializeExtra(pojo: ObjectMap): void {}
 }
 
 /** Base class for heroes and units */
 export abstract class Character extends Card {
-    readonly attacksPerTurn: number = 1;
+    attacksPerTurn: number = 1;
 
     serialize(): ObjectMap {
         let pojo = super.serialize();
@@ -295,6 +355,10 @@ export abstract class Character extends Card {
         pojo.canAttack = this.canAttack();
         pojo.canPatrol = this.canPatrol();
         return pojo;
+    }
+
+    deserializeExtra(pojo: ObjectMap) {
+        this.attacksPerTurn = <number>pojo.attacksPerTurn; // in case this can be modified by cards
     }
 
     canAttack(): boolean {
@@ -307,16 +371,13 @@ export abstract class Character extends Card {
 }
 
 export abstract class Unit extends Character {
-    abstract techLevel: TechLevel;
     readonly isToken: boolean = false;
 
-    cardType: CardType = "Unit";
+    readonly cardType: CardType = "Unit";
 
     serialize(): ObjectMap {
         let pojo = super.serialize();
-        pojo.techLevel = this.techLevel;
         pojo.isToken = this.isToken;
-        pojo.attacksPerTurn = this.attacksPerTurn;
         return pojo;
     }
 
@@ -325,21 +386,34 @@ export abstract class Unit extends Character {
 
 // TODO
 export abstract class Hero extends Character {
-    abstract level: number;
-    turnsTilAvailable: number = 0;
+    readonly cardType: CardType = "Hero";
 
-    cardType: CardType = "Hero";
+    level: number = 1;
+
+    readonly abstract midLevel: number;
+    readonly abstract maxLevel: number;
+
+    turnsTilAvailable: number = 0;
+    turnsTilCastUltimate: number = 1; // some heroes may set this to 0, e.g. Prynn
 
     serialize(): ObjectMap {
         let pojo = super.serialize();
         pojo.level = this.level;
+        pojo.midLevel = this.midLevel;
+        pojo.maxLevel = this.maxLevel;
         pojo.turnsTilAvailable = this.turnsTilAvailable;
+        pojo.turnsTilCastUltimate = this.turnsTilCastUltimate;
         return pojo;
     }
 
     deserializeExtra(pojo: ObjectMap): void {
         this.level = <number>pojo.level;
         this.turnsTilAvailable = <number>pojo.turnsTilAvailable;
+        this.turnsTilCastUltimate = <number>pojo.turnsTilCastUltimate;
+    }
+
+    canCastUltimate(): boolean {
+        return this.level == this.maxLevel && this.turnsTilCastUltimate === 0;
     }
 
     markCantBeSummonedNextTurn() {

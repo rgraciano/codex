@@ -19,11 +19,16 @@ export function startTurnAction(game: Game): void {
     // ready everything
     game.addEvents(readyAllCards(game, board));
 
-    // mark recently deceased heroes as being one turn closer to available
+    // mark recently deceased heroes as being one turn closer to available,
+    // and heroes that were max leveled as being able to cast ultimate
     board.heroZone.map(hero => 
         { 
             if (hero.turnsTilAvailable > 0)
                 hero.turnsTilAvailable--;
+            
+            if (hero.level == hero.maxLevel && hero.turnsTilCastUltimate > 0)
+                hero.turnsTilCastUltimate--;
+
             return hero;
         });
 
