@@ -195,12 +195,6 @@ export abstract class Card {
         if (attrs.cost > this.controllerBoard.gold)
             return false;
         
-        // most cards have this basic tech check
-        if ((this.cardType != 'Spell' && this.cardType != 'Hero') 
-                && this.techLevel && this.techLevel.startsWith('Tech') 
-                && !this.controllerBoard.techBuildingIsActive(this.techLevel))
-            return false;
-
         // to play a hero, max heroes must not be exceeded, and this hero can't have died recently or otherwise been made unavailable
         if (this.cardType == 'Hero') {
             let hero: Hero = <Hero><unknown>this;
@@ -221,7 +215,7 @@ export abstract class Card {
         }
 
         // spells can be played if a hero of the same type is out there, or if we have any hero out there for tech 0 spells
-        if (this.cardType == 'Spell') {
+        else if (this.cardType == 'Spell') {
             let heroesInPlay: Hero[] = <Hero[]>this.game.getAllActiveCards(this.controllerBoard).filter(h => (h.cardType == 'Hero'));
 
             // when no heroes in play, we can't cast spells
@@ -245,6 +239,22 @@ export abstract class Card {
                 return (heroesOfMatchingSpec.filter(h => h.canCastUltimate()).length > 0);
             else
                 return true;
+        }
+
+        // for all other cards, we just check the tech level
+        else {
+            if (this.techLevel == 'Tech 0')
+                return true;
+
+            if (!this.controllerBoard.techBuildingIsActive(this.techLevel))
+                return false;
+
+            if (this.techLevel == 'Tech 2' || this.techLevel == 'Tech 3') {
+                if (this.controllerBoard.tech2.spec == this.spec)
+                    return true;
+                else return (this.controllerBoard.addOnIsActive() && this.controllerBoard.addOn.addOnType == 'Tech Lab' 
+                        && this.controllerBoard.addOn.techLabSpec == this.spec)
+            }
         }
     }
 
@@ -302,7 +312,6 @@ export abstract class Card {
     }
 }
 
-// TODO
 export abstract class Spell extends Card {
     readonly cardType: CardType = "Spell";
     
@@ -384,7 +393,6 @@ export abstract class Unit extends Character {
     deserializeExtra(pojo: ObjectMap): void {}
 }
 
-// TODO
 export abstract class Hero extends Character {
     readonly cardType: CardType = "Hero";
 

@@ -171,6 +171,10 @@ export class Board {
         return true;
     }
 
+    addOnIsActive(): boolean {
+        return this.addOn && !this.addOn.constructionInProgress && !this.addOn.destroyed && (this.addOn.health > 0);
+    }
+
     drawCards(howMany: number) {
         // If we need to draw more than we have, shuffle the discard pile.  TODO: Limit to one reshuffle per turn
         if (this.deck.length < howMany) {
@@ -324,7 +328,10 @@ class AddOn extends BoardBuilding {
         let pojo: ObjectMap = super.serialize();
         pojo.addOnType = this.addOnType;
         pojo.towerDetectedThisTurn = this.towerDetectedThisTurn;
-        pojo.techLabSpec = this.techLabSpec;
+        
+        if (this.techLabSpec)
+            pojo.techLabSpec = this.techLabSpec;
+
         return pojo;
     }
 
@@ -333,7 +340,10 @@ class AddOn extends BoardBuilding {
         BoardBuilding.deserializeCommonProperties(ao, pojo);
         ao.addOnType = <AddOnType>pojo.addOnType;
         ao.towerDetectedThisTurn = <boolean>pojo.towerDetectedThisTurn;
-        ao.techLabSpec = <Spec>pojo.techLabSpec;
+        
+        if (pojo.techLabSpec)
+            ao.techLabSpec = <Spec>pojo.techLabSpec;
+
         return ao;
     }
 }
@@ -341,8 +351,10 @@ type AddOnType = 'Tower' | 'Heroes Hall' | 'Surplus' | 'Tech Lab';
 
 class TechBuilding extends BoardBuilding {
     level: number;
-    readonly maxHealth: number = 5;
+    spec: Spec; // for Tech 2 only
 
+    readonly maxHealth: number = 5;
+    
     constructor(name: string, level: number, buildInstantly: boolean = false) {
         super(name, buildInstantly);
         this.level = level;
@@ -351,6 +363,7 @@ class TechBuilding extends BoardBuilding {
     serialize(): ObjectMap {
         let pojo: ObjectMap = super.serialize();
         pojo.level = this.level;
+        pojo.spec = this.spec;
         return pojo;
     }
 
@@ -361,6 +374,7 @@ class TechBuilding extends BoardBuilding {
 
     static deserialize(pojo: ObjectMap): TechBuilding {
         let tb = new TechBuilding(<string>pojo.name, <number>pojo.level);
+        tb.spec = <Spec>pojo.spec;
         BoardBuilding.deserializeCommonProperties(tb, pojo);
         return tb;
     }
