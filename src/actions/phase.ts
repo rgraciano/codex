@@ -126,7 +126,9 @@ export class Phase {
             name: this.name, 
             validActions: this.validActions,
             idsToResolve: this.idsToResolve,
-            resolvedIds: this.resolvedIds
+            resolvedIds: this.resolvedIds,
+            actionsForIds: this.actionsForIds,
+            extraState: this.extraState
         };
     }
 
@@ -134,6 +136,8 @@ export class Phase {
         let phase = new Phase(<PhaseName>pojo.name, <Array<ActionName>>pojo.validActions);
         phase.idsToResolve = <string[]>pojo.mustResolveMaps;
         phase.resolvedIds = <Array<string>>pojo.resovedIds;
+        phase.actionsForIds = <StringMap>pojo.actionsForIds;
+        phase.extraState = <StringMap>pojo.extraState;
         return phase;
     }
 
