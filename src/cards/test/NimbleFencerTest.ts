@@ -1,12 +1,14 @@
 
-import { Character, Color, FlavorType, TechLevel, Attributes, Unit, GlobalBonusHook } from '../card';
+import { Character, FlavorType, TechLevel, Attributes, Unit, GlobalBonusHook } from '../card';
 import { Game, EventDescriptor } from '../../game';
 import { CardApi } from '../card_api';
+import * as Color from '../color';
 
 export class NimbleFencerTest extends Unit implements GlobalBonusHook {
     protected baseAttributes = new Attributes();
 
-    color: Color = "Neutral";
+    color: Color.ColorName = 'Neutral';
+    spec: Color.Spec = 'Starter';
     flavorType: FlavorType = "QA";
     name: string = "Nimble Fencer Test";
     techLevel: TechLevel = "Tech 0";

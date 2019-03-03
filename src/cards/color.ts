@@ -23,4 +23,4 @@ export type BlackSpecs = 'Disease' | 'Necromancy' | 'Demonology';
 export const Blue: BlueSpecs[] = [ 'Law', 'Truth', 'Peace'];
 export type BlueSpecs = 'Law' | 'Truth' | 'Peace';
 
-export type Spec = NeutralSpecs | RedSpecs | GreenSpecs | PurpleSpecs | WhiteSpecs | BlackSpecs | BlueSpecs;
+export type Spec = 'Starter' | NeutralSpecs | RedSpecs | GreenSpecs | PurpleSpecs | WhiteSpecs | BlackSpecs | BlueSpecs;

@@ -1,16 +1,19 @@
 
 
 
-import { Unit, Card, Building, Color, FlavorType, Attributes, WouldDiscardHook } from '../card';
+import { Unit, Card, Building, FlavorType, Attributes, WouldDiscardHook, TechLevel } from '../card';
 import { Game, EventDescriptor } from '../../game';
+import * as Color from '../color';
 
 export class GraveyardTest extends Building implements WouldDiscardHook {
     protected baseAttributes = new Attributes();
 
-    color: Color = "Black";
+    color: Color.ColorName = 'Neutral';
+    spec: Color.Spec = 'Starter';
     flavorType: FlavorType = "QA";
     name: string = "Graveyard Test";
     importPath: string = "./test";
+    techLevel: TechLevel = 'Tech 0';
 
     constructor(game: Game, owner: number, controller?: number, cardId?: string) {
         super(game, owner, controller, cardId);

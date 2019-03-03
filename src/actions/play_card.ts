@@ -14,12 +14,11 @@ export function playCardAction(game: Game, cardId: string): void {
         throw new Error('Card ID ' + cardId + ' can not be found in hand');
     }
 
-    let attrs = cardToPlay.effective();
-
-    if (attrs.cost > board.gold) {
-        throw new Error('This card costs too much!');
+    if (!cardToPlay.canPlay()) {
+        throw new Error('Card ID ' + cardId + ' is not currently playable');
     }
 
+    let attrs = cardToPlay.effective();
     board.gold -= attrs.cost;
     game.addEvent(new EventDescriptor('PaidFor', 'Paid ' + attrs.cost + ' gold for ' + cardToPlay.name));
 

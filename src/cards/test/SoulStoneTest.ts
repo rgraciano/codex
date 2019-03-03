@@ -1,17 +1,21 @@
 
 
-import { Card, Spell, Color, FlavorType, Attributes, WouldDieHook } from '../card';
+import { Card, Spell, FlavorType, Attributes, WouldDieHook, SpellLevel, TechLevel } from '../card';
 import { Game, EventDescriptor } from '../../game';
 import { CardApi } from '../card_api';
+import * as Color from '../color';
 
 export class SoulStoneTest extends Spell implements WouldDieHook {
     protected baseAttributes = new Attributes();
 
-    color: Color = "Black";
+    color: Color.ColorName = 'Neutral';
+    spec: Color.Spec = 'Starter';
     flavorType: FlavorType = "QA";
     name: string = "Soul Stone Test";
     importPath: string = "./test";
-
+    spellLevel: SpellLevel = 'Normal';
+    techLevel: TechLevel = 'Tech 1';
+    
     constructor(game: Game, owner: number, controller?: number, cardId?: string) {
         super(game, owner, controller, cardId);
         this.baseAttributes.cost = 2;

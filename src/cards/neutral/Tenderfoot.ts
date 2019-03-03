@@ -1,11 +1,13 @@
 
-import { Color, FlavorType, TechLevel, Attributes, Unit } from '../card';
+import { FlavorType, TechLevel, Attributes, Unit } from '../card';
 import { Game, EventDescriptor } from '../../game';
+import * as Color from '../color';
 
 export class Tenderfoot extends Unit {
     protected baseAttributes = new Attributes();
 
-    color: Color = "Neutral";
+    color: Color.ColorName = 'Neutral';
+    spec: Color.Spec = 'Starter';
     flavorType: FlavorType = "Virtuoso";
     name: string = "Tenderfoot";
     techLevel: TechLevel = "Tech 0";
