@@ -87,14 +87,14 @@ export class Board {
         board.gold = <number>pojo.gold;
         board.base = BoardBuilding.deserialize(<ObjectMap>pojo.base);
 
-        board.hand = Card.deserializeCards(<Array<ObjectMap>>pojo.hand, game);
-        board.deck = Card.deserializeCards(<Array<ObjectMap>>pojo.deck, game);
-        board.discard = Card.deserializeCards(<Array<ObjectMap>>pojo.discard, game);
-        board.workers = Card.deserializeCards(<Array<ObjectMap>>pojo.workers, game);
-        board.heroZone = <Array<Hero>>Card.deserializeCards(<Array<ObjectMap>>pojo.heroZone, game);
-        board.inPlay = Card.deserializeCards(<Array<ObjectMap>>pojo.inPlay, game);
+        board.hand = Card.deserializeCards(<Array<ObjectMap>>pojo.hand);
+        board.deck = Card.deserializeCards(<Array<ObjectMap>>pojo.deck);
+        board.discard = Card.deserializeCards(<Array<ObjectMap>>pojo.discard);
+        board.workers = Card.deserializeCards(<Array<ObjectMap>>pojo.workers);
+        board.heroZone = <Array<Hero>>Card.deserializeCards(<Array<ObjectMap>>pojo.heroZone);
+        board.inPlay = Card.deserializeCards(<Array<ObjectMap>>pojo.inPlay);
 
-        board.patrolZone = PatrolZone.deserialize(<ObjectMap>pojo.patrolZone, game);
+        board.patrolZone = PatrolZone.deserialize(<ObjectMap>pojo.patrolZone);
 
         if (pojo.tech1) board.tech1 = TechBuilding.deserialize(<ObjectMap>pojo.tech1);
         if (pojo.tech2) board.tech2 = TechBuilding.deserialize(<ObjectMap>pojo.tech2);
@@ -403,10 +403,10 @@ export class PatrolZone {
         return objmap;
     }
 
-    static deserialize(pojo: ObjectMap, game: Game): PatrolZone {
+    static deserialize(pojo: ObjectMap): PatrolZone {
         let pz = new PatrolZone();
         for (let key in pojo) {
-            pz[key] = Card.deserialize(<ObjectMap>pojo[key], game);
+            pz[key] = Card.deserialize(<ObjectMap>pojo[key]);
         }
 
         return pz;

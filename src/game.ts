@@ -41,19 +41,23 @@ export class Game {
         this.player1Board.base = new BoardBuilding('Base', true);
         this.player2Board.base = new BoardBuilding('Base', true);
 
-        this.player1Board.discard = [new Tenderfoot(this, 1), new TimelyMessenger(this, 1), new OlderBrother(this, 1), 
-            new FruitNinja(this, 1), new Tenderfoot(this, 1), new TimelyMessenger(this, 1),
-            new OlderBrother(this, 1), new FruitNinja(this, 1), new Tenderfoot(this, 1), new TimelyMessenger(this, 1)];
+        this.player1Board.discard = [new Tenderfoot(1), new TimelyMessenger(1), new OlderBrother(1), 
+            new FruitNinja(1), new Tenderfoot(1), new TimelyMessenger(1),
+            new OlderBrother(1), new FruitNinja(1), new Tenderfoot(1), new TimelyMessenger(1)];
 
-        this.player2Board.discard = [new Tenderfoot(this, 2), new TimelyMessenger(this, 2), new OlderBrother(this, 2), 
-                new FruitNinja(this, 2), new Tenderfoot(this, 2), new TimelyMessenger(this, 2),
-                new OlderBrother(this, 2), new FruitNinja(this, 2), new Tenderfoot(this, 2), new TimelyMessenger(this, 2)];
+        this.player2Board.discard = [new Tenderfoot(2), new TimelyMessenger(2), new OlderBrother(2), 
+                new FruitNinja(2), new Tenderfoot(2), new TimelyMessenger(2),
+                new OlderBrother(2), new FruitNinja(2), new Tenderfoot(2), new TimelyMessenger(2)];
+
+        Card.idToCardMap.forEach(card => card.setupGameReferences(this));
 
         this.player1Board.drawCards(5);
         this.player2Board.drawCards(5);
 
         this.phaseStack = new PhaseStack();
         this.phaseStack.setupForNewGame();
+
+
     }
 
     serialize(): ObjectMap {
@@ -73,6 +77,9 @@ export class Game {
         game.player1Board = Board.deserialize(<ObjectMap>pojo.player1Board, game);
         game.player2Board = Board.deserialize(<ObjectMap>pojo.player2Board, game);
         game.phaseStack = PhaseStack.deserialize(<ObjectMap>pojo.phaseStack);
+
+        // need to setup the references AFTER the whole thing has been initialized
+        Card.idToCardMap.forEach(card => card.setupGameReferences(game));
         return game;
     }
 

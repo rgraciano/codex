@@ -16,8 +16,8 @@ export class SoulStoneTest extends Spell implements WouldDieHook {
     spellLevel: SpellLevel = 'Normal';
     techLevel: TechLevel = 'Tech 1';
     
-    constructor(game: Game, owner: number, controller?: number, cardId?: string) {
-        super(game, owner, controller, cardId);
+    constructor(owner: number, controller?: number, cardId?: string) {
+        super(owner, controller, cardId);
         this.baseAttributes.cost = 2;
     }
 

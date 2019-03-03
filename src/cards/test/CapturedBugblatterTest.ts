@@ -14,8 +14,8 @@ export class CapturedBugblatterTest extends Unit implements DiesHandler {
     techLevel: TechLevel = "Tech 2";
     importPath: string = "./test";
 
-    constructor(game: Game, owner: number, controller?: number, cardId?: string) {
-        super(game, owner, controller, cardId);
+    constructor(owner: number, controller?: number, cardId?: string) {
+        super(owner, controller, cardId);
         this.baseAttributes.cost = 2;
     }
 

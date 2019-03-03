@@ -45,16 +45,17 @@ export abstract class Card {
     controllerBoard: Board;
     oppositionalControllerBoard: Board;
 
-    constructor(game: Game, owner: number, controller?: number, cardId?: string) {
+    constructor(owner: number, controller?: number, cardId?: string) {
         this.cardId = cardId ? cardId : anyid().encode('Aa0').length(10).random().id();
         Card.cardToIdMap.set(this, this.cardId);
         Card.idToCardMap.set(this.cardId, this);
 
-        this.game = game;
-
         this.owner = owner;
         this.controller = this.controller ? this.controller : this.owner;
+    }
 
+    setupGameReferences(game: Game) {
+        this.game = game;
         if (this.owner === 1) {
             this.ownerBoard = this.game.player1Board;
             this.opponentBoard = this.game.player2Board;
@@ -98,14 +99,14 @@ export abstract class Card {
         return cards.map(cardInstance => cardInstance.serialize());
     }
 
-    static deserializeCards(pojoCards: ObjectMap[], game: Game): Array<Card> {
-        return pojoCards.map(pojoCard => Card.deserialize(pojoCard, game));
+    static deserializeCards(pojoCards: ObjectMap[]): Array<Card> {
+        return pojoCards.map(pojoCard => Card.deserialize(pojoCard));
     }
 
     /** Any state implemented by descendants that isn't readonly should be deserialized in here */
     abstract deserializeExtra(pojo: ObjectMap): void;
 
-    static deserialize(pojo: ObjectMap, game: Game): Card {
+    static deserialize(pojo: ObjectMap): Card {
         // Reason #32452345 this project would've been easier in Java. This is a hack-y way of figuring out which specific card we're trying to
         // instantiate, and doing that dynamically. We have to use the Node.js global context to find the class we want, by the name we stored in 
         // the POJO, then call new with the relevant arguments.
@@ -114,11 +115,11 @@ export abstract class Card {
 
         if ((<string>pojo.importPath).length > 0) {
             ns = require(<string>pojo.importPath + '/' + <string>pojo.constructorName + '.js'); 
-            card = new ns[<string>pojo.constructorName](game, pojo.owner, pojo.controller, pojo.cardId);
+            card = new ns[<string>pojo.constructorName](pojo.owner, pojo.controller, pojo.cardId);
         }
         else {
             ns = module;
-            card = new ns['exports'][<string>pojo.constructorName](game, pojo.owner, pojo.controller, pojo.cardId);
+            card = new ns['exports'][<string>pojo.constructorName](pojo.owner, pojo.controller, pojo.cardId);
         }
 
         card.deserializeExtra(pojo);

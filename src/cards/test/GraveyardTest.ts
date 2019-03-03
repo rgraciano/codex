@@ -15,8 +15,8 @@ export class GraveyardTest extends Building implements WouldDiscardHook {
     importPath: string = "./test";
     techLevel: TechLevel = 'Tech 0';
 
-    constructor(game: Game, owner: number, controller?: number, cardId?: string) {
-        super(game, owner, controller, cardId);
+    constructor(owner: number, controller?: number, cardId?: string) {
+        super(owner, controller, cardId);
         this.baseAttributes.cost = 2;
         this.baseAttributes.health = 3;
     }
