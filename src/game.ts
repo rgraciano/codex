@@ -76,7 +76,32 @@ export class Game {
         return game;
     }
 
-    processGameState(board: Board): EventDescriptor[] {
+    processGameState(): EventDescriptor[] {
+        let results: EventDescriptor[];
+
+        results = this.processBoardState(this.player1Board);
+        results.push(...this.processBoardState(this.player2Board));
+
+        // check everything in play to see if anything has died. if it has, create a new phase like Destroy and have a DestroyChoice
+        // for everything we see as dying simultaneously.  cleanUpPhases() should then be able to trigger dies() for our DestroyChoice,
+        // which will trigger some stuff and life will go on
+        let cardsToDestroy: Card[] = this.getAllActiveCards().filter(card => 
+            { 
+                if (card && (card.cardType == 'Hero' || card.cardType == 'Unit') && card.shouldDestroy()) {
+                    results.push(new EventDescriptor('CardToDestroy', card.name + ' will be destroyed', { cardId: card.cardId }));
+                    return true;
+                }
+            });
+
+        if (cardsToDestroy.length > 0) {
+            this.phaseStack.addToStack(new Phase('Destroy', [ 'DestroyChoice']));
+            this.phaseStack.topOfStack().markCardsToResolve(cardsToDestroy);
+        }
+
+        return results;
+    }
+
+    processBoardState(board: Board): EventDescriptor[] {
         let results: EventDescriptor[] = [];
 
         // check base buildings. if base blown up, gg!
@@ -95,21 +120,7 @@ export class Game {
                 results.push(...bldgDestroyed);
         }
 
-        // check everything in play to see if anything has died. if it has, create a new phase like Destroy and have a DestroyChoice
-        // for everything we see as dying simultaneously.  cleanUpPhases() should then be able to trigger dies() for our DestroyChoice,
-        // which will trigger some stuff and life will go on
-        let cardsToDestroy: Card[] = this.getAllActiveCards().filter(card => 
-            { 
-                if (card && (card.cardType == 'Hero' || card.cardType == 'Unit') && card.shouldDestroy()) {
-                    results.push(new EventDescriptor('CardToDestroy', card.name + ' will be destroyed', { cardId: card.cardId }));
-                    return true;
-                }
-            });
-
-        if (cardsToDestroy.length > 0) {
-            this.phaseStack.addToStack(new Phase('Destroy', [ 'DestroyChoice']));
-            this.phaseStack.topOfStack().markCardsToResolve(cardsToDestroy);
-        }
+        return results;
     }
 
     getBoardAndOpponentBoard(): Array<Board> {
@@ -152,6 +163,10 @@ export class Game {
 
     cardIsInPlay(board: Board, card: Card): boolean {
         return board.inPlay.filter(localCard => localCard === card).length > 0;
+    }
+
+    cardIsInHand(board: Board, card: Card): boolean {
+        return board.hand.filter(localCard => localCard === card).length > 0;
     }
 
     removeCardFromBoard(board: Board, card: Card): boolean {

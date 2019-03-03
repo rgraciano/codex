@@ -3,14 +3,23 @@ import { anyid } from 'anyid';
 import { Game, EventDescriptor, RuneEvent } from '../game';
 import { ObjectMap } from '../game_server';
 import { Board } from '../board';
+import * as Color from './color';
+
+export type CardType = "Spell" | "Hero" | "Unit" | "Building" | "Upgrade" | "Effect" | "None";
+export type TechLevel = "Tech 0" | "Tech 1" | "Tech 2" | "Tech 3";
+export type SpellType = "Burn" | "Buff" | "Debuff";
+export type FlavorType = "Effect" | "QA" | "Mercenary" | "Virtuoso" | "Drunkard" | "Cute Animal" | "Flagbearer" | "Ninja" | "Lizardman" | "Beast";
 
 export abstract class Card {
 
     readonly abstract cardType: CardType;
-    readonly abstract color: Color;
+    readonly abstract color: Color.ColorName;
     
     readonly abstract name: string;
     readonly abstract flavorType: FlavorType;
+
+    abstract techLevel: TechLevel;
+    abstract spec: Color.Spec;
 
     // We need some way to identify active cards.  Note that we re-generate card objects when they are discarded
     readonly cardId: string;
@@ -76,7 +85,9 @@ export abstract class Card {
             owner: this.owner,
             controller: this.controller,
             baseAttributes: Object.assign({}, this.baseAttributes),
-            attributeModifiers: Object.assign({}, this.attributeModifiers)
+            attributeModifiers: Object.assign({}, this.attributeModifiers),
+            canUseAbility: this.canUseAbility(),
+            canPlay: this.canPlay()
         };
     }
 
@@ -142,6 +153,68 @@ export abstract class Card {
         }
 
         return attrSum;
+    }
+
+    protected canDoThings(arrivalFatigueOk: boolean, checkAttacksThisTurn: boolean): boolean {
+        if (!this.game.cardIsInPlay(this.controllerBoard, this)) {
+            return false;
+        }
+    
+        let attrs = this.effective();
+
+        // can't ever do things when exhausted
+        if (attrs.exhausted)
+            return false;
+
+        // check arrival fatigue for attacks and many abilities
+        if (!arrivalFatigueOk && attrs.arrivalFatigue)
+            return false;
+    
+        // check max number of attacks if applicable. check this is a character first, since only characters attack
+        if (Reflect.has(this, 'attacksPerTurn') && checkAttacksThisTurn) {
+            let character: Character = <Character><unknown>this; // typescript requires the unknown cast first when casting 'this'
+            
+            if (attrs.haveAttackedThisTurn < character.attacksPerTurn) // cards like Rampaging Elephant set this to 2. cards that can't attack set it to 0
+                return false;
+        }
+
+        return true;
+    }
+
+    // probably needs to be modified for Graveyard etc at some point
+    canPlay(): boolean {
+        if (!this.game.cardIsInHand(this.controllerBoard, this)) {
+            return false;
+        }
+
+        let attrs = this.effective(); // get effective gold cost, since many things may modify it
+
+        if (attrs.cost > this.controllerBoard.gold)
+            return false;
+        
+        if (this.techLevel && this.techLevel.startsWith('Tech') && !this.controllerBoard.techBuildingIsActive(this.techLevel))
+            return false;
+
+        if (this.cardType == 'Hero') {
+            let hero: Hero = <Hero><unknown>this;
+            let heroesInPlay: number = this.game.getAllActiveCards(this.controllerBoard).filter(h => h.cardType == 'Hero').length;
+            let maxHeroesInPlay = 1;
+            
+            if (this.controllerBoard.techBuildingIsActive('Tech 2'))
+                maxHeroesInPlay = 2;
+            if (this.controllerBoard.techBuildingIsActive('Tech 3'))
+                maxHeroesInPlay = 3;
+            
+            let addOn = this.controllerBoard.addOn;
+            if (addOn && addOn.addOnType == 'Heroes Hall' && !addOn.constructionInProgress)
+                maxHeroesInPlay = (maxHeroesInPlay == 3) ? 3 : maxHeroesInPlay + 1;
+
+            return hero.turnsTilAvailable === 0 && heroesInPlay < maxHeroesInPlay;
+        }
+    }
+
+    canUseAbility(): boolean {
+        return this.canDoThings(false, false);
     }
 
     /** When this card's health is zero, or its damage meets or exceeds its health, return true */
@@ -219,7 +292,17 @@ export abstract class Character extends Card {
     serialize(): ObjectMap {
         let pojo = super.serialize();
         pojo.attacksPerTurn = this.attacksPerTurn;
+        pojo.canAttack = this.canAttack();
+        pojo.canPatrol = this.canPatrol();
         return pojo;
+    }
+
+    canAttack(): boolean {
+        return this.canDoThings(false, true);
+    }
+
+    canPatrol(): boolean {
+        return this.canDoThings(true, false);
     }
 }
 
@@ -270,27 +353,6 @@ export abstract class Hero extends Character {
         this.level = 1;
     }
 }
-
-/** 
- * Sometimes an ability or spell will affect the game for a period of time.  The effect is best represented by a typical handler,
- * but where does the handler go if the card leaves play?  For example, spells leave play as soon as you cast them, and ability effects
- * may last beyond the death of the card that enacted them.
- * 
- * To account for this, we create a "card" called an Effect that the user can't see but the game can track.  This special card tracks the
- * impact of ongoing effects and can setup handlers as if it was a card to do things at specific times, destroy itself at a specific time, etc.
- * 
- * Making this a "card" means the game can search all cards for, say, OnUpkeep handlers and do them, and the engine doesn't need to know or care
- * what's making those handlers happen.
- */
-export class Effect extends Card {
-    readonly cardType: 'None';
-    readonly color: 'None';
-    readonly name: 'Effect';
-    readonly flavorType: FlavorType = 'Effect';
-
-    deserializeExtra(pojo: ObjectMap): void {}
-}
-
 
 /**  
  * Tracking what's on the card.  We get the final number by adding up what's here and what the card's base statistics are.  This is a little inefficient because the card doesn't have
@@ -370,13 +432,6 @@ export class Attributes {
     // TODO: Also model temporaryArmor / temporaryAttack.  See: Aged Sensei.  He'll have to add a trigger to clear it by end of turn.
     // TODO: For Safe Attacking - maybe there's a startOfAttack trigger and an endOfAttack trigger to add / remove the armor? 
 }
-
-export type CardType = "Spell" | "Hero" | "Unit" | "Building" | "Upgrade" | "Effect" | "None";
-export type Color = "Neutral" | "Red" | "Green" | "Black" | "White" | "Purple" | "Blue" | "None";
-export type TechLevel = "Tech 0" | "Tech 1" | "Tech 2" | "Tech 3";
-export type SpellType = "Burn" | "Buff" | "Debuff";
-export type FlavorType = "Effect" | "QA" | "Mercenary" | "Virtuoso" | "Drunkard" | "Cute Animal" | "Flagbearer" | "Ninja" | "Lizardman" | "Beast";
-
 
 export interface AttacksHandler extends Card {
     onAttack(attacker: Card, defender: Card): EventDescriptor;

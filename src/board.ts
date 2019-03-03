@@ -1,5 +1,5 @@
 
-import { Card, Hero, Effect } from './cards/card';
+import { Card, Hero, TechLevel } from './cards/card';
 import { Game, EventDescriptor } from './game';
 import { ObjectMap } from './game_server';
 
@@ -22,7 +22,7 @@ export class Board {
 
     // These things are "active" - cards that are in play somewhere
     inPlay: Array<Card> = [];
-    effects: Array<Effect> = [];
+    effects: Array<Card> = [];
     patrolZone: PatrolZone = new PatrolZone();
 
     base: BoardBuilding;
@@ -144,6 +144,21 @@ export class Board {
         }
 
         return events;
+    }
+
+    techBuildingIsActive(techLevel: TechLevel): boolean {
+        if (techLevel == 'Tech 0')
+            return true;
+
+        let bldg: TechBuilding = Reflect.get(this, 'tech' + techLevel[techLevel.length - 1]);
+
+        if (!bldg)
+            return false;
+
+        if (bldg.constructionInProgress || bldg.destroyed)
+            return false;
+
+        return true;
     }
 
     drawCards(howMany: number) {

@@ -150,8 +150,7 @@ export class GameServer {
             clearedEmptyPhase = this.game.phaseStack.resolveEmptyPhases();
 
             // Must happen after we clear empty phases, because GameOver is an empty phase
-            this.game.addEvents(this.game.processGameState(this.game.player1Board));
-            this.game.addEvents(this.game.processGameState(this.game.player2Board));
+            this.game.addEvents(this.game.processGameState());
 
             // If there's only one action that can be performed, and the game knows how to perform that action, then we do it automatically now before
             // returning to the user.  'PlayerChoice' indicates that the player MUST do something.
