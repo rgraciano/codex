@@ -113,7 +113,10 @@ export class GameServer {
         }
         else switch(action) {
             case 'PlayCard':
-                playCardAction(this.game, cardId);
+                playCardAction(cardId);
+                break;
+            case 'Worker':
+                playCardAction(cardId, true);
                 break;
             case 'Attack':
                 attackAction(cardId);

@@ -39,6 +39,9 @@ export function startTurnAction(game: Game): void {
     if (board.addOn && board.addOn.addOnType == 'Tower')
         board.addOn.towerDetectedThisTurn = false;
 
+    // allow worker
+    board.workeredThisTurn = false;
+
     // enter player turn phase
     game.phaseStack.addToStack(new Phase('PlayerTurn', [ 'PlayCard', 'Worker', 'Tech', 'BuildTech', 'BuildAddOn', 'Patrol', 'Ability', 'Attack', 'HeroSummon', 'HeroLevel', 'EndTurn']));
 

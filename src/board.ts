@@ -11,6 +11,7 @@ export class Board {
     playerNumber: number;
     chosenSpecs: Spec[];
     multiColor: boolean = false;
+    workeredThisTurn: boolean = false;
 
     turnCount: number = 0;
 
@@ -65,6 +66,9 @@ export class Board {
             heroZone: Card.serializeCards(this.heroZone),
             inPlay: Card.serializeCards(this.inPlay),
 
+            numWorkers: this.workers.length + this.startingWorkers, // for the client
+            workeredThisTurn: this.workeredThisTurn,
+
             patrolZone: PatrolZone.serialize(this.patrolZone), // break from convention here b/c instance method screws up property iteration on pz
         };
 
@@ -86,6 +90,7 @@ export class Board {
         board.turnCount = <number>pojo.turnCount;
         board.gold = <number>pojo.gold;
         board.base = BoardBuilding.deserialize(<ObjectMap>pojo.base);
+        board.workeredThisTurn = <boolean>pojo.workeredThisTurn;
 
         board.hand = Card.deserializeCards(<Array<ObjectMap>>pojo.hand);
         board.deck = Card.deserializeCards(<Array<ObjectMap>>pojo.deck);
