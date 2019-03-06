@@ -35,6 +35,7 @@ function worker(board: Board, card: Card) {
     card.game.addEvent(new EventDescriptor('PaidFor', 'Paid 1 gold to worker a card'));
 
     board.moveCard(board.hand, card, board.workers);
+    board.workeredThisTurn = true;
 }
 
 function play(board: Board, card: Card) {
