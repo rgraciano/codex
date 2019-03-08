@@ -27,12 +27,13 @@ function worker(board: Board, card: Card) {
     if (board.workeredThisTurn)
         throw new Error('You may only play a worker once per turn');
 
-    if (board.gold < 1)
+    if (board.canWorker())
         throw new Error('Not enough gold to worker');
 
-    board.gold--;
+    let cost = board.getWorkerCost();
+    board.gold -= cost;
 
-    card.game.addEvent(new EventDescriptor('PaidFor', 'Paid 1 gold to worker a card'));
+    card.game.addEvent(new EventDescriptor('PaidFor', 'Paid ' + cost + ' gold to worker a card'));
 
     board.moveCard(board.hand, card, board.workers);
     board.workeredThisTurn = true;

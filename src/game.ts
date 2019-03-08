@@ -228,20 +228,25 @@ export class Game {
 
     markMustResolveForCardsWithFnName(space: Card[], fnName: string) {
         // find all of the cards with handlers that match
-        let foundCards: Card[] = Game.findCardsWithFunction(space, fnName);
+        let foundCards: Card[] = Game.findCardsWithProperty(space, fnName);
     
         // add all of those cards to the list of allowedActions, automatically removing those that were already resolved and ensuring there are no duplicates
         this.phaseStack.topOfStack().markCardsToResolve(foundCards, fnName);
     }
+
 
     /** 
      * Searches an array of cards for every card mapping to an interface (eg, implements onUpkeep). For example, findCardsWithHandlers(board.InPlay, 'onUpkeep')
      * 
      * @param implementsFunction The function on an interface that would indicate this interface is implemented, eg, 'onUpkeep'
      */
-    static findCardsWithFunction(cards: Card[], implementsFunction: string): Card[] {
+    static findCardsWithProperty(cards: Card[], implementsProperty: string): Card[] {
+        return Game.findCardsMatching(cards, card => Reflect.has(card, implementsProperty));
+    }
+
+    static findCardsMatching(cards: Card[], matching: (card: Card) => boolean): Card[] {
         return cards.filter(card => {
-            return (card && Reflect.has(card, implementsFunction));
+            return (card && matching(card));
         });
     }
 

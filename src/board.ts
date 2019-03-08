@@ -68,6 +68,7 @@ export class Board {
 
             numWorkers: this.workers.length + this.startingWorkers, // for the client
             workeredThisTurn: this.workeredThisTurn,
+            canWorker: this.canWorker(),
 
             patrolZone: PatrolZone.serialize(this.patrolZone), // break from convention here b/c instance method screws up property iteration on pz
         };
@@ -108,6 +109,15 @@ export class Board {
         if (pojo.addOn) board.addOn = AddOn.deserialize(<ObjectMap>pojo.addOn);
 
         return board;
+    }
+
+    canWorker(): boolean {
+        return (this.gold >= this.getWorkerCost()) && !this.workeredThisTurn;
+    }
+
+    getWorkerCost(): number {
+        let workerCostAlterations = Game.findCardsWithProperty(this.inPlay, 'workersAreFree');
+        return (workerCostAlterations.length > 0) ? 0 : 1;
     }
 
     destroyIfRequired(building: BuildingType): (EventDescriptor[] | false) {

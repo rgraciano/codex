@@ -20,7 +20,7 @@ export class CardApi {
             card.game.getAllActiveCards().map(boardCard => (<GlobalBonusHook>card).giveBonus(boardCard));
         
         // Second, check if this card GETS bonuses FROM other cards...
-        let bonusGivers = <GlobalBonusHook[]>(Game.findCardsWithFunction(card.game.getAllActiveCards(), 'giveBonus'));
+        let bonusGivers = <GlobalBonusHook[]>(Game.findCardsWithProperty(card.game.getAllActiveCards(), 'giveBonus'));
         bonusGivers.map(giver => card.game.addEvent(giver.giveBonus(card)));
 
 
@@ -47,7 +47,7 @@ export class CardApi {
 
         /**** WOULD DIE ****/
         // We run all 'would die' handlers right away, because the user doesn't get to choose anything.  They just happen.  Order really does not matter.
-        let wouldDieHooks = Game.findCardsWithFunction(game.getAllActiveCards(), 'wouldDie');
+        let wouldDieHooks = Game.findCardsWithProperty(game.getAllActiveCards(), 'wouldDie');
 
         wouldDieHooks.map(cardWithHook => {
             let descriptor = (<WouldDieHook>cardWithHook).wouldDie(card);
@@ -130,7 +130,7 @@ export class CardApi {
         card.resetCard();
         card.game.removeCardFromPlay(card);
 
-        let wouldDiscardHooks = Game.findCardsWithFunction(card.game.getAllActiveCards(), 'wouldDiscard');
+        let wouldDiscardHooks = Game.findCardsWithProperty(card.game.getAllActiveCards(), 'wouldDiscard');
         let needToDiscard = true;
 
         if (wouldDiscardHooks) {
