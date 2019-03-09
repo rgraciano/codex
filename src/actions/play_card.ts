@@ -24,11 +24,9 @@ export function playCardAction(cardId: string, asWorker = false): void {
 }
 
 function worker(board: Board, card: Card) {
-    if (board.workeredThisTurn)
-        throw new Error('You may only play a worker once per turn');
-
-    if (board.canWorker())
-        throw new Error('Not enough gold to worker');
+    if (!board.canWorker()) {
+        throw new Error ('You do not meet the requirements to worker');
+    }
 
     let cost = board.getWorkerCost();
     board.gold -= cost;
