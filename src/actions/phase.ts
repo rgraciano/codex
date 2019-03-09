@@ -1,20 +1,50 @@
-
 import { Card } from '../cards/card';
 import { ObjectMap, StringMap } from '../game_server';
 
-// Phase names have no meaning to the client. They could actually be empty or removed altogether, 
+// Phase names have no meaning to the client. They could actually be empty or removed altogether,
 // but naming the phases makes it a little easier to debug the stack and follow what's going on.
 // The game server does use phase names a little, primarily to figure out how many actions it should
 // currently be seeing and whether or not it can auto-resolve this phase.
-export type PhaseName = 'PlayerTurn' | 'NewGame' | 'Upkeep' | 'Arrives' | 'DiesOrLeaves' | 'PlayerPrompt' 
-                        | 'GameOver' | 'Destroy' | 'Attack' | 'PrepareAttackTargets' | 'AttackDestination';                        
+export type PhaseName =
+    | 'PlayerTurn'
+    | 'NewGame'
+    | 'Upkeep'
+    | 'Arrives'
+    | 'DiesOrLeaves'
+    | 'PlayerPrompt'
+    | 'GameOver'
+    | 'Destroy'
+    | 'Attack'
+    | 'PrepareAttackTargets'
+    | 'AttackDestination'
+    | 'ChooseAbilityTarget';
 
 // The client uses Actions to understand what API calls are currently valid, and how to present possible actions to the user.
-export type ActionName = 'NewGame' | 'UpkeepChoice' | 'ArrivesChoice' | 'DiesOrLeavesChoice' | 'DestroyChoice' 
-                        | 'AttacksChoice' | 'PrepareAttackTargets' | 'AttackCardsChoice' | 'AttackCardsOrBuildingsChoice' 
-                        | TurnActionName;
-export type TurnActionName = 'PlayCard' | 'Worker' | 'Tech' | 'BuildTech' | 'BuildAddOn' | 'Patrol' | 'Ability' 
-                        | 'Attack' | 'HeroSummon' | 'HeroLevel' | 'EndTurn';
+export type ActionName =
+    | 'NewGame'
+    | 'UpkeepChoice'
+    | 'ArrivesChoice'
+    | 'DiesOrLeavesChoice'
+    | 'DestroyChoice'
+    | 'AttacksChoice'
+    | 'PrepareAttackTargets'
+    | 'AttackCardsChoice'
+    | 'AttackCardsOrBuildingsChoice'
+    | 'AbilityChoice'
+    | TurnActionName;
+
+export type TurnActionName =
+    | 'PlayCard'
+    | 'Worker'
+    | 'Tech'
+    | 'BuildTech'
+    | 'BuildAddOn'
+    | 'Patrol'
+    | 'Ability'
+    | 'Attack'
+    | 'HeroSummon'
+    | 'HeroLevel'
+    | 'EndTurn';
 
 // note patrol and un-patrol will BOTH need to be options, or attack/ability/exhaust will need to check if patrolling and
 // remove from that state
@@ -22,17 +52,17 @@ export type TurnActionName = 'PlayCard' | 'Worker' | 'Tech' | 'BuildTech' | 'Bui
 /**
  * Phases are parts of the game that allow a set of actions to be performed in any order.  Some actions
  * may be performed multiple times.  Others can only be performed once and have to be crossed off the list.
- * 
+ *
  * An action in a phase may spawn a new phase, with a new set of available actions (and on, and on...).  When
  * a phase is done, we resolve it and go back to the phase that initiated it.
- * 
+ *
  * We represent phases as a stack, checking that actions in the current phase are possible
  */
 export class PhaseStack {
     stack: Array<Phase> = new Array<Phase>();
 
     setupForNewGame() {
-        this.stack = [ new Phase('NewGame', [ ] ) ];
+        this.stack = [new Phase('NewGame', [])];
     }
 
     serialize(): ObjectMap {
@@ -57,7 +87,7 @@ export class PhaseStack {
         return this.topOfStack().validActions;
     }
 
-    /** This will clear out any phases that are no longer valid because they have cleared out all required cards.  
+    /** This will clear out any phases that are no longer valid because they have cleared out all required cards.
      * Cards may have died due to effects or simply been resolved.
      * @returns true if phases were eliminated, false if not */
     resolveEmptyPhases(): boolean {
@@ -90,24 +120,24 @@ export class Phase {
 
     validActions: Array<ActionName> = [];
 
-    /* 
-    * We both keep a list of cards we have to resolve still, 
-    * as well as a list of resolved, because we will recalculate the list as we go.
-    * 
-    * In some actions, it will be mandatory to resolve all of them to move forward.
-    * In other actions, it will be a choice between things to resolve.
-    * 
-    * The client doesn't need to know or care either way. It highlights everything
-    * in the list, and when the user clicks something in the list, the back-end 
-    * updates the list by either clearing it or removing the option they just resolved.
-    * The client then simply (dumbly) again highlights the whatever is on the list.
-    * 
-    * Each map has:
-    * 'resolveId' 
-    */
+    /*
+     * We both keep a list of cards we have to resolve still,
+     * as well as a list of resolved, because we will recalculate the list as we go.
+     *
+     * In some actions, it will be mandatory to resolve all of them to move forward.
+     * In other actions, it will be a choice between things to resolve.
+     *
+     * The client doesn't need to know or care either way. It highlights everything
+     * in the list, and when the user clicks something in the list, the back-end
+     * updates the list by either clearing it or removing the option they just resolved.
+     * The client then simply (dumbly) again highlights the whatever is on the list.
+     *
+     * Each map has:
+     * 'resolveId'
+     */
     idsToResolve: string[] = [];
     resolvedIds: Array<string> = [];
-    
+
     // In some cases, we may do different things based on which ID is selected.
     // If necessary, we record the thing to do for each ID here.
     actionsForIds: StringMap = {};
@@ -122,8 +152,8 @@ export class Phase {
     }
 
     serialize(): ObjectMap {
-        return { 
-            name: this.name, 
+        return {
+            name: this.name,
             validActions: this.validActions,
             idsToResolve: this.idsToResolve,
             resolvedIds: this.resolvedIds,
@@ -148,13 +178,12 @@ export class Phase {
     markIdsToResolve(cardIds: string[], action?: string): void {
         this.idsToResolve.push(...cardIds);
 
-        if (action)
-            cardIds.map(id => this.actionsForIds[id] = action);
+        if (action) cardIds.map(id => (this.actionsForIds[id] = action));
     }
 
     /** @returns whether or not card can be found in list of must resolved */
     ifToResolve(cardId: string): boolean {
-        return (this.idsToResolve.filter(thisId => thisId === cardId)).length > 0;
+        return this.idsToResolve.filter(thisId => thisId === cardId).length > 0;
     }
 
     isValidAction(action: ActionName): boolean {

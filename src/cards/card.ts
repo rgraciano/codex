@@ -5,7 +5,7 @@ import { Board } from '../board';
 import * as Color from './color';
 
 export type CardType = 'Spell' | 'Hero' | 'Unit' | 'Building' | 'Upgrade' | 'Effect' | 'None';
-export type TechLevel = 'Tech 0' | 'Tech 1' | 'Tech 2' | 'Tech 3';
+export type TechLevel = 0 | 1 | 2 | 3;
 export type SpellLevel = 'Tech 0' | 'Normal' | 'Ultimate';
 export type SpellType = 'Burn' | 'Buff' | 'Debuff';
 export type FlavorType =
@@ -24,6 +24,7 @@ export abstract class Card {
     abstract readonly cardType: CardType;
 
     abstract readonly techLevel: TechLevel;
+    abstract readonly techLevelNumeric: number;
     abstract readonly color: Color.ColorName;
     abstract readonly spec: Color.Spec;
 
@@ -130,11 +131,7 @@ export abstract class Card {
             card = new ns[<string>pojo.constructorName](pojo.owner, pojo.controller, pojo.cardId);
         } else {
             ns = module;
-            card = new ns['exports'][<string>pojo.constructorName](
-                pojo.owner,
-                pojo.controller,
-                pojo.cardId
-            );
+            card = new ns['exports'][<string>pojo.constructorName](pojo.owner, pojo.controller, pojo.cardId);
         }
 
         card.deserializeExtra(pojo);
@@ -213,13 +210,11 @@ export abstract class Card {
         if (this.cardType == 'Hero') {
             let hero: Hero = <Hero>(<unknown>this);
 
-            let heroesInPlay: number = this.game
-                .getAllActiveCards(this.controllerBoard)
-                .filter(h => h.cardType == 'Hero').length;
+            let heroesInPlay: number = this.game.getAllActiveCards(this.controllerBoard).filter(h => h.cardType == 'Hero').length;
             let maxHeroesInPlay = 1;
 
-            if (this.controllerBoard.techBuildingIsActive('Tech 2')) maxHeroesInPlay = 2;
-            if (this.controllerBoard.techBuildingIsActive('Tech 3')) maxHeroesInPlay = 3;
+            if (this.controllerBoard.techBuildingIsActive(2)) maxHeroesInPlay = 2;
+            if (this.controllerBoard.techBuildingIsActive(3)) maxHeroesInPlay = 3;
 
             let addOn = this.controllerBoard.addOn;
             if (addOn && addOn.addOnType == 'Heroes Hall' && !addOn.constructionInProgress)
@@ -230,16 +225,14 @@ export abstract class Card {
 
         // spells can be played if a hero of the same type is out there, or if we have any hero out there for tech 0 spells
         else if (this.cardType == 'Spell') {
-            let heroesInPlay: Hero[] = <Hero[]>(
-                this.game.getAllActiveCards(this.controllerBoard).filter(h => h.cardType == 'Hero')
-            );
+            let heroesInPlay: Hero[] = <Hero[]>this.game.getAllActiveCards(this.controllerBoard).filter(h => h.cardType == 'Hero');
 
             // when no heroes in play, we can't cast spells
             if (heroesInPlay.length === 0) return false;
 
             // we can always cast tech0. note there's a gold penalty for multi-color decks, but that's already handled
             // by the Spell class in its cost calculation
-            if (this.techLevel == 'Tech 0') {
+            if (this.techLevel == 0) {
                 return true;
             }
 
@@ -249,18 +242,17 @@ export abstract class Card {
 
             // finally for ultimate spells, the hero of matching spec must be able to cast them
             let spell: Spell = <Spell>(<unknown>this);
-            if (spell.spellLevel == 'Ultimate')
-                return heroesOfMatchingSpec.filter(h => h.canCastUltimate()).length > 0;
+            if (spell.spellLevel == 'Ultimate') return heroesOfMatchingSpec.filter(h => h.canCastUltimate()).length > 0;
             else return true;
         }
 
         // for all other cards, we just check the tech level
         else {
-            if (this.techLevel == 'Tech 0') return true;
+            if (this.techLevel == 0) return true;
 
             if (!this.controllerBoard.techBuildingIsActive(this.techLevel)) return false;
 
-            if (this.techLevel == 'Tech 2' || this.techLevel == 'Tech 3') {
+            if (this.techLevel == 2 || this.techLevel == 3) {
                 if (this.controllerBoard.tech2.spec == this.spec) return true;
                 else
                     return (
@@ -295,17 +287,8 @@ export abstract class Card {
     }
 
     /** When otherCard is controlled by the same player, and its FlavorType matches, run fn(otherCard) */
-    doIfYourCardAndFlavorType(
-        otherCard: Card,
-        flavorType: FlavorType,
-        fn: (otherCard: Card) => EventDescriptor
-    ): EventDescriptor {
-        if (
-            otherCard.controller === this.controller &&
-            otherCard.flavorType &&
-            otherCard.flavorType === flavorType
-        )
-            return fn(otherCard);
+    doIfYourCardAndFlavorType(otherCard: Card, flavorType: FlavorType, fn: (otherCard: Card) => EventDescriptor): EventDescriptor {
+        if (otherCard.controller === this.controller && otherCard.flavorType && otherCard.flavorType === flavorType) return fn(otherCard);
         else return undefined;
     }
 
@@ -319,11 +302,7 @@ export abstract class Card {
         return this.adjustProperty(numToLose, property, 'subtract');
     }
 
-    private adjustProperty(
-        numToAdjust: number,
-        runeProperty: keyof Attributes,
-        addOrSubtract: 'add' | 'subtract'
-    ) {
+    private adjustProperty(numToAdjust: number, runeProperty: keyof Attributes, addOrSubtract: 'add' | 'subtract') {
         let add = addOrSubtract == 'add';
 
         if (add) this.attributeModifiers[runeProperty] += numToAdjust;
@@ -355,13 +334,11 @@ export abstract class Spell extends Card {
     effective(): Attributes {
         let attrs = super.effective();
 
-        if (!this.controllerBoard.multiColor || !(this.techLevel == 'Tech 0')) return attrs;
+        if (!this.controllerBoard.multiColor || !(this.techLevel == 0)) return attrs;
 
         // we only have Tech 0 spells for our chosen starting color, and if we're multi-color,
         // casting them with a different colored hero costs 1 extra gold
-        let sameColorHeroes = this.game
-            .getAllActiveCards(this.controllerBoard)
-            .filter(h => h.cardType == 'Hero' && h.color == this.color);
+        let sameColorHeroes = this.game.getAllActiveCards(this.controllerBoard).filter(h => h.cardType == 'Hero' && h.color == this.color);
 
         if (sameColorHeroes.length === 0) attrs.cost++;
 
@@ -495,6 +472,7 @@ export class Attributes {
     haste: number = 0;
     unattackable: number = 0;
     detector: number = 0;
+    untargetable: number = 0;
 
     // Counting how many runes are on the card
     timeRunes: number = 0;

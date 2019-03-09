@@ -1,4 +1,3 @@
-
 import { Card, Hero, TechLevel } from './cards/card';
 import { Game, EventDescriptor } from './game';
 import { ObjectMap } from './game_server';
@@ -43,8 +42,7 @@ export class Board {
 
         if (playerNumber == 1) {
             this.startingWorkers = 4;
-        }
-        else {
+        } else {
             this.startingWorkers = 5;
         }
     }
@@ -70,7 +68,7 @@ export class Board {
             workeredThisTurn: this.workeredThisTurn,
             canWorker: this.canWorker(),
 
-            patrolZone: PatrolZone.serialize(this.patrolZone), // break from convention here b/c instance method screws up property iteration on pz
+            patrolZone: PatrolZone.serialize(this.patrolZone) // break from convention here b/c instance method screws up property iteration on pz
         };
 
         if (this.tech1) pojo.tech1 = this.tech1.serialize();
@@ -112,31 +110,31 @@ export class Board {
     }
 
     canWorker(): boolean {
-        return (this.gold >= this.getWorkerCost()) && !this.workeredThisTurn;
+        return this.gold >= this.getWorkerCost() && !this.workeredThisTurn;
     }
 
     getWorkerCost(): number {
         let workerCostAlterations = Game.findCardsWithProperty(this.inPlay, 'workersAreFree');
-        return (workerCostAlterations.length > 0) ? 0 : 1;
+        return workerCostAlterations.length > 0 ? 0 : 1;
     }
 
-    destroyIfRequired(building: BuildingType): (EventDescriptor[] | false) {
+    destroyIfRequired(building: BuildingType): EventDescriptor[] | false {
         switch (building) {
             case 'Base':
                 return this.base.shouldBeDestroyed() ? this.destroyBuilding('Base') : false;
-                    
+
             case 'Tech 1':
-                return (this.tech1 && this.tech1.shouldBeDestroyed()) ? this.destroyBuilding('Tech 1') : false;
+                return this.tech1 && this.tech1.shouldBeDestroyed() ? this.destroyBuilding('Tech 1') : false;
 
             case 'Tech 2':
-                return (this.tech2 && this.tech2.shouldBeDestroyed()) ? this.destroyBuilding('Tech 2') : false;
+                return this.tech2 && this.tech2.shouldBeDestroyed() ? this.destroyBuilding('Tech 2') : false;
 
             case 'Tech 3':
-                return (this.tech3 && this.tech3.shouldBeDestroyed()) ? this.destroyBuilding('Tech 3') : false;
+                return this.tech3 && this.tech3.shouldBeDestroyed() ? this.destroyBuilding('Tech 3') : false;
 
             case 'AddOn':
-                return (this.addOn && this.addOn.shouldBeDestroyed()) ? this.destroyBuilding('AddOn') : false;
-            
+                return this.addOn && this.addOn.shouldBeDestroyed() ? this.destroyBuilding('AddOn') : false;
+
             default:
                 return [];
         }
@@ -146,24 +144,45 @@ export class Board {
         let events: EventDescriptor[] = [];
 
         if (building == 'Base') {
-            events.push(new EventDescriptor('GameOver', 'Player ' + this.playerNumber + " base is destroyed! The game is over", { destroyed: this.playerNumber }));
-        }
-        else {
+            events.push(
+                new EventDescriptor('GameOver', 'Player ' + this.playerNumber + ' base is destroyed! The game is over', {
+                    destroyed: this.playerNumber
+                })
+            );
+        } else {
             events.push(this.base.damage(2));
 
             if (building.startsWith('Tech')) {
                 let buildingNumber: string;
-                
-                switch(building) {
-                    case 'Tech 1': this.tech1.destroy(); buildingNumber = '1'; break;
-                    case 'Tech 2': this.tech2.destroy(); buildingNumber = '2'; break;
-                    case 'Tech 3': this.tech3.destroy(); buildingNumber = '3'; break;
+
+                switch (building) {
+                    case 'Tech 1':
+                        this.tech1.destroy();
+                        buildingNumber = '1';
+                        break;
+                    case 'Tech 2':
+                        this.tech2.destroy();
+                        buildingNumber = '2';
+                        break;
+                    case 'Tech 3':
+                        this.tech3.destroy();
+                        buildingNumber = '3';
+                        break;
                 }
 
-                events.push(new EventDescriptor('BuildingDestroyed', 'Player ' + this.playerNumber + ' Tech ' + buildingNumber + ' building was destroyed', { destroyed: building }));
-            }
-            else if (building == 'AddOn') {
-                events.push(new EventDescriptor('BuildingDestroyed', 'Player ' + this.playerNumber + ' add on building was destroyed', { destroyed: building }));
+                events.push(
+                    new EventDescriptor(
+                        'BuildingDestroyed',
+                        'Player ' + this.playerNumber + ' Tech ' + buildingNumber + ' building was destroyed',
+                        { destroyed: building }
+                    )
+                );
+            } else if (building == 'AddOn') {
+                events.push(
+                    new EventDescriptor('BuildingDestroyed', 'Player ' + this.playerNumber + ' add on building was destroyed', {
+                        destroyed: building
+                    })
+                );
                 this.addOn = null;
             }
         }
@@ -172,22 +191,19 @@ export class Board {
     }
 
     techBuildingIsActive(techLevel: TechLevel): boolean {
-        if (techLevel == 'Tech 0')
-            return true;
+        if (techLevel == 0) return true;
 
-        let bldg: TechBuilding = Reflect.get(this, 'tech' + techLevel[techLevel.length - 1]);
+        let bldg: TechBuilding = Reflect.get(this, 'tech' + new Number(techLevel).toString());
 
-        if (!bldg)
-            return false;
+        if (!bldg) return false;
 
-        if (bldg.constructionInProgress || bldg.destroyed)
-            return false;
+        if (bldg.constructionInProgress || bldg.destroyed) return false;
 
         return true;
     }
 
     addOnIsActive(): boolean {
-        return this.addOn && !this.addOn.constructionInProgress && !this.addOn.destroyed && (this.addOn.health > 0);
+        return this.addOn && !this.addOn.constructionInProgress && !this.addOn.destroyed && this.addOn.health > 0;
     }
 
     drawCards(howMany: number) {
@@ -220,7 +236,7 @@ export class Board {
     }
 
     /** Verifies a card is in a specific space.  Returns null if it can't be found */
-    findCardById(space: Array<Card>, cardId: string): (Card | undefined) {
+    findCardById(space: Array<Card>, cardId: string): Card | undefined {
         let card: Card = Card.idToCardMap.get(cardId);
 
         if (card === undefined || space.indexOf(card) === -1) {
@@ -236,16 +252,15 @@ export class Board {
      */
     moveCard(fromSpace: Array<Card>, card: Card, toSpace?: Array<Card>): boolean {
         let index = fromSpace.indexOf(card);
-        
+
         if (index === -1) {
             return false;
         }
 
         fromSpace.splice(index, 1);
 
-        if (toSpace)
-            toSpace.push(card);
-            
+        if (toSpace) toSpace.push(card);
+
         return true;
     }
 
@@ -282,7 +297,7 @@ export class BoardBuilding {
             name: this.name,
             destroyed: this.destroyed,
             constructionInProgress: this.constructionInProgress
-        };  
+        };
     }
 
     static deserialize(pojo: ObjectMap): BoardBuilding {
@@ -343,9 +358,8 @@ class AddOn extends BoardBuilding {
         let pojo: ObjectMap = super.serialize();
         pojo.addOnType = this.addOnType;
         pojo.towerDetectedThisTurn = this.towerDetectedThisTurn;
-        
-        if (this.techLabSpec)
-            pojo.techLabSpec = this.techLabSpec;
+
+        if (this.techLabSpec) pojo.techLabSpec = this.techLabSpec;
 
         return pojo;
     }
@@ -355,9 +369,8 @@ class AddOn extends BoardBuilding {
         BoardBuilding.deserializeCommonProperties(ao, pojo);
         ao.addOnType = <AddOnType>pojo.addOnType;
         ao.towerDetectedThisTurn = <boolean>pojo.towerDetectedThisTurn;
-        
-        if (pojo.techLabSpec)
-            ao.techLabSpec = <Spec>pojo.techLabSpec;
+
+        if (pojo.techLabSpec) ao.techLabSpec = <Spec>pojo.techLabSpec;
 
         return ao;
     }
@@ -369,7 +382,7 @@ class TechBuilding extends BoardBuilding {
     spec: Spec; // for Tech 2 only
 
     readonly maxHealth: number = 5;
-    
+
     constructor(name: string, level: number, buildInstantly: boolean = false) {
         super(name, buildInstantly);
         this.level = level;
@@ -412,8 +425,7 @@ export class PatrolZone {
     static serialize(pz: PatrolZone): ObjectMap {
         let objmap = new ObjectMap();
         for (let key in this) {
-            if (key)
-                objmap[key] = pz[key].serialize();
+            if (key) objmap[key] = pz[key].serialize();
         }
         return objmap;
     }
@@ -427,4 +439,3 @@ export class PatrolZone {
         return pz;
     }
 }
-
