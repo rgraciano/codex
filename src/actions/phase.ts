@@ -59,7 +59,7 @@ export type TurnActionName =
  * We represent phases as a stack, checking that actions in the current phase are possible
  */
 export class PhaseStack {
-    stack: Array<Phase> = new Array<Phase>();
+    stack: Phase[] = [];
 
     setupForNewGame() {
         this.stack = [new Phase('NewGame', [])];
@@ -71,7 +71,7 @@ export class PhaseStack {
 
     static deserialize(pojo: ObjectMap): PhaseStack {
         let ps = new PhaseStack();
-        ps.stack = (<Array<ObjectMap>>pojo.stack).map(phase => Phase.deserialize(phase));
+        ps.stack = (<ObjectMap[]>pojo.stack).map(phase => Phase.deserialize(phase));
         return ps;
     }
 
@@ -83,7 +83,7 @@ export class PhaseStack {
         return this.stack[this.stack.length - 1];
     }
 
-    validActions(): Array<ActionName> {
+    validActions(): ActionName[] {
         return this.topOfStack().validActions;
     }
 
@@ -118,7 +118,7 @@ export class PhaseStack {
 export class Phase {
     name: PhaseName;
 
-    validActions: Array<ActionName> = [];
+    validActions: ActionName[] = [];
 
     /*
      * We both keep a list of cards we have to resolve still,
@@ -136,7 +136,7 @@ export class Phase {
      * 'resolveId'
      */
     idsToResolve: string[] = [];
-    resolvedIds: Array<string> = [];
+    resolvedIds: string[] = [];
 
     // In some cases, we may do different things based on which ID is selected.
     // If necessary, we record the thing to do for each ID here.
@@ -144,9 +144,9 @@ export class Phase {
 
     // This is used to track any information an action needs to carry forward in this phase,
     // e.g., which attacker we're currently resolving.
-    extraState: StringMap = {};
+    extraState: PrimitiveMap = {};
 
-    constructor(name: PhaseName, validActions: Array<ActionName>) {
+    constructor(name: PhaseName, validActions: ActionName[]) {
         this.name = name;
         this.validActions = validActions;
     }
@@ -163,11 +163,11 @@ export class Phase {
     }
 
     static deserialize(pojo: ObjectMap): Phase {
-        let phase = new Phase(<PhaseName>pojo.name, <Array<ActionName>>pojo.validActions);
+        let phase = new Phase(<PhaseName>pojo.name, <ActionName[]>pojo.validActions);
         phase.idsToResolve = <string[]>pojo.mustResolveMaps;
-        phase.resolvedIds = <Array<string>>pojo.resovedIds;
+        phase.resolvedIds = <string[]>pojo.resovedIds;
         phase.actionsForIds = <StringMap>pojo.actionsForIds;
-        phase.extraState = <StringMap>pojo.extraState;
+        phase.extraState = <PrimitiveMap>pojo.extraState;
         return phase;
     }
 
@@ -175,10 +175,11 @@ export class Phase {
         this.markIdsToResolve(cards.map(card => card.cardId), action);
     }
 
-    markIdsToResolve(cardIds: string[], action?: string): void {
-        this.idsToResolve.push(...cardIds);
+    /** @ids could be card IDs OR BuildingTypes */
+    markIdsToResolve(ids: string[], action?: string): void {
+        this.idsToResolve.push(...ids);
 
-        if (action) cardIds.map(id => (this.actionsForIds[id] = action));
+        if (action) ids.map(id => (this.actionsForIds[id] = action));
     }
 
     /** @returns whether or not card can be found in list of must resolved */
@@ -207,3 +208,7 @@ export class Phase {
         return this.resolvedIds.length === 0;
     }
 }
+
+export type PrimitiveMap = {
+    [k: string]: string | number | boolean;
+};
