@@ -264,11 +264,11 @@ export class Board {
         return true;
     }
 
-    getPatrolZoneAsArray(): Array<Card> {
-        let a: Array<Card> = [];
+    getPatrolZoneAsArray(): Card[] {
+        let a: Card[] = [];
 
         for (let thing in this.patrolZone) {
-            a.push(this.patrolZone[thing]);
+            if (this.patrolZone[thing]) a.push(this.patrolZone[thing]);
         }
 
         return a;

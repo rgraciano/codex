@@ -135,8 +135,8 @@ export class Phase {
      * Each map has:
      * 'resolveId'
      */
-    idsToResolve: string[] = [];
-    resolvedIds: string[] = [];
+    idsToResolve: string[];
+    resolvedIds: string[];
 
     // In some cases, we may do different things based on which ID is selected.
     // If necessary, we record the thing to do for each ID here.
@@ -149,6 +149,9 @@ export class Phase {
     constructor(name: PhaseName, validActions: ActionName[]) {
         this.name = name;
         this.validActions = validActions;
+
+        this.idsToResolve = [];
+        this.resolvedIds = [];
     }
 
     serialize(): ObjectMap {
@@ -164,8 +167,8 @@ export class Phase {
 
     static deserialize(pojo: ObjectMap): Phase {
         let phase = new Phase(<PhaseName>pojo.name, <ActionName[]>pojo.validActions);
-        phase.idsToResolve = <string[]>pojo.mustResolveMaps;
-        phase.resolvedIds = <string[]>pojo.resovedIds;
+        phase.idsToResolve = <string[]>pojo.idsToResolve;
+        phase.resolvedIds = <string[]>pojo.resolvedIds;
         phase.actionsForIds = <StringMap>pojo.actionsForIds;
         phase.extraState = <PrimitiveMap>pojo.extraState;
         return phase;
@@ -205,7 +208,7 @@ export class Phase {
     }
 
     finished(): boolean {
-        return this.resolvedIds.length === 0;
+        return this.idsToResolve.length === 0;
     }
 }
 

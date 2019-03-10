@@ -6,7 +6,7 @@ import { ActionName } from './actions/phase';
 import { playCardAction } from './actions/play_card_action';
 import { choiceAction } from './actions/choice_actions';
 import { attackAction, prepareAttackTargetsAction } from './actions/attack_actions';
-import { abilityAction } from 'actions/ability_action';
+import { abilityAction } from './actions/ability_action';
 
 const savePath = '/Users/rg/gamestates';
 
@@ -119,7 +119,7 @@ export class GameServer {
         } else
             switch (action) {
                 case 'Ability':
-                    abilityAction(cardId, GameServer.requiredAlnumProperties(context, ['abilityName'])['abilityName']);
+                    abilityAction(cardId, GameServer.requiredNameProperties(context, ['abilityName'])['abilityName']);
                     break;
 
                 case 'Attack':
@@ -190,10 +190,18 @@ export class GameServer {
     }
 
     static requiredAlnumProperties(context: StringMap, requiredList: Array<string>): StringMap {
+        return this.requiredProperties(context, requiredList, /[^a-zA-Z0-9]/);
+    }
+
+    static requiredNameProperties(context: StringMap, requiredList: Array<string>): StringMap {
+        return this.requiredProperties(context, requiredList, /[^- +\/\\a-zA-Z0-9]/);
+    }
+
+    static requiredProperties(context: StringMap, requiredList: Array<string>, regEx: RegExp): StringMap {
         let validated: StringMap = new StringMap();
 
         for (let req of requiredList) {
-            if (context.hasOwnProperty(req) && !/[^a-zA-Z0-9]/.test(context[req])) {
+            if (context.hasOwnProperty(req) && !regEx.test(context[req]) && context[req].length < 50) {
                 validated[req] = context[req];
             } else throw new Error('Missing parameter: ' + req); // TODO: this doesn't map to error handling elsewhere, but it's easy to manage...
         }

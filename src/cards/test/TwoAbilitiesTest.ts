@@ -2,7 +2,7 @@ import { Card, FlavorType, TechLevel, Attributes, Unit } from '../card';
 import { Ability, AddPlusOneOneAbility } from '../ability';
 import { Game, EventDescriptor } from '../../game';
 import * as Color from '../color';
-import { CardApi } from 'cards/card_api';
+import { CardApi } from '../card_api';
 
 export class TwoAbilitiesTest extends Unit {
     protected baseAttributes = new Attributes();
@@ -26,6 +26,11 @@ export class TwoAbilitiesTest extends Unit {
 }
 
 class DestroyAbility extends Ability {
+    constructor(card: Card) {
+        super(card);
+        this.name = 'Destroy';
+    }
+
     use() {
         super.use();
         return this.choose(undefined, this.choicesUnits(this.card.game.getAllActiveCards(), 0, 0), 2, 'Destroy', true, true);

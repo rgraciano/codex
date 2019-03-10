@@ -63,7 +63,7 @@ export function choiceAction(game: Game, cardOrBuildingId: string, action: Actio
                 cardWithAbility.controllerBoard.gold -= card.effective().resist;
             }
 
-            ability.resolveChoice(cardOrBuildingId);
+            game.addEvent(ability.resolveChoice(cardOrBuildingId));
             break;
 
         case 'Destroy':
@@ -98,5 +98,5 @@ export function choiceAction(game: Game, cardOrBuildingId: string, action: Actio
             throw new Error('Could not find a phase for this choice');
     }
 
-    phase.markResolved(cardId);
+    phase.markResolved(cardOrBuildingId);
 }

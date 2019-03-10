@@ -1,9 +1,9 @@
 import { Card, Attributes, TechLevel } from './card';
-import { EventDescriptor } from 'game';
-import { Phase } from 'actions/phase';
-import { BuildingType, BoardBuilding } from 'board';
+import { EventDescriptor } from '../game';
+import { Phase } from '../actions/phase';
+import { BuildingType, BoardBuilding } from '../board';
 
-export type BuildingChoice = { builtIns: BuildingType[]; cardBuildings: Card[] };
+export type BuildingChoice = { boardBuildings: BuildingType[]; cardBuildings: Card[] };
 
 export abstract class Ability {
     name: string = 'Ability';
@@ -76,7 +76,8 @@ export abstract class Ability {
 
         // can we ever choose the same thing more than once? i don't think so... and the default here is to cross things off the list
         phase.markCardsToResolve(allCards);
-        phase.markIdsToResolve(buildings.builtIns);
+        if (buildings && buildings.boardBuildings) phase.markIdsToResolve(buildings.boardBuildings);
+
         if (!choicesRequired) phase.markIdsToResolve(['None']);
 
         // gives the back-end the ability to find the resolve() method for this card
@@ -103,15 +104,15 @@ export abstract class Ability {
         minTechLevel: TechLevel,
         maxTechLevel: TechLevel
     ): BuildingChoice {
-        let choices: BuildingChoice = { builtIns: [], cardBuildings: [] };
+        let choices: BuildingChoice = { boardBuildings: [], cardBuildings: [] };
 
-        if (includeBase) choices.builtIns.push('Base');
-        if (includeAddOn) choices.builtIns.push('AddOn');
+        if (includeBase) choices.boardBuildings.push('Base');
+        if (includeAddOn) choices.boardBuildings.push('AddOn');
 
         for (let i = minTechLevel; i <= maxTechLevel; i++) {
             if (i === 0) continue;
 
-            choices.builtIns.push(<BuildingType>('Tech ' + new Number(i).toString()));
+            choices.boardBuildings.push(<BuildingType>('Tech ' + new Number(i).toString()));
         }
 
         if (includeCards) choices.cardBuildings = this.card.game.getAllActiveCards().filter(card => card.cardType == 'Building');
@@ -204,6 +205,7 @@ export class AddPlusOneOneAbility extends Ability {
         this.minTechLevel = minTechLevel;
         this.maxTechLevel = maxTechLevel;
         this.numTargets = numTargets;
+        this.name = 'Add +1/+1';
     }
 
     use() {

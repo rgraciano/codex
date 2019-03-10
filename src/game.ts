@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 
-import { PhaseStack, Phase } from 'actions/phase';
+import { PhaseStack, Phase } from './actions/phase';
 
 import { Board, BoardBuilding, BuildingType } from './board';
 
@@ -9,7 +9,7 @@ import { TimelyMessenger } from './cards/neutral/TimelyMessenger';
 import { Card } from './cards/card';
 
 import { ObjectMap } from './game_server';
-import { TwoAbilitiesTest } from 'cards/test/TwoAbilitiesTest';
+import { TwoAbilitiesTest } from './cards/test/TwoAbilitiesTest';
 
 export type ServerEvent =
     | RuneEvent
