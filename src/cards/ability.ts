@@ -3,6 +3,8 @@ import { EventDescriptor } from 'game';
 import { Phase } from 'actions/phase';
 import { BuildingType, BoardBuilding } from 'board';
 
+export type BuildingChoice = { builtIns: BuildingType[]; cardBuildings: Card[] };
+
 export abstract class Ability {
     name: string = 'Ability';
     card: Card;
@@ -41,18 +43,58 @@ export abstract class Ability {
     }
 
     /** For numberRequired, use 0 to indicate ALL */
-    choose(buildings: BuildingType[], cards: Card[], chooseNumber: number, choicesRequired = true, usesTargetingRules = true) {
+    choose(buildings: BuildingChoice, cards: Card[], chooseNumber: number, choicesRequired = true, usesTargetingRules = true) {
         let phaseStack = this.card.game.phaseStack;
 
-        if (usesTargetingRules && cards)
-            cards.filter(card => {
+        let allCards: Card[] = [];
+
+        if (buildings && buildings.cardBuildings) allCards = allCards.concat(buildings.cardBuildings);
+        if (cards) allCards = allCards.concat(cards);
+
+        if (usesTargetingRules && allCards)
+            allCards.filter(card => {
                 let eff = card.effective();
                 if (eff.untargetable) return false;
                 else if (card.controller != card.game.activePlayer && eff.invisible) return false;
                 else return true;
             });
 
-        phaseStack.addToStack(new Phase('ChooseAbilityTarget', ['AbilityChoice']));
+        let phase = phaseStack.topOfStack();
+        if (phase.name != 'ChooseAbilityTarget') {
+            phase = new Phase('ChooseAbilityTarget', ['AbilityChoice']);
+            phaseStack.addToStack(phase);
+        }
+
+        // can we ever choose the same thing more than once? i don't think so... and the default here is to cross things off the list
+        phase.markCardsToResolve(allCards);
+
+        // next, add buildings. markBuildingsToResolve?
+    }
+
+    // building choices can be built-ins, or cards
+    // note buildings can be untargetable (see Hero's Monument), so we should manage that here
+    // returns an array of built-in building IDs and Cards IDs
+    choicesBuildings(
+        includeCards: boolean,
+        includeBase: boolean,
+        includeAddOn: boolean,
+        minTechLevel: TechLevel,
+        maxTechLevel: TechLevel
+    ): BuildingChoice {
+        let choices: BuildingChoice = { builtIns: [], cardBuildings: [] };
+
+        if (includeBase) choices.builtIns.push('Base');
+        if (includeAddOn) choices.builtIns.push('AddOn');
+
+        for (let i = minTechLevel; i <= maxTechLevel; i++) {
+            if (i === 0) continue;
+
+            choices.builtIns.push(<BuildingType>('Tech ' + new Number(i).toString()));
+        }
+
+        if (includeCards) choices.cardBuildings = this.card.game.getAllActiveCards().filter(card => card.cardType == 'Building');
+
+        return choices;
     }
 
     choicesUnits(space: Card[], leastTechLevel?: TechLevel, mostTechLevel?: TechLevel, extraFilter?: (card: Card) => boolean): Card[] {
