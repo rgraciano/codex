@@ -1,4 +1,3 @@
-
 import { Game } from './game';
 import { anyid } from 'anyid';
 import * as fs from 'fs';
@@ -39,11 +38,15 @@ export class GameServer {
     game: Game;
 
     // Unique link to the current game state, can be passed around.  We encourage the user to pass this around at
-    // beginning of turn, but technically you could pass it around whenever you want.  We also use this to branch 
+    // beginning of turn, but technically you could pass it around whenever you want.  We also use this to branch
     // (create multiple game states/outcomes) and avoid collisions.
 
     private generateGameStateId(): string {
-        return anyid().encode('Aa0').length(10).random().id();
+        return anyid()
+            .encode('Aa0')
+            .length(10)
+            .random()
+            .id();
     }
 
     /** Creates a new game state ID for the current game state and saves it to the filesystem
@@ -56,10 +59,8 @@ export class GameServer {
 
     loadGameState(gameStateId: string) {
         let path = savePath + '/' + gameStateId + '.json';
-        if (fs.existsSync(path))
-            this.game = Game.deserialize(JSON.parse(fs.readFileSync(path, 'utf-8')));
-        else
-            throw new Error('Game state ' + gameStateId + ' does not exist');
+        if (fs.existsSync(path)) this.game = Game.deserialize(JSON.parse(fs.readFileSync(path, 'utf-8')));
+        else throw new Error('Game state ' + gameStateId + ' does not exist');
     }
 
     // TODO: likely to replace the skeleton with some framework here...
@@ -71,9 +72,9 @@ export class GameServer {
 
             return this.wrapUp();
         }
-        
-        let state: (string | boolean) = GameServer.getAlNumProperty(context, 'gameStateId');
-        
+
+        let state: string | boolean = GameServer.getAlNumProperty(context, 'gameStateId');
+
         if (!state) {
             return this.responseError('No state specified');
         }
@@ -83,9 +84,14 @@ export class GameServer {
         this.loadGameState(state);
 
         if (!this.game.phaseStack.topOfStack().isValidAction(action)) {
-            return this.responseError('Action ' + action + ' is not currently valid.  Currently valid actions include ' + this.game.phaseStack.validActions().toString);
+            return this.responseError(
+                'Action ' +
+                    action +
+                    ' is not currently valid.  Currently valid actions include ' +
+                    this.game.phaseStack.validActions().toString
+            );
         }
-   
+
         try {
             let cardId = GameServer.requiredAlnumProperties(context, ['cardId'])['cardId'];
             this.runAction(action, cardId, context);
@@ -102,31 +108,30 @@ export class GameServer {
             if (action == 'AttackCardsOrBuildingsChoice') {
                 let buildingChoice = GameServer.getAlNumProperty(context, 'building');
                 let cardChoice = GameServer.getAlNumProperty(context, 'validCardTargetId');
-                
+
                 if (buildingChoice) safeContext.building = buildingChoice;
                 else if (cardChoice) safeContext.validCardTargetId = cardChoice;
-            }
-            else if (action == 'AttackCardsChoice') {
-                safeContext.validCardTargetId = GameServer.requiredAlnumProperties(context, [ 'validCardTargetId' ])['validCardTargetId'];
+            } else if (action == 'AttackCardsChoice') {
+                safeContext.validCardTargetId = GameServer.requiredAlnumProperties(context, ['validCardTargetId'])['validCardTargetId'];
             }
             choiceAction(this.game, cardId, <ActionName>action, safeContext);
-        }
-        else switch(action) {
-            case 'PlayCard':
-                playCardAction(cardId);
-                break;
-            case 'Worker':
-                playCardAction(cardId, true);
-                break;
-            case 'Attack':
-                attackAction(cardId);
-                break;
-            case 'PrepareAttackTargets':
-                prepareAttackTargetsAction(cardId);
-                break;
-            default:
-                this.responseError('Invalid action');
-        }
+        } else
+            switch (action) {
+                case 'PlayCard':
+                    playCardAction(cardId);
+                    break;
+                case 'Worker':
+                    playCardAction(cardId, true);
+                    break;
+                case 'Attack':
+                    attackAction(cardId);
+                    break;
+                case 'PrepareAttackTargets':
+                    prepareAttackTargetsAction(cardId);
+                    break;
+                default:
+                    this.responseError('Invalid action');
+            }
     }
 
     responseError(error: string) {
@@ -137,15 +142,15 @@ export class GameServer {
         this.cleanUpPhases();
         return this.responseSuccess();
     }
-    
+
     /**
-    * Before the end of this action, clear as many actions as the game can clear without user input.
-    * 
-    * First, eliminate any empty phases - phases that don't have any cards on them to take action on.
-    * Second, eliminate any phases with only a single valid action, by performing that action.
-    * 
-    * Each time we eliminate one of the above, we keep going to clear as many as we can.
-    */
+     * Before the end of this action, clear as many actions as the game can clear without user input.
+     *
+     * First, eliminate any empty phases - phases that don't have any cards on them to take action on.
+     * Second, eliminate any phases with only a single valid action, by performing that action.
+     *
+     * Each time we eliminate one of the above, we keep going to clear as many as we can.
+     */
     cleanUpPhases() {
         let clearedEmptyPhase: boolean, clearedSingleAction: boolean;
 
@@ -158,17 +163,14 @@ export class GameServer {
             // If there's only one action that can be performed, and the game knows how to perform that action, then we do it automatically now before
             // returning to the user.  'PlayerChoice' indicates that the player MUST do something.
             let topOfStack = this.game.phaseStack.topOfStack();
-            
-            if (topOfStack.name == 'GameOver')
-                return;
+
+            if (topOfStack.name == 'GameOver') return;
 
             if (topOfStack.name != 'PlayerPrompt' && topOfStack.validActions.length === 1 && topOfStack.idsToResolve.length === 1) {
                 this.runAction(topOfStack.validActions[0], <string>topOfStack.idsToResolve[0], {});
                 clearedSingleAction = true;
-            }
-            else 
-                clearedSingleAction = false;
-        } while(clearedEmptyPhase || clearedSingleAction);
+            } else clearedSingleAction = false;
+        } while (clearedEmptyPhase || clearedSingleAction);
     }
 
     responseSuccess(): ObjectMap {
@@ -182,23 +184,25 @@ export class GameServer {
         let validated: StringMap = new StringMap();
 
         for (let req of requiredList) {
-            if (context.hasOwnProperty(req) && !( /[^a-zA-Z0-9]/.test(context[req]) )) {
+            if (context.hasOwnProperty(req) && !/[^a-zA-Z0-9]/.test(context[req])) {
                 validated[req] = context[req];
-            }
-            else throw new Error('Missing parameter: ' + req); // TODO: this doesn't map to error handling elsewhere, but it's easy to manage...
+            } else throw new Error('Missing parameter: ' + req); // TODO: this doesn't map to error handling elsewhere, but it's easy to manage...
         }
 
         return validated;
     }
 
     // TODO: Replace later; will pick some kind of framework that does this boilerplate stuff for us
-    static getAlNumProperty(context: StringMap, property: string): (string | false) {
-        if (context.hasOwnProperty(property) && !( /[^a-zA-Z0-9]/.test(context[property]) )) {
+    static getAlNumProperty(context: StringMap, property: string): string | false {
+        if (context.hasOwnProperty(property) && !/[^a-zA-Z0-9]/.test(context[property])) {
             return context[property];
         }
         return false;
     }
 }
-export class StringMap { [s: string]: string; }
-export class ObjectMap { [s: string]: Object; }
-
+export class StringMap {
+    [s: string]: string;
+}
+export class ObjectMap {
+    [s: string]: Object;
+}

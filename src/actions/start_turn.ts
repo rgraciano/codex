@@ -1,10 +1,9 @@
-
 import { Game, EventDescriptor } from '../game';
 import { Card } from '../cards/card';
-import { Board} from '../board';
+import { Board } from '../board';
 import { PatrolZone } from '../board';
 import { Phase } from './phase';
-import { UpkeepHandler } from '../cards/card';
+import { UpkeepHandler } from '../cards/handlers';
 
 export function startTurnAction(game: Game): void {
     let boards = game.getBoardAndOpponentBoard();
@@ -12,7 +11,7 @@ export function startTurnAction(game: Game): void {
     let opponentBoard = boards[1];
 
     board.turnCount++; // TODO: This needs to be done per player
-    
+
     // clear patrol zone, moving everything to "in play"
     game.addEvent(clearPatrolZone(board));
 
@@ -21,37 +20,46 @@ export function startTurnAction(game: Game): void {
 
     // mark recently deceased heroes as being one turn closer to available,
     // and heroes that were max leveled as being able to cast ultimate
-    board.heroZone.map(hero => 
-        { 
-            if (hero.turnsTilAvailable > 0)
-                hero.turnsTilAvailable--;
-            
-            if (hero.level == hero.maxLevel && hero.turnsTilCastUltimate > 0)
-                hero.turnsTilCastUltimate--;
+    board.heroZone.map(hero => {
+        if (hero.turnsTilAvailable > 0) hero.turnsTilAvailable--;
 
-            return hero;
-        });
+        if (hero.level == hero.maxLevel && hero.turnsTilCastUltimate > 0) hero.turnsTilCastUltimate--;
+
+        return hero;
+    });
 
     // collect gold
     game.addEvent(board.collectGold());
 
     // reset tower ability
-    if (board.addOn && board.addOn.addOnType == 'Tower')
-        board.addOn.towerDetectedThisTurn = false;
+    if (board.addOn && board.addOn.addOnType == 'Tower') board.addOn.towerDetectedThisTurn = false;
 
     // allow worker
     board.workeredThisTurn = false;
 
     // enter player turn phase
-    game.phaseStack.addToStack(new Phase('PlayerTurn', [ 'PlayCard', 'Worker', 'Tech', 'BuildTech', 'BuildAddOn', 'Patrol', 'Ability', 'Attack', 'HeroSummon', 'HeroLevel', 'EndTurn']));
+    game.phaseStack.addToStack(
+        new Phase('PlayerTurn', [
+            'PlayCard',
+            'Worker',
+            'Tech',
+            'BuildTech',
+            'BuildAddOn',
+            'Patrol',
+            'Ability',
+            'Attack',
+            'HeroSummon',
+            'HeroLevel',
+            'EndTurn'
+        ])
+    );
 
     // enter upkeep phase, process upkeep events. when this is resolved, we'll exit into the PlayerTurn phase just beneath
-    game.phaseStack.addToStack(new Phase('Upkeep', [ 'UpkeepChoice' ]));
+    game.phaseStack.addToStack(new Phase('Upkeep', ['UpkeepChoice']));
     game.markMustResolveForCardsWithFnName(game.getBoardAndOpponentBoard()[0].inPlay, 'onUpkeep');
 }
 
 export function upkeepChoiceAction(game: Game, cardId: string): void {
-
     let phase = game.phaseStack.topOfStack();
 
     if (phase.name != 'Upkeep' || !phase.ifToResolve(cardId)) {
@@ -86,16 +94,15 @@ function readyAllCards(game: Game, board: Board): Array<EventDescriptor> {
     // Nothing happens when we ready cards, so we don't have to worry about any triggers happening here.
 
     let andDoToReadyCards = function(card: Card): EventDescriptor {
-        if (card.attributeModifiers.exhausted > 0)
-            card.attributeModifiers.exhausted--; // decrement because adding to this means it's disabled or may have come into play exhausted
-        
+        if (card.attributeModifiers.exhausted > 0) card.attributeModifiers.exhausted--; // decrement because adding to this means it's disabled or may have come into play exhausted
+
         card.attributeModifiers.arrivalFatigue = 0; // set to zero because you have arrival fatigue or you don't
         return new EventDescriptor('ReadyCard', 'Readied ' + card.name, { cardId: card.cardId });
     };
     let matching = function(card: Card): boolean {
         let attrs = card.effective();
-        return (attrs.exhausted > 0 || attrs.arrivalFatigue > 0);
+        return attrs.exhausted > 0 || attrs.arrivalFatigue > 0;
     };
-    
+
     return Game.findAndDoOnCards(board.inPlay, matching, andDoToReadyCards);
 }

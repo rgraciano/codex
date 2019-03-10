@@ -1,35 +1,31 @@
-
 import { Game, EventDescriptor } from '../game';
-import { Card, Hero, GlobalBonusHook, WouldDieHook, WouldDiscardHook } from './card';
+import { Card, Hero } from './card';
+import { GlobalBonusHook, WouldDieHook, WouldDiscardHook } from './handlers';
 import { Phase } from '../actions/phase';
 
 /**
  * Everything in here is designed to be called by a card when something happens, e.g., something is made to arrive.
  */
 export class CardApi {
-
     /** Does everything needed to bring a card into play. Note you still need to remove card from wherever it was before calling this */
     static arriveCardIntoPlay(card: Card): void {
         let boards = card.game.getBoardAndOpponentBoard();
         let board = boards[0];
         let opponentBoard = boards[1];
-    
+
         /**** GLOBAL BONUSES ****/
         // First, check if this card applies bonuses to other cards (possibly including or excluding self)
-        if (Reflect.has(card, 'giveBonus'))
-            card.game.getAllActiveCards().map(boardCard => (<GlobalBonusHook>card).giveBonus(boardCard));
-        
-        // Second, check if this card GETS bonuses FROM other cards...
-        let bonusGivers = <GlobalBonusHook[]>(Game.findCardsWithProperty(card.game.getAllActiveCards(), 'giveBonus'));
-        bonusGivers.map(giver => card.game.addEvent(giver.giveBonus(card)));
+        if (Reflect.has(card, 'giveBonus')) card.game.getAllActiveCards().map(boardCard => (<GlobalBonusHook>card).giveBonus(boardCard));
 
+        // Second, check if this card GETS bonuses FROM other cards...
+        let bonusGivers = <GlobalBonusHook[]>Game.findCardsWithProperty(card.game.getAllActiveCards(), 'giveBonus');
+        bonusGivers.map(giver => card.game.addEvent(giver.giveBonus(card)));
 
         /**** CARD IS NOW ON THE BOARD */
         board.inPlay.push(card);
 
-
         /**** ARRIVES PHASE ****/
-        card.game.phaseStack.addToStack(new Phase('Arrives', [ 'ArrivesChoice' ]));
+        card.game.phaseStack.addToStack(new Phase('Arrives', ['ArrivesChoice']));
         card.game.phaseStack.topOfStack().extraState.arrivingCardId = card.cardId;
 
         // Resolve any handlers that happen when a card arrives
@@ -42,8 +38,7 @@ export class CardApi {
 
         // Set damage equal to health, as we can always tell something is dead that way. This is in case someone calls this method directly, e.g. by destroying a card
         let effective = card.effective();
-        if (effective.damage < effective.health)
-            card.attributeModifiers.damage = effective.health;
+        if (effective.damage < effective.health) card.attributeModifiers.damage = effective.health;
 
         /**** WOULD DIE ****/
         // We run all 'would die' handlers right away, because the user doesn't get to choose anything.  They just happen.  Order really does not matter.
@@ -60,21 +55,19 @@ export class CardApi {
         if (effective.health > 0 && effective.damage < effective.health) {
             return;
         }
-       
+
         /**** DEAD. SO DEAD. ****/
-        game.phaseStack.addToStack(new Phase('DiesOrLeaves', [ 'DiesOrLeavesChoice' ]));
+        game.phaseStack.addToStack(new Phase('DiesOrLeaves', ['DiesOrLeavesChoice']));
         game.phaseStack.topOfStack().extraState.dyingCardId = card.cardId;
         game.markMustResolveForCardsWithFnName(game.getAllActiveCards(), 'onDies');
 
         CardApi.leavePlay(card, 'Discard', true); // TODO: Add Hero logic, which may also necessitate player choices
 
-
         let board = card.controller == 1 ? game.player1Board : game.player2Board;
         if (board.patrolZone.scavenger === card) {
             board.gold++;
             game.addEvent(new EventDescriptor('Scavenger', 'Player ' + card.controller + ' gains 1 gold for Scavenger'));
-        }
-        else if (board.patrolZone.technician === card) {
+        } else if (board.patrolZone.technician === card) {
             board.drawCards(1);
             game.addEvent(new EventDescriptor('Technician', 'Player ' + card.controller + ' draws 1 card for Technician'));
         }
@@ -85,7 +78,7 @@ export class CardApi {
         let game: Game = card.game;
 
         if (!afterDies) {
-            game.phaseStack.addToStack(new Phase('DiesOrLeaves', [ 'DiesOrLeavesChoice' ]));
+            game.phaseStack.addToStack(new Phase('DiesOrLeaves', ['DiesOrLeavesChoice']));
             game.phaseStack.topOfStack().extraState.dyingCardId = card.cardId;
         }
 
@@ -102,7 +95,7 @@ export class CardApi {
                 this.putCardBackInHeroZone(<Hero>card);
                 break;
             default:
-                return;            
+                return;
         }
     }
 
@@ -111,7 +104,7 @@ export class CardApi {
         card.resetCard();
         card.game.removeCardFromPlay(card);
         card.ownerBoard.heroZone.push(card);
-        card.game.addEvent(new EventDescriptor('ReturnToHeroZone', card.name + " was returned to hero zone", { cardId: card.cardId }));
+        card.game.addEvent(new EventDescriptor('ReturnToHeroZone', card.name + ' was returned to hero zone', { cardId: card.cardId }));
     }
 
     /** Will NOT trigger leaves play and similar handlers. Call those if you want those things to happen. */
@@ -119,10 +112,10 @@ export class CardApi {
         card.resetCard();
         card.game.removeCardFromPlay(card);
         card.ownerBoard.hand.push(card);
-        card.game.addEvent(new EventDescriptor('PutInHand', card.name + " was returned to hand", { cardId: card.cardId }));
+        card.game.addEvent(new EventDescriptor('PutInHand', card.name + ' was returned to hand', { cardId: card.cardId }));
     }
 
-    /** 
+    /**
      * Does not trigger Dies or Leaves Play.  Use those functions if you want to initiate those things.
      * DOES trigger wouldDiscard, and looks for things that would prevent discard.
      */
@@ -136,17 +129,17 @@ export class CardApi {
         if (wouldDiscardHooks) {
             wouldDiscardHooks.map(hookCard => {
                 let result = (<WouldDiscardHook>hookCard).wouldDiscard(card);
-               
+
                 if (result) {
                     card.game.addEvent(result);
                     needToDiscard = false;
-                }   
+                }
             });
         }
 
         if (needToDiscard) {
             card.ownerBoard.discard.push(card);
-            card.game.addEvent(new EventDescriptor('DiscardedCards', card.name + " was discarded", { cardId: card.cardId }));
+            card.game.addEvent(new EventDescriptor('DiscardedCards', card.name + ' was discarded', { cardId: card.cardId }));
         }
     }
 }
