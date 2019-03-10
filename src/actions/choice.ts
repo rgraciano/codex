@@ -58,6 +58,11 @@ export function choiceAction(game: Game, cardOrBuildingId: string, action: Actio
                 // if we've chosen the max number of things we can choose, end the phase
                 game.phaseStack.endCurrentPhase();
 
+            if (card && <boolean>phase.extraState['usesTargetingRules']) {
+                // subtract any resistance on the targeted card
+                cardWithAbility.controllerBoard.gold -= card.effective().resist;
+            }
+
             ability.resolveChoice(cardOrBuildingId);
             break;
 

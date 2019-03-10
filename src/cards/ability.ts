@@ -51,13 +51,15 @@ export abstract class Ability {
         if (buildings && buildings.cardBuildings) allCards = allCards.concat(buildings.cardBuildings);
         if (cards) allCards = allCards.concat(cards);
 
-        if (usesTargetingRules && allCards)
+        if (usesTargetingRules && allCards) {
             allCards.filter(card => {
                 let eff = card.effective();
                 if (eff.untargetable) return false;
                 else if (card.controller != card.game.activePlayer && eff.invisible) return false;
+                else if (card.controllerBoard.gold < eff.resist) return false;
                 else return true;
             });
+        }
 
         let phase = phaseStack.topOfStack();
         if (phase.name != 'ChooseAbilityTarget') {
@@ -78,6 +80,8 @@ export abstract class Ability {
         // whether or not things are required
         phase.extraState.chooseNumber = chooseNumber;
         phase.extraState.haveChosen = 0;
+
+        phase.extraState.usesTargetingRules = usesTargetingRules;
     }
 
     // building choices can be built-ins, or cards

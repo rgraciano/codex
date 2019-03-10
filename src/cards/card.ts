@@ -477,6 +477,7 @@ export class Attributes {
     detector: number = 0;
     untargetable: number = 0;
     ephemeral: number = 0;
+    resist: number = 0;
 
     // Counting how many runes are on the card
     timeRunes: number = 0;
