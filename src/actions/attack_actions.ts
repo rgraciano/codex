@@ -1,5 +1,5 @@
 import { Card, Character, Attributes } from '../cards/card';
-import { Phase } from '../actions/phase';
+import { Phase } from './phase';
 import { EventDescriptor } from '../game';
 
 function getAttackerFromId(attackerId: string): Character {

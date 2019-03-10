@@ -38,7 +38,8 @@ export type ServerEvent =
     | 'AttackComplete'
     | 'TowerDetected'
     | 'PossibleAttackTargets'
-    | 'NoneChosen';
+    | 'NoneChosen'
+    | 'Info';
 export type RuneEvent = 'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
 export class Game {

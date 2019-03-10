@@ -43,7 +43,14 @@ export abstract class Ability {
     }
 
     /** For numberRequired, use 0 to indicate ALL */
-    choose(buildings: BuildingChoice, cards: Card[], chooseNumber: number, choicesRequired = true, usesTargetingRules = true) {
+    choose(
+        buildings: BuildingChoice,
+        cards: Card[],
+        chooseNumber: number,
+        label: string,
+        choicesRequired = true,
+        usesTargetingRules = true
+    ) {
         let phaseStack = this.card.game.phaseStack;
 
         let allCards: Card[] = [];
@@ -80,6 +87,8 @@ export abstract class Ability {
         // whether or not things are required
         phase.extraState.chooseNumber = chooseNumber;
         phase.extraState.haveChosen = 0;
+
+        phase.extraState.label = label;
 
         phase.extraState.usesTargetingRules = usesTargetingRules;
     }
@@ -180,5 +189,8 @@ export abstract class Ability {
 
     abstract resolveChoice(cardOrBuildingId: string): EventDescriptor;
 
-    abstract use(): EventDescriptor; // always enters an ability phase?
+    use(): EventDescriptor {
+        this.payFor();
+        return new EventDescriptor('Info', 'Paid for ability ' + this.name);
+    }
 }

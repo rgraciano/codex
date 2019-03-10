@@ -1,11 +1,12 @@
 import { Game } from './game';
 import { anyid } from 'anyid';
 import * as fs from 'fs';
+import { startTurnAction } from './actions/start_turn_action';
 import { ActionName } from './actions/phase';
-import { startTurnAction } from './actions/start_turn';
-import { playCardAction } from './actions/play_card';
-import { choiceAction } from './actions/choice';
-import { attackAction, prepareAttackTargetsAction } from './actions/attack';
+import { playCardAction } from './actions/play_card_action';
+import { choiceAction } from './actions/choice_actions';
+import { attackAction, prepareAttackTargetsAction } from './actions/attack_actions';
+import { abilityAction } from 'actions/ability_action';
 
 const savePath = '/Users/rg/gamestates';
 
@@ -117,18 +118,26 @@ export class GameServer {
             choiceAction(this.game, cardId, <ActionName>action, safeContext);
         } else
             switch (action) {
-                case 'PlayCard':
-                    playCardAction(cardId);
+                case 'Ability':
+                    abilityAction(cardId, GameServer.requiredAlnumProperties(context, ['abilityName'])['abilityName']);
                     break;
-                case 'Worker':
-                    playCardAction(cardId, true);
-                    break;
+
                 case 'Attack':
                     attackAction(cardId);
                     break;
+
+                case 'PlayCard':
+                    playCardAction(cardId);
+                    break;
+
                 case 'PrepareAttackTargets':
                     prepareAttackTargetsAction(cardId);
                     break;
+
+                case 'Worker':
+                    playCardAction(cardId, true);
+                    break;
+
                 default:
                     this.responseError('Invalid action');
             }

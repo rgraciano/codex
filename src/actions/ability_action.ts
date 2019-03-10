@@ -1,0 +1,14 @@
+import { Card } from '../cards/card';
+
+export function abilityAction(cardId: string, abilityName: string): void {
+    let cardWithAbility = Card.idToCardMap.get(cardId);
+    if (!cardWithAbility) throw new Error('Card ID ' + cardId + ' can not be found');
+
+    let ability = cardWithAbility.abilityMap.get(abilityName);
+    if (!ability) throw new Error('Could not find ability ' + abilityName + ' on card ' + cardWithAbility.name);
+
+    if (!ability.canUse())
+        throw new Error('Do not meet the requirements to use ability ' + abilityName + ' on card ' + cardWithAbility.name);
+
+    cardWithAbility.game.addEvent(ability.use());
+}

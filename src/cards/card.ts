@@ -92,7 +92,7 @@ export abstract class Card {
     }
 
     serialize(): ObjectMap {
-        return {
+        let objMap = {
             constructorName: this.constructor.name,
             importPath: this.importPath,
             techLevel: this.techLevel,
@@ -106,9 +106,13 @@ export abstract class Card {
             controller: this.controller,
             baseAttributes: Object.assign({}, this.baseAttributes),
             attributeModifiers: Object.assign({}, this.attributeModifiers),
-            canUseAbility: this.canUseAbility(),
+            abilities: Array.from(this.abilityMap.keys()),
+            canUseAbilities: <boolean[]>[],
             canPlay: this.canPlay()
         };
+
+        this.abilityMap.forEach((ability, key, map) => objMap.canUseAbilities.push(ability.canUse()));
+        return objMap;
     }
 
     static serializeCards(cards: Array<Card>): Array<ObjectMap> {
