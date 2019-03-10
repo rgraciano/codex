@@ -29,7 +29,15 @@ export function choiceAction(game: Game, cardOrBuildingId: string, action: Actio
     }
 
     switch (phase.name) {
-        case 'Ability':
+        case 'Arrives':
+            game.addEvent((<ArrivesHandler>card).onArrives(Card.idToCardMap.get(<string>phase.extraState['arrivingCardId'])));
+            break;
+
+        case 'Attack':
+            game.addEvent((<AttacksHandler>card).onAttacks(Card.idToCardMap.get(<string>phase.extraState['attackingCardId'])));
+            break;
+
+        case 'ChooseAbilityTarget':
             let cardWithAbility = Card.idToCardMap.get(<string>phase.extraState['cardWithAbility']);
             let ability = cardWithAbility.abilityMap.get(<string>phase.extraState['abilityName']);
 
@@ -51,14 +59,6 @@ export function choiceAction(game: Game, cardOrBuildingId: string, action: Actio
                 game.phaseStack.endCurrentPhase();
 
             ability.resolveChoice(cardOrBuildingId);
-            break;
-
-        case 'Arrives':
-            game.addEvent((<ArrivesHandler>card).onArrives(Card.idToCardMap.get(<string>phase.extraState['arrivingCardId'])));
-            break;
-
-        case 'Attack':
-            game.addEvent((<AttacksHandler>card).onAttacks(Card.idToCardMap.get(<string>phase.extraState['attackingCardId'])));
             break;
 
         case 'Destroy':

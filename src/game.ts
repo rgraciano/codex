@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 
-import { PhaseStack, Phase } from './actions/phase';
+import { PhaseStack, Phase } from 'actions/phase';
 
 import { Board, BoardBuilding, BuildingType } from './board';
 
