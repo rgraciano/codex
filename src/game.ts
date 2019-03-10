@@ -4,14 +4,12 @@ import { PhaseStack, Phase } from 'actions/phase';
 
 import { Board, BoardBuilding, BuildingType } from './board';
 
-import { FruitNinja } from './cards/neutral/FruitNinja';
-import { Tenderfoot } from './cards/neutral/Tenderfoot';
-import { OlderBrother } from './cards/neutral/OlderBrother';
 import { TimelyMessenger } from './cards/neutral/TimelyMessenger';
 
 import { Card } from './cards/card';
 
 import { ObjectMap } from './game_server';
+import { TwoAbilitiesTest } from 'cards/test/TwoAbilitiesTest';
 
 export type ServerEvent =
     | RuneEvent
@@ -39,7 +37,8 @@ export type ServerEvent =
     | 'TowerDetected'
     | 'PossibleAttackTargets'
     | 'NoneChosen'
-    | 'Info';
+    | 'Info'
+    | 'Ability';
 export type RuneEvent = 'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
 export class Game {
@@ -62,28 +61,28 @@ export class Game {
         this.player2Board.base = new BoardBuilding('Base', true);
 
         this.player1Board.discard = [
-            new Tenderfoot(1),
             new TimelyMessenger(1),
-            new OlderBrother(1),
-            new FruitNinja(1),
-            new Tenderfoot(1),
+            new TwoAbilitiesTest(1),
             new TimelyMessenger(1),
-            new OlderBrother(1),
-            new FruitNinja(1),
-            new Tenderfoot(1),
-            new TimelyMessenger(1)
+            new TwoAbilitiesTest(1),
+            new TimelyMessenger(1),
+            new TwoAbilitiesTest(1),
+            new TimelyMessenger(1),
+            new TwoAbilitiesTest(1),
+            new TimelyMessenger(1),
+            new TwoAbilitiesTest(1)
         ];
 
         this.player2Board.discard = [
-            new Tenderfoot(2),
             new TimelyMessenger(2),
-            new OlderBrother(2),
-            new FruitNinja(2),
-            new Tenderfoot(2),
             new TimelyMessenger(2),
-            new OlderBrother(2),
-            new FruitNinja(2),
-            new Tenderfoot(2),
+            new TimelyMessenger(2),
+            new TimelyMessenger(2),
+            new TimelyMessenger(2),
+            new TimelyMessenger(2),
+            new TimelyMessenger(2),
+            new TimelyMessenger(2),
+            new TimelyMessenger(2),
             new TimelyMessenger(2)
         ];
 

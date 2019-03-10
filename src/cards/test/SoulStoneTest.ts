@@ -1,6 +1,5 @@
-
-
-import { Card, Spell, FlavorType, Attributes, WouldDieHook, SpellLevel, TechLevel } from '../card';
+import { Card, Spell, FlavorType, Attributes, SpellLevel, TechLevel } from '../card';
+import { WouldDieHook } from '../handlers';
 import { Game, EventDescriptor } from '../../game';
 import { CardApi } from '../card_api';
 import * as Color from '../color';
@@ -10,12 +9,12 @@ export class SoulStoneTest extends Spell implements WouldDieHook {
 
     color: Color.ColorName = 'Neutral';
     spec: Color.Spec = 'Starter';
-    flavorType: FlavorType = "QA";
-    name: string = "Soul Stone Test";
-    importPath: string = "./test";
+    flavorType: FlavorType = 'QA';
+    name: string = 'Soul Stone Test';
+    importPath: string = './test';
     spellLevel: SpellLevel = 'Normal';
-    techLevel: TechLevel = 'Tech 1';
-    
+    techLevel: TechLevel = 1;
+
     constructor(owner: number, controller?: number, cardId?: string) {
         super(owner, controller, cardId);
         this.baseAttributes.cost = 2;
@@ -23,13 +22,13 @@ export class SoulStoneTest extends Spell implements WouldDieHook {
 
     wouldDie(cardToDie: Card): EventDescriptor {
         if (this.contains.find(card => card == cardToDie)) {
-           cardToDie.attributeModifiers.damage = 0;
-           cardToDie.attributeModifiers.plusOneOne--;
-           
-           this.game.removeCardFromPlay(this);
-           this.ownerBoard.discard.push(this);
-           
-           return new EventDescriptor('WouldDie', 'Soul Stone prevented the death of ' + cardToDie.cardId);
+            cardToDie.attributeModifiers.damage = 0;
+            cardToDie.attributeModifiers.plusOneOne--;
+
+            this.game.removeCardFromPlay(this);
+            this.ownerBoard.discard.push(this);
+
+            return new EventDescriptor('WouldDie', 'Soul Stone prevented the death of ' + cardToDie.cardId);
         }
         return undefined;
     }

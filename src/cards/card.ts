@@ -25,14 +25,13 @@ export abstract class Card {
     abstract readonly cardType: CardType;
 
     abstract readonly techLevel: TechLevel;
-    abstract readonly techLevelNumeric: number;
     abstract readonly color: Color.ColorName;
     abstract readonly spec: Color.Spec;
 
     abstract readonly name: string;
     abstract readonly flavorType: FlavorType;
 
-    abstract abilityMap: Map<string, Ability> = new Map<string, Ability>();
+    abilityMap: Map<string, Ability> = new Map<string, Ability>();
 
     // Identifies cards uniquely, for client<->server communication
     readonly cardId: string;
@@ -143,6 +142,10 @@ export abstract class Card {
 
         card.deserializeExtra(pojo);
         return card;
+    }
+
+    registerAbility(ability: Ability) {
+        this.abilityMap.set(ability.name, ability);
     }
 
     /**

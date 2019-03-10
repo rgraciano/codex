@@ -189,8 +189,38 @@ export abstract class Ability {
 
     abstract resolveChoice(cardOrBuildingId: string): EventDescriptor;
 
-    use(): EventDescriptor {
+    use() {
         this.payFor();
-        return new EventDescriptor('Info', 'Paid for ability ' + this.name);
+    }
+}
+
+export class AddPlusOneOneAbility extends Ability {
+    minTechLevel: TechLevel;
+    maxTechLevel: TechLevel;
+    numTargets: number;
+
+    constructor(card: Card, minTechLevel: TechLevel, maxTechLevel: TechLevel, numTargets: number) {
+        super(card);
+        this.minTechLevel = minTechLevel;
+        this.maxTechLevel = maxTechLevel;
+        this.numTargets = numTargets;
+    }
+
+    use() {
+        super.use();
+        return this.choose(
+            undefined,
+            this.choicesUnits(this.card.game.getAllActiveCards(), this.minTechLevel, this.maxTechLevel),
+            this.numTargets,
+            'Add +1/+1',
+            false,
+            true
+        );
+        // need to check - what happens if ability requires more targets than actually exist?
+    }
+
+    resolveChoice(cardOrBuildingId: string) {
+        let card = Card.idToCardMap.get(cardOrBuildingId);
+        return card.gainProperty('plusOneOne', 1);
     }
 }

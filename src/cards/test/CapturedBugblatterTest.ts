@@ -1,6 +1,5 @@
-
-
-import { Card, TechLevel, Unit, FlavorType, Attributes, DiesHandler } from '../card';
+import { Card, TechLevel, Unit, FlavorType, Attributes } from '../card';
+import { DiesHandler } from '../handlers';
 import { Game, EventDescriptor } from '../../game';
 import * as Color from '../color';
 
@@ -9,10 +8,10 @@ export class CapturedBugblatterTest extends Unit implements DiesHandler {
 
     color: Color.ColorName = 'Neutral';
     spec: Color.Spec = 'Starter';
-    flavorType: FlavorType = "Beast";
-    name: string = "Captured Bugblatter Test";
-    techLevel: TechLevel = "Tech 2";
-    importPath: string = "./test";
+    flavorType: FlavorType = 'Beast';
+    name: string = 'Captured Bugblatter Test';
+    techLevel: TechLevel = 2;
+    importPath: string = './test';
 
     constructor(owner: number, controller?: number, cardId?: string) {
         super(owner, controller, cardId);
@@ -21,7 +20,7 @@ export class CapturedBugblatterTest extends Unit implements DiesHandler {
 
     onDies(dyingCard: Card): EventDescriptor {
         if (dyingCard.cardType == 'Unit') {
-           return this.oppositionalControllerBoard.base.damage(1, this);
+            return this.oppositionalControllerBoard.base.damage(1, this);
         }
         return undefined;
     }

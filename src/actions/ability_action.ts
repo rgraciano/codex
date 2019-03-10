@@ -10,5 +10,5 @@ export function abilityAction(cardId: string, abilityName: string): void {
     if (!ability.canUse())
         throw new Error('Do not meet the requirements to use ability ' + abilityName + ' on card ' + cardWithAbility.name);
 
-    cardWithAbility.game.addEvent(ability.use());
+    ability.use();
 }
