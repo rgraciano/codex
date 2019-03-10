@@ -2,6 +2,7 @@ import { anyid } from 'anyid';
 import { Game, EventDescriptor, RuneEvent } from '../game';
 import { ObjectMap } from '../game_server';
 import { Board } from '../board';
+import { Ability } from './ability';
 import * as Color from './color';
 
 export type CardType = 'Spell' | 'Hero' | 'Unit' | 'Building' | 'Upgrade' | 'Effect' | 'None';
@@ -30,6 +31,8 @@ export abstract class Card {
 
     abstract readonly name: string;
     abstract readonly flavorType: FlavorType;
+
+    abstract abilityMap: Map<string, Ability> = new Map<string, Ability>();
 
     // Identifies cards uniquely, for client<->server communication
     readonly cardId: string;

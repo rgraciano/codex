@@ -37,7 +37,8 @@ export type ServerEvent =
     | 'CardToDestroy'
     | 'AttackComplete'
     | 'TowerDetected'
-    | 'PossibleAttackTargets';
+    | 'PossibleAttackTargets'
+    | 'NoneChosen';
 export type RuneEvent = 'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
 export class Game {

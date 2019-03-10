@@ -63,3 +63,4 @@ typings/
 scratch.ts
 
 built/**
+.DS_Store

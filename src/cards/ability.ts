@@ -174,7 +174,7 @@ export abstract class Ability {
         return selectedCards;
     }
 
-    abstract resolveChoice(): EventDescriptor;
+    abstract resolveChoice(cardOrBuildingId: string): EventDescriptor;
 
     abstract use(): EventDescriptor; // always enters an ability phase?
 }
