@@ -4,6 +4,8 @@ import { ObjectMap } from './game_server';
 import { Spec } from './cards/color';
 
 export type BuildingType = 'Base' | 'Tech 1' | 'Tech 2' | 'Tech 3' | 'AddOn';
+export type AddOnType = 'Tower' | 'Surplus' | 'Heroes Hall' | 'Tech Lab' | 'None';
+export type BuildingOrAddOnType = BuildingType | AddOnType;
 
 /** This class will essentially represent an entire player state */
 export class Board {
@@ -47,6 +49,10 @@ export class Board {
         }
     }
 
+    workerCount(): number {
+        return this.workers.length + this.startingWorkers;
+    }
+
     serialize(): ObjectMap {
         let pojo: ObjectMap = {
             playerNumber: this.playerNumber,
@@ -55,7 +61,7 @@ export class Board {
 
             turnCount: this.turnCount,
             gold: this.gold,
-            base: this.base.serialize(),
+            base: this.base.serialize('Base', this.gold, this.workerCount(), this.multiColor),
 
             hand: Card.serializeCards(this.hand),
             deck: Card.serializeCards(this.deck),
@@ -71,11 +77,11 @@ export class Board {
             patrolZone: PatrolZone.serialize(this.patrolZone) // break from convention here b/c instance method screws up property iteration on pz
         };
 
-        if (this.tech1) pojo.tech1 = this.tech1.serialize();
-        if (this.tech2) pojo.tech2 = this.tech2.serialize();
-        if (this.tech3) pojo.tech3 = this.tech3.serialize();
+        pojo.tech1 = this.tech1.serialize('Tech 1', this.gold, this.workerCount(), this.multiColor);
+        pojo.tech2 = this.tech2.serialize('Tech 2', this.gold, this.workerCount(), this.multiColor);
+        pojo.tech3 = this.tech3.serialize('Tech 3', this.gold, this.workerCount(), this.multiColor);
 
-        if (this.addOn) pojo.addOn = this.addOn.serialize();
+        pojo.addOn = this.addOn.serialize(this.addOn.addOnType, this.gold, this.workerCount(), this.multiColor);
 
         return pojo;
     }
@@ -100,11 +106,11 @@ export class Board {
 
         board.patrolZone = PatrolZone.deserialize(<ObjectMap>pojo.patrolZone);
 
-        if (pojo.tech1) board.tech1 = TechBuilding.deserialize(<ObjectMap>pojo.tech1);
-        if (pojo.tech2) board.tech2 = TechBuilding.deserialize(<ObjectMap>pojo.tech2);
-        if (pojo.tech3) board.tech3 = TechBuilding.deserialize(<ObjectMap>pojo.tech3);
+        board.tech1 = TechBuilding.deserialize(<ObjectMap>pojo.tech1);
+        board.tech2 = TechBuilding.deserialize(<ObjectMap>pojo.tech2);
+        board.tech3 = TechBuilding.deserialize(<ObjectMap>pojo.tech3);
 
-        if (pojo.addOn) board.addOn = AddOn.deserialize(<ObjectMap>pojo.addOn);
+        board.addOn = AddOn.deserialize(<ObjectMap>pojo.addOn);
 
         return board;
     }
@@ -280,23 +286,32 @@ export class BoardBuilding {
     readonly maxHealth: number = 20; // base health by default
     private _health: number = this.maxHealth;
     destroyed = false;
-    constructionInProgress = true;
+    constructionInProgress = false;
     name: string;
+    built: boolean = false;
 
-    constructor(name: string, buildInstantly: boolean = false) {
+    constructor(name: string) {
         this.name = name;
-        if (buildInstantly) {
-            this.constructionInProgress = false;
-        }
     }
 
-    serialize(): ObjectMap {
+    canBuild(type: BuildingOrAddOnType, gold: number, workers: number, multiColor: boolean = false): boolean {
+        return false; // default for base
+    }
+
+    build(buildInstantly: boolean = false) {
+        this.built = true;
+        this.constructionInProgress = !buildInstantly;
+    }
+
+    serialize(type: BuildingOrAddOnType, gold: number, workers: number, multiColor: boolean = false): ObjectMap {
         return {
             maxHealth: this.maxHealth,
             _health: this._health,
             name: this.name,
             destroyed: this.destroyed,
-            constructionInProgress: this.constructionInProgress
+            built: this.built,
+            constructionInProgress: this.constructionInProgress,
+            canBuild: this.canBuild(type, gold, workers, multiColor)
         };
     }
 
@@ -309,6 +324,7 @@ export class BoardBuilding {
     static deserializeCommonProperties(bb: BoardBuilding, pojo: ObjectMap): void {
         bb._health = <number>pojo._health;
         bb.destroyed = <boolean>pojo.destroyed;
+        bb.built = <boolean>pojo.built;
         bb.constructionInProgress = <boolean>pojo.constructionInProgress;
     }
 
@@ -348,16 +364,32 @@ export class BoardBuilding {
     }
 }
 
-class AddOn extends BoardBuilding {
+export class AddOn extends BoardBuilding {
     readonly maxHealth: number = 4;
     addOnType: AddOnType;
     towerDetectedThisTurn: boolean = false;
     techLabSpec: Spec;
 
-    serialize(): ObjectMap {
-        let pojo: ObjectMap = super.serialize();
+    canBuild(type: AddOnType, gold: number, workers: number, multiColor: boolean = false): boolean {
+        if (this.built) return false;
+
+        switch (type) {
+            case 'Tower':
+                return gold >= 3;
+            case 'Surplus':
+                return gold >= 5;
+            case 'Heroes Hall':
+                return gold >= 2;
+            case 'Tech Lab':
+                return gold >= 1;
+        }
+    }
+
+    serialize(type: BuildingOrAddOnType, gold: number, workers: number, multiColor: boolean = false): ObjectMap {
+        let pojo: ObjectMap = super.serialize(type, gold, workers, multiColor);
         pojo.addOnType = this.addOnType;
         pojo.towerDetectedThisTurn = this.towerDetectedThisTurn;
+        pojo.canBuild = this.canBuild(this.addOnType, gold, 0);
 
         if (this.techLabSpec) pojo.techLabSpec = this.techLabSpec;
 
@@ -375,21 +407,20 @@ class AddOn extends BoardBuilding {
         return ao;
     }
 }
-type AddOnType = 'Tower' | 'Heroes Hall' | 'Surplus' | 'Tech Lab';
 
-class TechBuilding extends BoardBuilding {
+export class TechBuilding extends BoardBuilding {
     level: number;
     spec: Spec; // for Tech 2 only
 
     readonly maxHealth: number = 5;
 
-    constructor(name: string, level: number, buildInstantly: boolean = false) {
-        super(name, buildInstantly);
+    constructor(name: string, level: number) {
+        super(name);
         this.level = level;
     }
 
-    serialize(): ObjectMap {
-        let pojo: ObjectMap = super.serialize();
+    serialize(type: BuildingOrAddOnType, gold: number, workers: number, multiColor: boolean = false): ObjectMap {
+        let pojo: ObjectMap = super.serialize(type, gold, workers, multiColor);
         pojo.level = this.level;
         pojo.spec = this.spec;
         return pojo;
@@ -398,6 +429,20 @@ class TechBuilding extends BoardBuilding {
     destroy() {
         this.destroyed = true;
         this.resetHealth();
+    }
+
+    canBuild(type: BuildingType, gold: number, workers: number, multiColor: boolean = false): boolean {
+        if (this.built) return false;
+
+        switch (type) {
+            case 'Tech 1':
+                let reqGold = multiColor ? 2 : 1;
+                return gold >= reqGold && workers >= 6;
+            case 'Tech 2':
+                return gold >= 4 && workers >= 8;
+            case 'Tech 3':
+                return gold >= 5 && workers >= 10;
+        }
     }
 
     static deserialize(pojo: ObjectMap): TechBuilding {

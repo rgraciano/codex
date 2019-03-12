@@ -2,7 +2,7 @@ import 'reflect-metadata';
 
 import { PhaseStack, Phase } from './actions/phase';
 
-import { Board, BoardBuilding, BuildingType } from './board';
+import { Board, BoardBuilding, BuildingType, TechBuilding, AddOn } from './board';
 
 import { TimelyMessenger } from './cards/neutral/TimelyMessenger';
 
@@ -57,8 +57,15 @@ export class Game {
         this.player1Board = new Board(1);
         this.player2Board = new Board(2);
 
-        this.player1Board.base = new BoardBuilding('Base', true);
-        this.player2Board.base = new BoardBuilding('Base', true);
+        this.player1Board.base = new BoardBuilding('Base');
+        this.player1Board.base.build(true);
+        this.player2Board.base = new BoardBuilding('Base');
+        this.player1Board.base.build(true);
+
+        this.player1Board.tech1 = new TechBuilding('Tech 1', 1);
+        this.player1Board.tech2 = new TechBuilding('Tech 2', 2);
+        this.player1Board.tech3 = new TechBuilding('Tech 3', 3);
+        this.player1Board.addOn = new AddOn('None');
 
         this.player1Board.discard = [
             new TimelyMessenger(1),
