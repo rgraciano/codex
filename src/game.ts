@@ -65,7 +65,12 @@ export class Game {
         this.player1Board.tech1 = new TechBuilding('Tech 1', 1);
         this.player1Board.tech2 = new TechBuilding('Tech 2', 2);
         this.player1Board.tech3 = new TechBuilding('Tech 3', 3);
-        this.player1Board.addOn = new AddOn('None');
+        this.player1Board.addOn = new AddOn('AddOn');
+
+        this.player2Board.tech1 = new TechBuilding('Tech 1', 1);
+        this.player2Board.tech2 = new TechBuilding('Tech 2', 2);
+        this.player2Board.tech3 = new TechBuilding('Tech 3', 3);
+        this.player2Board.addOn = new AddOn('AddOn');
 
         this.player1Board.discard = [
             new TimelyMessenger(1),

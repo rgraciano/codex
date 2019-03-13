@@ -203,7 +203,7 @@ export class Board {
 
         if (!bldg) return false;
 
-        if (bldg.constructionInProgress || bldg.destroyed) return false;
+        if (bldg.constructionInProgress || bldg.destroyed || bldg.disabled) return false;
 
         return true;
     }
@@ -289,9 +289,11 @@ export class BoardBuilding {
     constructionInProgress = false;
     name: string;
     built: boolean = false;
+    disabled: boolean = false;
 
-    constructor(name: string) {
+    constructor(name: BuildingType) {
         this.name = name;
+        if (this.name == 'Base') this.built = true;
     }
 
     canBuild(type: BuildingOrAddOnType, gold: number, workers: number, multiColor: boolean = false): boolean {
@@ -311,12 +313,13 @@ export class BoardBuilding {
             destroyed: this.destroyed,
             built: this.built,
             constructionInProgress: this.constructionInProgress,
-            canBuild: this.canBuild(type, gold, workers, multiColor)
+            canBuild: this.canBuild(type, gold, workers, multiColor),
+            disabled: this.disabled
         };
     }
 
     static deserialize(pojo: ObjectMap): BoardBuilding {
-        let bb = new BoardBuilding(<string>pojo.name);
+        let bb = new BoardBuilding(<BuildingType>pojo.name);
         BoardBuilding.deserializeCommonProperties(bb, pojo);
         return bb;
     }
@@ -326,6 +329,7 @@ export class BoardBuilding {
         bb.destroyed = <boolean>pojo.destroyed;
         bb.built = <boolean>pojo.built;
         bb.constructionInProgress = <boolean>pojo.constructionInProgress;
+        bb.disabled = <boolean>pojo.disabled;
     }
 
     shouldBeDestroyed(): boolean {
@@ -380,7 +384,8 @@ export class AddOn extends BoardBuilding {
                 return gold >= 5;
             case 'Heroes Hall':
                 return gold >= 2;
-            case 'Tech Lab':
+            default:
+                // tech lab or none
                 return gold >= 1;
         }
     }
@@ -389,7 +394,11 @@ export class AddOn extends BoardBuilding {
         let pojo: ObjectMap = super.serialize(type, gold, workers, multiColor);
         pojo.addOnType = this.addOnType;
         pojo.towerDetectedThisTurn = this.towerDetectedThisTurn;
-        pojo.canBuild = this.canBuild(this.addOnType, gold, 0);
+        pojo.canBuild = this.canBuild('Tech Lab', gold, 0);
+        pojo.canBuildTower = this.canBuild('Tower', gold, 0);
+        pojo.canBuildSurplus = this.canBuild('Surplus', gold, 0);
+        pojo.canBuildHeroesHall = this.canBuild('Heroes Hall', gold, 0);
+        pojo.canBuildTechLab = this.canBuild('Tech Lab', gold, 0);
 
         if (this.techLabSpec) pojo.techLabSpec = this.techLabSpec;
 
@@ -397,7 +406,7 @@ export class AddOn extends BoardBuilding {
     }
 
     static deserialize(pojo: ObjectMap): AddOn {
-        let ao = new AddOn(<string>pojo.name);
+        let ao = new AddOn(<BuildingType>pojo.name);
         BoardBuilding.deserializeCommonProperties(ao, pojo);
         ao.addOnType = <AddOnType>pojo.addOnType;
         ao.towerDetectedThisTurn = <boolean>pojo.towerDetectedThisTurn;
@@ -414,7 +423,7 @@ export class TechBuilding extends BoardBuilding {
 
     readonly maxHealth: number = 5;
 
-    constructor(name: string, level: number) {
+    constructor(name: BuildingType, level: number) {
         super(name);
         this.level = level;
     }
@@ -446,7 +455,7 @@ export class TechBuilding extends BoardBuilding {
     }
 
     static deserialize(pojo: ObjectMap): TechBuilding {
-        let tb = new TechBuilding(<string>pojo.name, <number>pojo.level);
+        let tb = new TechBuilding(<BuildingType>pojo.name, <number>pojo.level);
         tb.spec = <Spec>pojo.spec;
         BoardBuilding.deserializeCommonProperties(tb, pojo);
         return tb;
