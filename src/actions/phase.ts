@@ -94,13 +94,12 @@ export class PhaseStack {
 
         this.stack = this.stack.filter(phase => {
             switch (phase.name) {
-                case 'Upkeep':
-                case 'Arrives':
-                    if (phase.idsToResolve.length === 0) {
-                        return false;
-                    }
-                default:
+                case 'NewGame':
+                case 'PlayerTurn':
                     return true;
+
+                default:
+                    return phase.idsToResolve && phase.idsToResolve.length > 0;
             }
         });
 

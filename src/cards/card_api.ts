@@ -61,23 +61,14 @@ export class CardApi {
         game.phaseStack.topOfStack().extraState.dyingCardId = card.cardId;
         game.markMustResolveForCardsWithFnName(game.getAllActiveCards(), 'onDies');
 
-        CardApi.leavePlay(card, 'Discard', true); // TODO: Add Hero logic, which may also necessitate player choices
-
-        let board = card.controller == 1 ? game.player1Board : game.player2Board;
-        if (board.patrolZone.scavenger === card) {
-            board.gold++;
-            game.addEvent(new EventDescriptor('Scavenger', 'Player ' + card.controller + ' gains 1 gold for Scavenger'));
-        } else if (board.patrolZone.technician === card) {
-            board.drawCards(1);
-            game.addEvent(new EventDescriptor('Technician', 'Player ' + card.controller + ' draws 1 card for Technician'));
-        }
+        CardApi.leavePlay(card, 'Discard', false, true); // TODO: Add Hero logic, which may also necessitate player choices
     }
 
     /** Called specifically when a card leaves play, such as when Undo is used to bounce a card to hand */
-    static leavePlay(card: Card, destination: Destination, afterDies = false) {
+    static leavePlay(card: Card, destination: Destination, enterNewPhase: boolean, isDying: boolean) {
         let game: Game = card.game;
 
-        if (!afterDies) {
+        if (enterNewPhase) {
             game.phaseStack.addToStack(new Phase('DiesOrLeaves', ['DiesOrLeavesChoice']));
             game.phaseStack.topOfStack().extraState.dyingCardId = card.cardId;
         }
@@ -89,7 +80,7 @@ export class CardApi {
                 this.putCardBackInHand(card);
                 break;
             case 'Discard':
-                this.discardCardFromPlay(card);
+                this.discardCardFromPlay(card, isDying);
                 break;
             case 'HeroZone':
                 this.putCardBackInHeroZone(<Hero>card);
@@ -119,8 +110,20 @@ export class CardApi {
      * Does not trigger Dies or Leaves Play.  Use those functions if you want to initiate those things.
      * DOES trigger wouldDiscard, and looks for things that would prevent discard.
      */
-    private static discardCardFromPlay(card: Card): void {
+    private static discardCardFromPlay(card: Card, isDying: boolean): void {
         card.resetCard();
+
+        if (isDying) {
+            let board = card.controller == 1 ? card.game.player1Board : card.game.player2Board;
+            if (board.patrolZone.scavenger === card) {
+                board.gold++;
+                card.game.addEvent(new EventDescriptor('Scavenger', 'Player ' + card.controller + ' gains 1 gold for Scavenger'));
+            } else if (board.patrolZone.technician === card) {
+                board.drawCards(1);
+                card.game.addEvent(new EventDescriptor('Technician', 'Player ' + card.controller + ' draws 1 card for Technician'));
+            }
+        }
+
         card.game.removeCardFromPlay(card);
 
         let wouldDiscardHooks = Game.findCardsWithProperty(card.game.getAllActiveCards(), 'wouldDiscard');

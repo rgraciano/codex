@@ -240,7 +240,7 @@ export class Game {
     removeCardFromSpace(space: Card[], card: Card): boolean {
         let index = space.findIndex(curCard => curCard == card);
         if (index >= 0) {
-            space.splice(index);
+            space.splice(index, 1);
             return true;
         } else return false;
     }
