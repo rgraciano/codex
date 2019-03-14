@@ -42,6 +42,8 @@ function play(board: Board, card: Card) {
     // Takes card out of hand, but doesn't put it in play yet
     board.moveCard(board.hand, card);
 
+    card.gainProperty('arrivalFatigue', 1);
+
     // TODO: Add spell support. Spells don't "arrive"
     CardApi.arriveCardIntoPlay(card);
 }

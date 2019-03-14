@@ -140,6 +140,7 @@ export abstract class Card {
             card = new ns['exports'][<string>pojo.constructorName](pojo.owner, pojo.controller, pojo.cardId);
         }
 
+        card.attributeModifiers = <Attributes>pojo.attributeModifiers;
         card.deserializeExtra(pojo);
         return card;
     }
@@ -193,7 +194,7 @@ export abstract class Card {
         if (attrs.exhausted) return false;
 
         // check arrival fatigue for attacks and many abilities
-        if (!arrivalFatigueOk && attrs.arrivalFatigue) return false;
+        if (!arrivalFatigueOk && attrs.arrivalFatigue && !attrs.haste) return false;
 
         // check max number of attacks if applicable. check this is a character first, since only characters attack
         if (Reflect.has(this, 'attacksPerTurn') && checkAttacksThisTurn) {
