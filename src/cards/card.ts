@@ -228,7 +228,7 @@ export abstract class Card {
             if (this.controllerBoard.techBuildingIsActive(3)) maxHeroesInPlay = 3;
 
             let addOn = this.controllerBoard.addOn;
-            if (addOn && addOn.addOnType == 'Heroes Hall' && !addOn.constructionInProgress)
+            if (this.controllerBoard.addOnIsActive() && addOn.addOnType == 'Heroes Hall')
                 maxHeroesInPlay = maxHeroesInPlay == 3 ? 3 : maxHeroesInPlay + 1;
 
             return hero.turnsTilAvailable === 0 && heroesInPlay < maxHeroesInPlay;
@@ -486,6 +486,10 @@ export class Attributes {
     untargetable: number = 0;
     ephemeral: number = 0;
     resist: number = 0;
+
+    // Some cards say "cant sacrifice", "cant patrol", etc.  Track those here
+    cantSacrifice: number = 0;
+    cantPatrol: number = 0;
 
     // Counting how many runes are on the card
     timeRunes: number = 0;

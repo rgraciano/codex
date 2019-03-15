@@ -37,6 +37,12 @@ export function startTurnAction(game: Game): void {
     // allow worker
     board.workeredThisTurn = false;
 
+    // draw card for surplus
+    if (board.addOnIsActive() && board.addOn.addOnType == 'Surplus') {
+        board.drawCards(1);
+        game.addEvent(new EventDescriptor('Draw', 'Drew a card for Surplus'));
+    }
+
     // enter player turn phase
     game.phaseStack.addToStack(
         new Phase('PlayerTurn', [

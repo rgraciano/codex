@@ -39,7 +39,8 @@ export type ServerEvent =
     | 'NoneChosen'
     | 'Info'
     | 'Ability'
-    | 'Built';
+    | 'Built'
+    | 'Draw';
 export type RuneEvent = 'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
 export class Game {
