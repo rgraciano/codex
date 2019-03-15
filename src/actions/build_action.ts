@@ -1,7 +1,7 @@
-import { Game } from '../game';
-import { BoardBuilding } from 'board';
+import { Game, EventDescriptor } from '../game';
+import { BoardBuilding, AddOnType } from 'board';
 
-export function buildAction(game: Game, buildingId: string, addOnExtra: string = undefined): void {
+export function buildAction(game: Game, buildingId: string, addOnExtra: AddOnType = undefined): void {
     let building: BoardBuilding;
     let board = game.activePlayer == 1 ? game.player1Board : game.player2Board;
 
@@ -22,7 +22,12 @@ export function buildAction(game: Game, buildingId: string, addOnExtra: string =
             throw new Error('Building ID ' + buildingId + ' not recognized');
     }
 
-    if (!addOnExtra) {
-        if (building.canBuild(buildingId, board.gold, board.workerCount(), board.multiColor)
-    }
+    let idToBuild = addOnExtra ? addOnExtra : buildingId;
+
+    if (!building.canBuild(idToBuild)) throw new Error('Do not meet requirements for ' + buildingId);
+
+    if (buildingId == 'AddOn') building.build(false, addOnExtra);
+    else building.build();
+
+    game.addEvent(new EventDescriptor('Built', 'Built ' + buildingId));
 }

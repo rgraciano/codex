@@ -38,7 +38,8 @@ export type ServerEvent =
     | 'PossibleAttackTargets'
     | 'NoneChosen'
     | 'Info'
-    | 'Ability';
+    | 'Ability'
+    | 'Built';
 export type RuneEvent = 'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
 export class Game {
@@ -57,20 +58,20 @@ export class Game {
         this.player1Board = new Board(1);
         this.player2Board = new Board(2);
 
-        this.player1Board.base = new BoardBuilding('Base');
+        this.player1Board.base = new BoardBuilding('Base', this.player1Board);
         this.player1Board.base.build(true);
-        this.player2Board.base = new BoardBuilding('Base');
+        this.player2Board.base = new BoardBuilding('Base', this.player2Board);
         this.player1Board.base.build(true);
 
-        this.player1Board.tech1 = new TechBuilding('Tech 1', 1);
-        this.player1Board.tech2 = new TechBuilding('Tech 2', 2);
-        this.player1Board.tech3 = new TechBuilding('Tech 3', 3);
-        this.player1Board.addOn = new AddOn('AddOn');
+        this.player1Board.tech1 = new TechBuilding('Tech 1', this.player1Board, 1);
+        this.player1Board.tech2 = new TechBuilding('Tech 2', this.player1Board, 2);
+        this.player1Board.tech3 = new TechBuilding('Tech 3', this.player1Board, 3);
+        this.player1Board.addOn = new AddOn('AddOn', this.player1Board);
 
-        this.player2Board.tech1 = new TechBuilding('Tech 1', 1);
-        this.player2Board.tech2 = new TechBuilding('Tech 2', 2);
-        this.player2Board.tech3 = new TechBuilding('Tech 3', 3);
-        this.player2Board.addOn = new AddOn('AddOn');
+        this.player2Board.tech1 = new TechBuilding('Tech 1', this.player2Board, 1);
+        this.player2Board.tech2 = new TechBuilding('Tech 2', this.player2Board, 2);
+        this.player2Board.tech3 = new TechBuilding('Tech 3', this.player2Board, 3);
+        this.player2Board.addOn = new AddOn('AddOn', this.player2Board);
 
         this.player1Board.discard = [
             new TimelyMessenger(1),

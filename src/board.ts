@@ -89,28 +89,29 @@ export class Board {
     static deserialize(pojo: ObjectMap, game: Game): Board {
         let board = new Board(<number>pojo.playerNumber);
 
-        board.chosenSpecs = <Spec[]>pojo.chosenSpecs;
+        board.workers = Card.deserializeCards(<Array<ObjectMap>>pojo.workers);
         board.multiColor = <boolean>pojo.boolean;
 
+        board.chosenSpecs = <Spec[]>pojo.chosenSpecs;
         board.turnCount = <number>pojo.turnCount;
         board.gold = <number>pojo.gold;
-        board.base = BoardBuilding.deserialize(<ObjectMap>pojo.base);
         board.workeredThisTurn = <boolean>pojo.workeredThisTurn;
 
         board.hand = Card.deserializeCards(<Array<ObjectMap>>pojo.hand);
         board.deck = Card.deserializeCards(<Array<ObjectMap>>pojo.deck);
         board.discard = Card.deserializeCards(<Array<ObjectMap>>pojo.discard);
-        board.workers = Card.deserializeCards(<Array<ObjectMap>>pojo.workers);
+
         board.heroZone = <Array<Hero>>Card.deserializeCards(<Array<ObjectMap>>pojo.heroZone);
         board.inPlay = Card.deserializeCards(<Array<ObjectMap>>pojo.inPlay);
 
         board.patrolZone = PatrolZone.deserialize(<ObjectMap>pojo.patrolZone);
 
-        board.tech1 = TechBuilding.deserialize(<ObjectMap>pojo.tech1);
-        board.tech2 = TechBuilding.deserialize(<ObjectMap>pojo.tech2);
-        board.tech3 = TechBuilding.deserialize(<ObjectMap>pojo.tech3);
+        board.base = BoardBuilding.deserialize(<ObjectMap>pojo.base, board);
+        board.tech1 = TechBuilding.deserialize(<ObjectMap>pojo.tech1, board);
+        board.tech2 = TechBuilding.deserialize(<ObjectMap>pojo.tech2, board);
+        board.tech3 = TechBuilding.deserialize(<ObjectMap>pojo.tech3, board);
 
-        board.addOn = AddOn.deserialize(<ObjectMap>pojo.addOn);
+        board.addOn = AddOn.deserialize(<ObjectMap>pojo.addOn, board);
 
         return board;
     }
@@ -212,6 +213,10 @@ export class Board {
         return this.addOn && !this.addOn.constructionInProgress && !this.addOn.destroyed && this.addOn.health > 0;
     }
 
+    static isBuildingId(id: string): boolean {
+        return id == 'Base' || id == 'Tech 1' || id == 'Tech 2' || id == 'Tech 3' || id == 'AddOn';
+    }
+
     drawCards(howMany: number) {
         // If we need to draw more than we have, shuffle the discard pile.  TODO: Limit to one reshuffle per turn
         if (this.deck.length < howMany) {
@@ -291,18 +296,48 @@ export class BoardBuilding {
     built: boolean = false;
     disabled: boolean = false;
 
-    constructor(name: BuildingType) {
+    board: Board;
+
+    constructor(name: BuildingType, board: Board) {
         this.name = name;
         if (this.name == 'Base') this.built = true;
+        this.board = board;
     }
 
-    canBuild(type: BuildingOrAddOnType, gold: number, workers: number, multiColor: boolean = false): boolean {
+    canBuild(type: BuildingOrAddOnType): boolean {
         return false; // default for base
     }
 
-    build(buildInstantly: boolean = false) {
+    build(buildInstantly: boolean = false, type?: AddOnType) {
+        this.board.gold -= this.getCost(type);
+        this._health = this.maxHealth;
         this.built = true;
+        this.disabled = false;
         this.constructionInProgress = !buildInstantly;
+    }
+
+    getCost(type?: AddOnType): number {
+        switch (this.name) {
+            case 'Base':
+                return 0;
+            case 'Tech 1':
+                return this.board.multiColor ? 2 : 1;
+            case 'Tech 2':
+                return 4;
+            case 'Tech 3':
+                return 5;
+        }
+
+        switch (type) {
+            case 'Surplus':
+                return 5;
+            case 'Tower':
+                return 3;
+            case 'Heroes Hall':
+                return 2;
+            case 'Tech Lab':
+                return 1;
+        }
     }
 
     serialize(type: BuildingOrAddOnType, gold: number, workers: number, multiColor: boolean = false): ObjectMap {
@@ -313,13 +348,13 @@ export class BoardBuilding {
             destroyed: this.destroyed,
             built: this.built,
             constructionInProgress: this.constructionInProgress,
-            canBuild: this.canBuild(type, gold, workers, multiColor),
+            canBuild: this.canBuild(type),
             disabled: this.disabled
         };
     }
 
-    static deserialize(pojo: ObjectMap): BoardBuilding {
-        let bb = new BoardBuilding(<BuildingType>pojo.name);
+    static deserialize(pojo: ObjectMap, board: Board): BoardBuilding {
+        let bb = new BoardBuilding(<BuildingType>pojo.name, board);
         BoardBuilding.deserializeCommonProperties(bb, pojo);
         return bb;
     }
@@ -374,8 +409,10 @@ export class AddOn extends BoardBuilding {
     towerDetectedThisTurn: boolean = false;
     techLabSpec: Spec;
 
-    canBuild(type: AddOnType, gold: number, workers: number, multiColor: boolean = false): boolean {
+    canBuild(type: AddOnType): boolean {
         if (this.built) return false;
+
+        let gold = this.board.gold;
 
         switch (type) {
             case 'Tower':
@@ -384,29 +421,35 @@ export class AddOn extends BoardBuilding {
                 return gold >= 5;
             case 'Heroes Hall':
                 return gold >= 2;
-            default:
-                // tech lab or none
+            case 'Tech Lab':
                 return gold >= 1;
+            default:
+                return false;
         }
+    }
+
+    build(buildInstantly: boolean = false, type?: AddOnType) {
+        super.build(buildInstantly, type);
+        this.addOnType = type;
     }
 
     serialize(type: BuildingOrAddOnType, gold: number, workers: number, multiColor: boolean = false): ObjectMap {
         let pojo: ObjectMap = super.serialize(type, gold, workers, multiColor);
         pojo.addOnType = this.addOnType;
         pojo.towerDetectedThisTurn = this.towerDetectedThisTurn;
-        pojo.canBuild = this.canBuild('Tech Lab', gold, 0);
-        pojo.canBuildTower = this.canBuild('Tower', gold, 0);
-        pojo.canBuildSurplus = this.canBuild('Surplus', gold, 0);
-        pojo.canBuildHeroesHall = this.canBuild('Heroes Hall', gold, 0);
-        pojo.canBuildTechLab = this.canBuild('Tech Lab', gold, 0);
+        pojo.canBuild = this.canBuild('Tech Lab');
+        pojo.canBuildTower = this.canBuild('Tower');
+        pojo.canBuildSurplus = this.canBuild('Surplus');
+        pojo.canBuildHeroesHall = this.canBuild('Heroes Hall');
+        pojo.canBuildTechLab = this.canBuild('Tech Lab');
 
         if (this.techLabSpec) pojo.techLabSpec = this.techLabSpec;
 
         return pojo;
     }
 
-    static deserialize(pojo: ObjectMap): AddOn {
-        let ao = new AddOn(<BuildingType>pojo.name);
+    static deserialize(pojo: ObjectMap, board: Board): AddOn {
+        let ao = new AddOn(<BuildingType>pojo.name, board);
         BoardBuilding.deserializeCommonProperties(ao, pojo);
         ao.addOnType = <AddOnType>pojo.addOnType;
         ao.towerDetectedThisTurn = <boolean>pojo.towerDetectedThisTurn;
@@ -423,8 +466,8 @@ export class TechBuilding extends BoardBuilding {
 
     readonly maxHealth: number = 5;
 
-    constructor(name: BuildingType, level: number) {
-        super(name);
+    constructor(name: BuildingType, board: Board, level: number) {
+        super(name, board);
         this.level = level;
     }
 
@@ -440,12 +483,15 @@ export class TechBuilding extends BoardBuilding {
         this.resetHealth();
     }
 
-    canBuild(type: BuildingType, gold: number, workers: number, multiColor: boolean = false): boolean {
+    canBuild(type: BuildingType): boolean {
         if (this.built) return false;
+
+        let gold = this.board.gold;
+        let workers = this.board.workerCount();
 
         switch (type) {
             case 'Tech 1':
-                let reqGold = multiColor ? 2 : 1;
+                let reqGold = this.board.multiColor ? 2 : 1;
                 return gold >= reqGold && workers >= 6;
             case 'Tech 2':
                 return gold >= 4 && workers >= 8;
@@ -454,8 +500,8 @@ export class TechBuilding extends BoardBuilding {
         }
     }
 
-    static deserialize(pojo: ObjectMap): TechBuilding {
-        let tb = new TechBuilding(<BuildingType>pojo.name, <number>pojo.level);
+    static deserialize(pojo: ObjectMap, board: Board): TechBuilding {
+        let tb = new TechBuilding(<BuildingType>pojo.name, board, <number>pojo.level);
         tb.spec = <Spec>pojo.spec;
         BoardBuilding.deserializeCommonProperties(tb, pojo);
         return tb;

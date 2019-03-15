@@ -7,6 +7,8 @@ import { playCardAction } from './actions/play_card_action';
 import { choiceAction } from './actions/choice_actions';
 import { attackAction, prepareAttackTargetsAction } from './actions/attack_actions';
 import { abilityAction } from './actions/ability_action';
+import { buildAction } from './actions/build_action';
+import { AddOnType, Board } from './board';
 
 const savePath = '/Users/rg/gamestates';
 
@@ -94,53 +96,120 @@ export class GameServer {
         }
 
         try {
-            let cardId = GameServer.requiredAlnumProperties(context, ['cardId'])['cardId'];
-            this.runAction(action, cardId, context);
+            this.runAction(action, context);
             return this.wrapUp();
         } catch (e) {
             return this.responseError(e.message);
         }
     }
 
-    runAction(action: string, cardId: string, context: StringMap) {
+    static requireProp(
+        propname: string,
+        context: StringMap,
+        validFn: (strmap: StringMap, reqlist: string[]) => StringMap,
+        overrideId?: string
+    ): string {
+        if (overrideId) return overrideId;
+
+        let propValue = validFn(context, [propname])[propname];
+        if (!propValue) throw new Error('Required property ' + propname + ' could not be found');
+
+        return propValue;
+    }
+
+    runAction(action: string, context: StringMap, overrideWithPhase: boolean = false) {
+        let onlyPossibleTarget: string = undefined;
+        let phase = this.game.phaseStack.topOfStack();
+
+        if (overrideWithPhase) onlyPossibleTarget = <string>phase.idsToResolve[0];
+
         if (action.endsWith('Choice')) {
             let safeContext: StringMap = {};
+            let choiceId: string;
 
-            if (action == 'AttackCardsOrBuildingsChoice') {
-                let buildingChoice = GameServer.getAlNumProperty(context, 'building');
-                let cardChoice = GameServer.getAlNumProperty(context, 'validCardTargetId');
+            // when attacking, if there's an "only possible choice" then it's a target building or target attack,
+            // and we have to get the attacking card ID from the extra state
+            if (action == 'AttackCardsOrBuildingsChoice' || action == 'AttackCardsChoice') {
+                if (action == 'AttackCardsOrBuildingsChoice') {
+                    let buildingChoice = GameServer.getAlNumProperty(context, 'targetBuildingId');
+                    let cardChoice = GameServer.getAlNumProperty(context, 'targetCardId');
 
-                if (buildingChoice) safeContext.building = buildingChoice;
-                else if (cardChoice) safeContext.validCardTargetId = cardChoice;
-            } else if (action == 'AttackCardsChoice') {
-                safeContext.validCardTargetId = GameServer.requiredAlnumProperties(context, ['validCardTargetId'])['validCardTargetId'];
+                    if (overrideWithPhase) {
+                        if (Board.isBuildingId(onlyPossibleTarget)) buildingChoice = onlyPossibleTarget;
+                        else cardChoice = onlyPossibleTarget;
+                    }
+
+                    if (buildingChoice) safeContext.building = buildingChoice;
+                    else if (cardChoice) safeContext.validCardTargetId = cardChoice;
+                } else if (action == 'AttackCardsChoice') {
+                    safeContext.validCardTargetId = GameServer.requireProp(
+                        'targetCardId',
+                        context,
+                        GameServer.alnumProperties,
+                        onlyPossibleTarget
+                    );
+                }
+
+                if (overrideWithPhase) {
+                    choiceId = <string>phase.extraState.attackingCardId;
+                } else {
+                    choiceId = GameServer.requireProp('cardId', context, GameServer.alnumProperties);
+                }
             }
-            choiceAction(this.game, cardId, <ActionName>action, safeContext);
-        } else
-            switch (action) {
-                case 'Ability':
-                    abilityAction(cardId, GameServer.requiredNameProperties(context, ['abilityName'])['abilityName']);
-                    break;
-
-                case 'Attack':
-                    attackAction(cardId);
-                    break;
-
-                case 'PlayCard':
-                    playCardAction(cardId);
-                    break;
-
-                case 'PrepareAttackTargets':
-                    prepareAttackTargetsAction(cardId);
-                    break;
-
-                case 'Worker':
-                    playCardAction(cardId, true);
-                    break;
-
-                default:
-                    this.responseError('Invalid action');
+            // when not attacking, the only possible choice is simple
+            else if (overrideWithPhase) {
+                choiceId = onlyPossibleTarget;
             }
+
+            choiceAction(this.game, choiceId, <ActionName>action, safeContext);
+
+            return;
+        }
+
+        switch (action) {
+            case 'Ability': {
+                let cardId = GameServer.requireProp('cardId', context, GameServer.alnumProperties); // no onlyPossibleTarget possible
+                abilityAction(cardId, GameServer.requireProp('abilityName', context, GameServer.nameProperties));
+                break;
+            }
+
+            case 'Attack': {
+                let cardId = GameServer.requireProp('cardId', context, GameServer.alnumProperties); // no onlyPossibleTarget possible
+                attackAction(cardId);
+                break;
+            }
+
+            case 'Build': {
+                let buildingId = GameServer.requireProp('buildingId', context, GameServer.nameProperties); // no onlyPossibleTarget possible
+
+                let addOnType = undefined;
+                if (buildingId == 'AddOn') addOnType = GameServer.requireProp('addOnType', context, GameServer.nameProperties);
+
+                buildAction(this.game, buildingId, <AddOnType>addOnType);
+                break;
+            }
+
+            case 'PlayCard': {
+                let cardId = GameServer.requireProp('cardId', context, GameServer.alnumProperties); // no onlyPossibleTarget possible
+                playCardAction(cardId);
+                break;
+            }
+
+            case 'PrepareAttackTargets': {
+                let cardId = GameServer.requireProp('cardId', context, GameServer.alnumProperties, onlyPossibleTarget);
+                prepareAttackTargetsAction(cardId);
+                break;
+            }
+
+            case 'Worker': {
+                let cardId = GameServer.requireProp('cardId', context, GameServer.alnumProperties); // no onlyPossibleTarget possible
+                playCardAction(cardId, true);
+                break;
+            }
+
+            default:
+                this.responseError('Invalid action');
+        }
     }
 
     responseError(error: string) {
@@ -176,7 +245,7 @@ export class GameServer {
             if (topOfStack.name == 'GameOver') return;
 
             if (topOfStack.name != 'PlayerPrompt' && topOfStack.validActions.length === 1 && topOfStack.idsToResolve.length === 1) {
-                this.runAction(topOfStack.validActions[0], <string>topOfStack.idsToResolve[0], {});
+                this.runAction(topOfStack.validActions[0], {}, true);
                 clearedSingleAction = true;
             } else clearedSingleAction = false;
         } while (clearedEmptyPhase || clearedSingleAction);
@@ -189,24 +258,26 @@ export class GameServer {
         return serialized;
     }
 
-    static requiredAlnumProperties(context: StringMap, requiredList: Array<string>): StringMap {
-        return this.requiredProperties(context, requiredList, /[^a-zA-Z0-9]/);
-    }
-
-    static requiredNameProperties(context: StringMap, requiredList: Array<string>): StringMap {
-        return this.requiredProperties(context, requiredList, /[^- +\/\\a-zA-Z0-9]/);
-    }
-
-    static requiredProperties(context: StringMap, requiredList: Array<string>, regEx: RegExp): StringMap {
+    static validateProperties(context: StringMap, requiredList: string[], regEx: RegExp): StringMap {
         let validated: StringMap = new StringMap();
 
         for (let req of requiredList) {
             if (context.hasOwnProperty(req) && !regEx.test(context[req]) && context[req].length < 50) {
                 validated[req] = context[req];
-            } else throw new Error('Missing parameter: ' + req); // TODO: this doesn't map to error handling elsewhere, but it's easy to manage...
+            } else {
+                validated[req] = '';
+            }
         }
 
         return validated;
+    }
+
+    static alnumProperties(context: StringMap, requiredList: string[]): StringMap {
+        return GameServer.validateProperties(context, requiredList, /[^a-zA-Z0-9]/);
+    }
+
+    static nameProperties(context: StringMap, requiredList: string[]): StringMap {
+        return GameServer.validateProperties(context, requiredList, /[^- +\/\\a-zA-Z0-9]/);
     }
 
     // TODO: Replace later; will pick some kind of framework that does this boilerplate stuff for us
