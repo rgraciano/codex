@@ -17,7 +17,8 @@ export type PhaseName =
     | 'Attack'
     | 'PrepareAttackTargets'
     | 'AttackDestination'
-    | 'ChooseAbilityTarget';
+    | 'ChooseAbilityTarget'
+    | 'ChooseTowerReveal';
 
 // The client uses Actions to understand what API calls are currently valid, and how to present possible actions to the user.
 export type ActionName =
@@ -31,6 +32,7 @@ export type ActionName =
     | 'AttackCardsChoice'
     | 'AttackCardsOrBuildingsChoice'
     | 'AbilityChoice'
+    | 'TowerRevealChoice'
     | TurnActionName;
 
 export type TurnActionName =
@@ -43,7 +45,8 @@ export type TurnActionName =
     | 'Attack'
     | 'HeroSummon'
     | 'HeroLevel'
-    | 'EndTurn';
+    | 'EndTurn'
+    | 'TowerReveal';
 
 // note patrol and un-patrol will BOTH need to be options, or attack/ability/exhaust will need to check if patrolling and
 // remove from that state

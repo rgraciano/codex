@@ -62,7 +62,7 @@ export abstract class Ability {
             allCards.filter(card => {
                 let eff = card.effective();
                 if (eff.untargetable) return false;
-                else if (card.controller != card.game.activePlayer && eff.invisible) return false;
+                else if (card.controller != card.game.activePlayer && (eff.invisible && !eff.towerRevealedThisTurn)) return false;
                 else if (card.controllerBoard.gold < eff.resist) return false;
                 else return true;
             });

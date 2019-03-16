@@ -80,7 +80,9 @@ export function prepareAttackTargetsAction(attackerId: string) {
         return;
     }
 
-    if (attackerAttrs.stealth || attackerAttrs.invisible) {
+    // towerRevealedThisTurn can't have been applied yet unless this attack was somehow stopped and restarted
+    // we check anyway just in case there's some weird edge case that could cause that
+    if ((attackerAttrs.stealth || attackerAttrs.invisible) && !attackerAttrs.towerRevealedThisTurn) {
         let unstoppable = true;
 
         // if the opponent has a card working as a detector...
@@ -89,9 +91,10 @@ export function prepareAttackTargetsAction(attackerId: string) {
 
         // if the opponent has a tower that can detect the attacker
         let addOn = attacker.oppositionalControllerBoard.addOn;
-        if (addOn && addOn.addOnType === 'Tower' && addOn.towerDetectedThisTurn === false) {
+        if (addOn && addOn.addOnType === 'Tower' && addOn.towerRevealedThisTurn === false) {
             unstoppable = false;
-            addOn.towerDetectedThisTurn = true;
+            addOn.towerRevealedThisTurn = true;
+            attacker.gainProperty('towerRevealedThisTurn');
             game.addEvent(new EventDescriptor('TowerDetected', 'Tower detected ' + attacker.name, { attackerId: attackerId }));
         }
 

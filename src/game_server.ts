@@ -9,6 +9,7 @@ import { attackAction, prepareAttackTargetsAction } from './actions/attack_actio
 import { abilityAction } from './actions/ability_action';
 import { buildAction } from './actions/build_action';
 import { AddOnType, Board } from './board';
+import { towerRevealAction } from 'actions/tower_reveal_action';
 
 const savePath = '/Users/rg/gamestates';
 
@@ -198,6 +199,11 @@ export class GameServer {
             case 'PrepareAttackTargets': {
                 let cardId = GameServer.requireProp('cardId', context, GameServer.alnumProperties, onlyPossibleTarget);
                 prepareAttackTargetsAction(cardId);
+                break;
+            }
+
+            case 'TowerDetect': {
+                towerRevealAction(this.game);
                 break;
             }
 

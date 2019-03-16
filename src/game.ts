@@ -40,7 +40,8 @@ export type ServerEvent =
     | 'Info'
     | 'Ability'
     | 'Built'
-    | 'Draw';
+    | 'Draw'
+    | 'TowerReveal';
 export type RuneEvent = 'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
 export class Game {
@@ -270,7 +271,7 @@ export class Game {
 
             let attrs = card.effective();
 
-            if (attrs.invisible || attrs.unattackable) return false;
+            if ((attrs.invisible && !attrs.towerRevealedThisTurn) || attrs.unattackable) return false;
 
             return true;
         });

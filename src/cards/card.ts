@@ -487,6 +487,9 @@ export class Attributes {
     ephemeral: number = 0;
     resist: number = 0;
 
+    // Tracking tower ability
+    towerRevealedThisTurn: number = 0;
+
     // Some cards say "cant sacrifice", "cant patrol", etc.  Track those here
     cantSacrifice: number = 0;
     cantPatrol: number = 0;

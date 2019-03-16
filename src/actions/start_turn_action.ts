@@ -32,7 +32,8 @@ export function startTurnAction(game: Game): void {
     game.addEvent(board.collectGold());
 
     // reset tower ability
-    if (board.addOn && board.addOn.addOnType == 'Tower') board.addOn.towerDetectedThisTurn = false;
+    if (board.addOn && board.addOn.addOnType == 'Tower') board.addOn.towerRevealedThisTurn = false;
+    game.getAllActiveCards().map(card => (card.attributeModifiers.towerRevealedThisTurn = 0));
 
     // allow worker
     board.workeredThisTurn = false;
@@ -55,7 +56,8 @@ export function startTurnAction(game: Game): void {
             'Attack',
             'HeroSummon',
             'HeroLevel',
-            'EndTurn'
+            'EndTurn',
+            'TowerReveal'
         ])
     );
 

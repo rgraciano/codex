@@ -406,7 +406,7 @@ export class BoardBuilding {
 export class AddOn extends BoardBuilding {
     readonly maxHealth: number = 4;
     addOnType: AddOnType;
-    towerDetectedThisTurn: boolean = false;
+    towerRevealedThisTurn: boolean = false;
     techLabSpec: Spec;
 
     canBuild(type: AddOnType): boolean {
@@ -436,7 +436,9 @@ export class AddOn extends BoardBuilding {
     serialize(type: BuildingOrAddOnType, gold: number, workers: number, multiColor: boolean = false): ObjectMap {
         let pojo: ObjectMap = super.serialize(type, gold, workers, multiColor);
         pojo.addOnType = this.addOnType;
-        pojo.towerDetectedThisTurn = this.towerDetectedThisTurn;
+        pojo.towerRevealedThisTurn = this.towerRevealedThisTurn;
+        pojo.canReveal =
+            !this.towerRevealedThisTurn && !this.constructionInProgress && this.built && !this.destroyed && this.addOnType == 'Tower';
         pojo.canBuild = this.canBuild('Tech Lab');
         pojo.canBuildTower = this.canBuild('Tower');
         pojo.canBuildSurplus = this.canBuild('Surplus');
@@ -452,7 +454,7 @@ export class AddOn extends BoardBuilding {
         let ao = new AddOn(<BuildingType>pojo.name, board);
         BoardBuilding.deserializeCommonProperties(ao, pojo);
         ao.addOnType = <AddOnType>pojo.addOnType;
-        ao.towerDetectedThisTurn = <boolean>pojo.towerDetectedThisTurn;
+        ao.towerRevealedThisTurn = <boolean>pojo.towerRevealedThisTurn;
 
         if (pojo.techLabSpec) ao.techLabSpec = <Spec>pojo.techLabSpec;
 

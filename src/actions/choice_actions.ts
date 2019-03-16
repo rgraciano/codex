@@ -66,6 +66,11 @@ export function choiceAction(game: Game, cardOrBuildingId: string, action: Actio
             game.addEvent(ability.resolveChoice(cardOrBuildingId));
             break;
 
+        case 'ChooseTowerReveal':
+            card.gainProperty('towerRevealedThisTurn');
+            game.addEvent(new EventDescriptor('TowerReveal', 'Tower revealed ' + card.name));
+            break;
+
         case 'Destroy':
             CardApi.destroyCard(Card.idToCardMap.get(cardId));
             break;
@@ -94,6 +99,7 @@ export function choiceAction(game: Game, cardOrBuildingId: string, action: Actio
             break;
 
         case 'PlayerPrompt':
+            break;
         default:
             throw new Error('Could not find a phase for this choice');
     }
