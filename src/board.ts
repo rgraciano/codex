@@ -1,4 +1,5 @@
 import { Card, Hero, TechLevel } from './cards/card';
+import { CardApi } from './cards/card_api';
 import { Game, EventDescriptor } from './game';
 import { ObjectMap } from './game_server';
 import { Spec } from './cards/color';
@@ -121,8 +122,7 @@ export class Board {
     }
 
     getWorkerCost(): number {
-        let workerCostAlterations = Game.findCardsWithProperty(this.inPlay, 'workersAreFree');
-        return workerCostAlterations.length > 0 ? 0 : 1;
+        return CardApi.checkWorkersAreFree(this) ? 0 : 1;
     }
 
     destroyIfRequired(building: BuildingType): EventDescriptor[] | false {
@@ -244,35 +244,6 @@ export class Board {
         let collected: number = this.startingWorkers + this.workers.length;
         this.gold += collected;
         return new EventDescriptor('CollectGold', 'Collected ' + collected + ' gold');
-    }
-
-    /** Verifies a card is in a specific space.  Returns null if it can't be found */
-    findCardById(space: Array<Card>, cardId: string): Card | undefined {
-        let card: Card = Card.idToCardMap.get(cardId);
-
-        if (card === undefined || space.indexOf(card) === -1) {
-            return undefined;
-        }
-
-        return card;
-    }
-
-    /**
-     *  Moves a card from one area to another, e.g. hand to play space, play to discard, etc.
-     *  If toSpace is omitted then the card is simply removed.
-     */
-    moveCard(fromSpace: Array<Card>, card: Card, toSpace?: Array<Card>): boolean {
-        let index = fromSpace.indexOf(card);
-
-        if (index === -1) {
-            return false;
-        }
-
-        fromSpace.splice(index, 1);
-
-        if (toSpace) toSpace.push(card);
-
-        return true;
     }
 
     getPatrolZoneAsArray(): Card[] {

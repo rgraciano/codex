@@ -195,14 +195,6 @@ export class Game {
     }
 
     /** Find a card, wherever it may be, and remove it from play. Card MUST be removed or this will throw an error */
-    removeCardFromPlay(card: Card) {
-        let found = false;
-
-        if (!this.removeCardFromBoard(this.player1Board, card)) found = this.removeCardFromBoard(this.player2Board, card);
-        else found = true;
-
-        if (!found) throw new Error('Tried to remove ' + card.cardId + ' from play, but could not find it');
-    }
 
     cardIsInAnActiveSpace(board: Board, card: Card): boolean {
         return (
@@ -223,29 +215,6 @@ export class Game {
 
     cardIsInHand(board: Board, card: Card): boolean {
         return board.hand.filter(localCard => localCard === card).length > 0;
-    }
-
-    removeCardFromBoard(board: Board, card: Card): boolean {
-        for (let i in board.patrolZone) {
-            if (board.patrolZone[i] == card) {
-                board.patrolZone[i] = null;
-                return true;
-            }
-        }
-
-        if (this.removeCardFromSpace(board.inPlay, card)) return true;
-        if (this.removeCardFromSpace(board.effects, card)) return true;
-        if (this.removeCardFromSpace(board.hand, card)) return true;
-
-        return false;
-    }
-
-    removeCardFromSpace(space: Card[], card: Card): boolean {
-        let index = space.findIndex(curCard => curCard == card);
-        if (index >= 0) {
-            space.splice(index, 1);
-            return true;
-        } else return false;
     }
 
     getAllActiveCards(useBoard?: Board): Card[] {
@@ -274,29 +243,6 @@ export class Game {
             if ((attrs.invisible && !attrs.towerRevealedThisTurn) || attrs.unattackable) return false;
 
             return true;
-        });
-    }
-
-    markMustResolveForCardsWithFnName(space: Card[], fnName: string) {
-        // find all of the cards with handlers that match
-        let foundCards: Card[] = Game.findCardsWithProperty(space, fnName);
-
-        // add all of those cards to the list of allowedActions, automatically removing those that were already resolved and ensuring there are no duplicates
-        this.phaseStack.topOfStack().markCardsToResolve(foundCards, fnName);
-    }
-
-    /**
-     * Searches an array of cards for every card mapping to an interface (eg, implements onUpkeep). For example, findCardsWithHandlers(board.InPlay, 'onUpkeep')
-     *
-     * @param implementsFunction The function on an interface that would indicate this interface is implemented, eg, 'onUpkeep'
-     */
-    static findCardsWithProperty(cards: Card[], implementsProperty: string): Card[] {
-        return Game.findCardsMatching(cards, card => Reflect.has(card, implementsProperty));
-    }
-
-    static findCardsMatching(cards: Card[], matching: (card: Card) => boolean): Card[] {
-        return cards.filter(card => {
-            return card && matching(card);
         });
     }
 

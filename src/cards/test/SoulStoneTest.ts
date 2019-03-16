@@ -25,8 +25,8 @@ export class SoulStoneTest extends Spell implements WouldDieHook {
             cardToDie.attributeModifiers.damage = 0;
             cardToDie.attributeModifiers.plusOneOne--;
 
-            this.game.removeCardFromPlay(this);
-            this.ownerBoard.discard.push(this);
+            //  this.game.removeCardFromPlay(this); // TODO: this is dangerous, use CardApi instead
+            // this.ownerBoard.discard.push(this);
 
             return new EventDescriptor('WouldDie', 'Soul Stone prevented the death of ' + cardToDie.cardId);
         }
