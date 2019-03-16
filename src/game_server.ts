@@ -9,7 +9,8 @@ import { attackAction, prepareAttackTargetsAction } from './actions/attack_actio
 import { abilityAction } from './actions/ability_action';
 import { buildAction } from './actions/build_action';
 import { AddOnType, Board } from './board';
-import { towerRevealAction } from 'actions/tower_reveal_action';
+import { towerRevealAction } from './actions/tower_reveal_action';
+import { playStagingAbilityAction } from './actions/play_staging_ability_action';
 
 const savePath = '/Users/rg/gamestates';
 
@@ -193,6 +194,15 @@ export class GameServer {
             case 'PlayCard': {
                 let cardId = GameServer.requireProp('cardId', context, GameServer.alnumProperties); // no onlyPossibleTarget possible
                 playCardAction(cardId);
+                break;
+            }
+
+            case 'PlayStagingAbility': {
+                playStagingAbilityAction(
+                    this.game,
+                    GameServer.requireProp('cardId', context, GameServer.alnumProperties),
+                    GameServer.requireProp('abilityName', context, GameServer.nameProperties)
+                );
                 break;
             }
 

@@ -66,7 +66,7 @@ export class PhaseStack {
     stack: Phase[] = [];
 
     setupForNewGame() {
-        this.stack = [new Phase('NewGame', [])];
+        this.stack = [new Phase('NewGame', [], false)];
     }
 
     serialize(): ObjectMap {
@@ -98,14 +98,8 @@ export class PhaseStack {
         let beginLen = this.stack.length;
 
         this.stack = this.stack.filter(phase => {
-            switch (phase.name) {
-                case 'NewGame':
-                case 'PlayerTurn':
-                    return true;
-
-                default:
-                    return phase.idsToResolve && phase.idsToResolve.length > 0;
-            }
+            if (phase.resolvesOnEmpty) return phase.idsToResolve && phase.idsToResolve.length > 0;
+            else return !phase.endThisPhase;
         });
 
         let endLen = this.stack.length;
@@ -122,6 +116,9 @@ export class Phase {
     name: PhaseName;
 
     validActions: ActionName[] = [];
+
+    resolvesOnEmpty: boolean = true;
+    endThisPhase: boolean = false;
 
     /*
      * We both keep a list of cards we have to resolve still,
@@ -149,12 +146,14 @@ export class Phase {
     // e.g., which attacker we're currently resolving.
     extraState: PrimitiveMap = {};
 
-    constructor(name: PhaseName, validActions: ActionName[]) {
+    constructor(name: PhaseName, validActions: ActionName[], resolvesOnEmpty: boolean = true) {
         this.name = name;
         this.validActions = validActions;
 
         this.idsToResolve = [];
         this.resolvedIds = [];
+
+        this.resolvesOnEmpty = resolvesOnEmpty;
     }
 
     serialize(): ObjectMap {
@@ -208,10 +207,6 @@ export class Phase {
 
     wasDone(cardId: string): boolean {
         return this.resolvedIds.indexOf(cardId) !== -1;
-    }
-
-    finished(): boolean {
-        return this.idsToResolve.length === 0;
     }
 }
 

@@ -4,6 +4,7 @@ import { Board } from '../board';
 import { PatrolZone } from '../board';
 import { Phase } from './phase';
 import { UpkeepHandler } from '../cards/handlers';
+import { CardApi } from 'cards/card_api';
 
 export function startTurnAction(game: Game): void {
     let boards = game.getBoardAndOpponentBoard();
@@ -46,24 +47,15 @@ export function startTurnAction(game: Game): void {
 
     // enter player turn phase
     game.phaseStack.addToStack(
-        new Phase('PlayerTurn', [
-            'PlayCard',
-            'Worker',
-            'Tech',
-            'Build',
-            'Patrol',
-            'Ability',
-            'Attack',
-            'HeroSummon',
-            'HeroLevel',
-            'EndTurn',
-            'TowerReveal'
-        ])
+        new Phase(
+            'PlayerTurn',
+            ['PlayCard', 'Worker', 'Tech', 'Build', 'Patrol', 'Ability', 'Attack', 'HeroSummon', 'HeroLevel', 'EndTurn', 'TowerReveal'],
+            false
+        )
     );
 
     // enter upkeep phase, process upkeep events. when this is resolved, we'll exit into the PlayerTurn phase just beneath
-    game.phaseStack.addToStack(new Phase('Upkeep', ['UpkeepChoice']));
-    game.markMustResolveForCardsWithFnName(game.getBoardAndOpponentBoard()[0].inPlay, 'onUpkeep');
+    CardApi.trigger(game, 'Upkeep', 'UpkeepChoice', 'onUpkeep', 'PlayerActive');
 }
 
 export function upkeepChoiceAction(game: Game, cardId: string): void {

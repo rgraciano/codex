@@ -128,9 +128,22 @@ export class CardApi {
         // to make any choices.  But for some spells, and when Boost / Don't Boost are there, then the user has to choose what to do
         // next.
         if (card.playStagingGroup.length > 1) {
-            let phase = new Phase('PlayStagingArea', ['PlayStagingAbility']);
+            let phase = new Phase('PlayStagingArea', ['PlayStagingAbility'], false);
             card.game.phaseStack.addToStack(phase);
             this.moveCard(card, fromSpace, board.playStagingArea);
+        } else {
+            this.leaveStagingArea(card, fromSpace);
+        }
+    }
+
+    static leaveStagingArea(card: Card, fromSpace: Card[]) {
+        // spells either have a default 'Cast' ability, OR they have a set of abilities to choose from in playStagingArea.
+        //
+        // once we're out of the staging area - either because they chose something and moved forward, or because there was nothing
+        // choose (only a default), we end up here.
+        if (card.cardType == 'Spell') {
+            let defaultAbility = card.abilityMap.get('Cast');
+            if (defaultAbility) defaultAbility.use();
         } else {
             CardApi.arriveCardIntoPlay(card, fromSpace);
         }
@@ -199,6 +212,18 @@ export class CardApi {
         switch (spaceType) {
             case 'AllActive':
                 space = game.getAllActiveCards();
+                break;
+            case 'PlayerActive':
+                space = game.getAllActiveCards(game.getBoardAndOpponentBoard()[0]);
+                break;
+            case 'OpponentActive':
+                space = game.getAllActiveCards(game.getBoardAndOpponentBoard()[1]);
+                break;
+            case 'AllPatroller':
+                space = game.getAllPatrollers();
+                break;
+            case 'OpponentPatroller':
+                space = game.getAllPatrollers(game.getBoardAndOpponentBoard()[1]);
                 break;
         }
         return space;

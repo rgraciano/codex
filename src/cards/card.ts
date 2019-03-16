@@ -348,6 +348,15 @@ export abstract class Card {
     }
 }
 
+/**
+ * Spells are Cards with abilities. There are two types:
+ *
+ *    1) Spells with a 'Cast' ability will immediately cast that ability upon use.  If channeling/ongoing/etc they will handle appropriately.
+ *
+ *    2) Spells with other abilities need added into this.playerStageGroup, and the game will ask the user to choose which one they
+ *       want to use.  We do it this way because there are Units and other things that also require similar choices and they use the
+ *       same mechanism to prompt the user for the choice.
+ */
 export abstract class Spell extends Card {
     readonly cardType: CardType = 'Spell';
 
