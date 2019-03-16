@@ -33,6 +33,7 @@ export abstract class Card {
     abstract readonly flavorType: FlavorType;
 
     abilityMap: Map<string, Ability> = new Map<string, Ability>();
+    playStagingGroup: string[] = [];
 
     // Identifies cards uniquely, for client<->server communication
     readonly cardId: string;
@@ -110,7 +111,8 @@ export abstract class Card {
             attributeModifiers: Object.assign({}, this.attributeModifiers),
             abilities: Array.from(this.abilityMap.keys()),
             canUseAbilities: <boolean[]>[],
-            canPlay: this.canPlay()
+            canPlay: this.canPlay(),
+            playStagingGroup: this.playStagingGroup
         };
 
         this.abilityMap.forEach((ability, key, map) => objMap.canUseAbilities.push(ability.canUse()));
@@ -148,8 +150,22 @@ export abstract class Card {
         return card;
     }
 
-    registerAbility(ability: Ability) {
+    /**
+     * Registers an ability, and also registers it into the "play staging group" list if desired.
+     *
+     * When a card is played, the game first stages it into the "staging area". It then looks for "abilities"
+     * on the card that are flagged as "playStaging", and presents them as options for the user to execute BEFORE
+     * the card is played.  For example, Boost is one option.  Another option might be Oathkeeper's choice to do
+     * one thing or another thing, or Murkwood Allies asking you which thing you intend to do.
+     *
+     * The game lets the user choose ONE of the things in the list, and then moves on.
+     */
+    registerAbility(ability: Ability, playStagingGroup?: boolean) {
         this.abilityMap.set(ability.name, ability);
+
+        if (playStagingGroup) {
+            this.playStagingGroup.push(ability.name);
+        }
     }
 
     /**

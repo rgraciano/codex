@@ -1,5 +1,5 @@
 import { Card, Attributes, TechLevel } from './card';
-import { EventDescriptor } from '../game';
+import { EventDescriptor, Game } from '../game';
 import { Phase } from '../actions/phase';
 import { BuildingType, BoardBuilding } from '../board';
 import { CardApi } from './card_api';
@@ -14,6 +14,7 @@ export abstract class Ability {
     requiresExhaust = false;
     requiredRuneType: keyof Attributes = undefined;
     requiresNumRunes = 0;
+    playStagingAbility = false;
 
     constructor(card: Card) {
         this.card = card;
@@ -28,7 +29,10 @@ export abstract class Ability {
 
         if (this.requiredRuneType && attrs[this.requiredRuneType] <= this.requiresNumRunes) return false;
 
-        return true;
+        // some abilities are actually choices that the user has to make when playing the card.
+        // for example, Boost and Not Boost are like this
+        if (this.card.game.phaseStack.topOfStack().name == 'PlayStagingArea') return this.playStagingAbility;
+        else return !this.playStagingAbility;
     }
 
     payFor() {
@@ -246,5 +250,28 @@ export class CreateTokensAbility extends Ability {
     use() {
         super.use();
         CardApi.makeTokens(this.card.game, this.tokenName, this.numTokens, this.onMyBoard);
+    }
+}
+
+export class BoostAbility extends Ability {
+    useFn: () => EventDescriptor;
+
+    constructor(card: Card, cost: number, useFn: () => void) {
+        super(card);
+        this.name = 'Boost';
+        this.requiredGoldCost = cost;
+    }
+
+    use() {
+        super.use();
+        this.useFn();
+        this.card.game.addEvent(new EventDescriptor('Boost', 'Paid for boost'));
+    }
+}
+
+export class DontBoostAbility extends Ability {
+    constructor(card: Card) {
+        super(card);
+        this.name = 'No Boost';
     }
 }

@@ -21,6 +21,8 @@ export class CardApi {
         // Takes card out of hand, but doesn't put it in play yet
         this.removeCardFromSpace(fromSpace, card);
 
+        card.gainProperty('arrivalFatigue', 1);
+
         /**** GLOBAL BONUSES ****/
         // First, check if this card applies bonuses to other cards (possibly including or excluding self)
         if (Reflect.has(card, 'giveBonus')) card.game.getAllActiveCards().map(boardCard => (<GlobalBonusHook>card).giveBonus(boardCard));
@@ -108,7 +110,7 @@ export class CardApi {
 
         card.game.addEvent(new EventDescriptor('PaidFor', 'Paid ' + cost + ' gold to worker a card'));
 
-        this.moveCard(board.hand, card, board.workers);
+        this.moveCard(card, board.hand, board.workers);
         board.workeredThisTurn = true;
     }
 
@@ -121,12 +123,17 @@ export class CardApi {
             card.game.addEvent(new EventDescriptor('PaidFor', 'Paid ' + cost + ' gold for ' + card.name));
         }
 
-        if (card.cardType == 'Spell') {
+        // Before cards arrive, they go into the "Play Staging Area", where the user can choose which thing to do on the card.
+        // Most of the time, there will only be one thing to do and this stage will auto-resolve without the user needing
+        // to make any choices.  But for some spells, and when Boost / Don't Boost are there, then the user has to choose what to do
+        // next.
+        if (card.playStagingGroup.length > 1) {
+            let phase = new Phase('PlayStagingArea', ['PlayStagingAbility']);
+            card.game.phaseStack.addToStack(phase);
+            this.moveCard(card, fromSpace, board.playStagingArea);
+        } else {
+            CardApi.arriveCardIntoPlay(card, fromSpace);
         }
-        card.gainProperty('arrivalFatigue', 1);
-
-        // TODO: Add spell support. Spells don't "arrive"
-        CardApi.arriveCardIntoPlay(card, fromSpace);
     }
 
     /**
@@ -249,7 +256,7 @@ export class CardApi {
      *  Moves a card from one area to another, e.g. hand to play space, play to discard, etc.
      *  If toSpace is omitted then the card is simply removed.
      */
-    private static moveCard(fromSpace: Array<Card>, card: Card, toSpace?: Array<Card>) {
+    private static moveCard(card: Card, fromSpace: Array<Card>, toSpace?: Array<Card>) {
         this.removeCardFromSpace(fromSpace, card);
         if (toSpace) toSpace.push(card);
     }

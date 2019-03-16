@@ -18,11 +18,13 @@ export type PhaseName =
     | 'PrepareAttackTargets'
     | 'AttackDestination'
     | 'ChooseAbilityTarget'
-    | 'ChooseTowerReveal';
+    | 'ChooseTowerReveal'
+    | 'PlayStagingArea';
 
 // The client uses Actions to understand what API calls are currently valid, and how to present possible actions to the user.
 export type ActionName =
     | 'NewGame'
+    | 'PlayStagingAbility'
     | 'UpkeepChoice'
     | 'ArrivesChoice'
     | 'DiesOrLeavesChoice'

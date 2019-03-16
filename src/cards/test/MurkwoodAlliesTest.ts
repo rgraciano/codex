@@ -1,5 +1,5 @@
 import { Card, FlavorType, TechLevel, Attributes, Unit, Spell, SpellLevel } from '../card';
-import { Ability, AddPlusOneOneAbility, CreateTokensAbility } from '../ability';
+import { Ability, BoostAbility, DontBoostAbility, CreateTokensAbility } from '../ability';
 import { Game, EventDescriptor } from '../../game';
 import * as Color from '../color';
 import { CardApi } from '../card_api';
@@ -21,28 +21,14 @@ export class MurkwoodAlliesTest extends Spell {
 
         let fA = new CreateTokensAbility(this, 0, 'Frog', 4);
         let bA = new CreateTokensAbility(this, 0, 'Beast', 1);
-        this.registerAbility(fA);
-        this.registerAbility(bA);
-        this.registerAbility(new BoostAbility(this, fA, bA));
-    }
-}
-
-class BoostAbility extends Ability {
-    fA: CreateTokensAbility;
-    bA: CreateTokensAbility;
-
-    constructor(card: Card, frogAbility: CreateTokensAbility, beastAbility: CreateTokensAbility) {
-        super(card);
-        this.name = 'Boost';
-        this.requiredGoldCost = 4;
-        this.fA = frogAbility;
-        this.bA = beastAbility;
-    }
-
-    use() {
-        super.use();
-        this.card.game.addEvent(new EventDescriptor('Boost', 'Paid for boost'));
-        this.fA.use();
-        this.bA.use();
+        this.registerAbility(fA, true);
+        this.registerAbility(bA, true);
+        this.registerAbility(
+            new BoostAbility(this, 4, () => {
+                fA.use();
+                bA.use();
+            }),
+            true
+        );
     }
 }

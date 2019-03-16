@@ -19,17 +19,18 @@ export class Board {
 
     gold: number = 0;
 
-    hand: Array<Card> = [];
-    deck: Array<Card> = [];
-    discard: Array<Card> = [];
-    workers: Array<Card> = [];
+    hand: Card[] = [];
+    deck: Card[] = [];
+    discard: Card[] = [];
+    workers: Card[] = [];
+    playStagingArea: Card[] = [];
     startingWorkers: number;
 
-    heroZone: Array<Hero> = [];
+    heroZone: Hero[] = [];
 
     // These things are "active" - cards that are in play somewhere
-    inPlay: Array<Card> = [];
-    effects: Array<Card> = [];
+    inPlay: Card[] = [];
+    effects: Card[] = [];
     patrolZone: PatrolZone = new PatrolZone();
 
     base: BoardBuilding;
@@ -70,6 +71,7 @@ export class Board {
             workers: Card.serializeCards(this.workers),
             heroZone: Card.serializeCards(this.heroZone),
             inPlay: Card.serializeCards(this.inPlay),
+            playStagingArea: Card.serializeCards(this.playStagingArea),
 
             numWorkers: this.workers.length + this.startingWorkers, // for the client
             workeredThisTurn: this.workeredThisTurn,
@@ -90,7 +92,7 @@ export class Board {
     static deserialize(pojo: ObjectMap, game: Game): Board {
         let board = new Board(<number>pojo.playerNumber);
 
-        board.workers = Card.deserializeCards(<Array<ObjectMap>>pojo.workers);
+        board.workers = Card.deserializeCards(<ObjectMap[]>pojo.workers);
         board.multiColor = <boolean>pojo.boolean;
 
         board.chosenSpecs = <Spec[]>pojo.chosenSpecs;
@@ -98,12 +100,13 @@ export class Board {
         board.gold = <number>pojo.gold;
         board.workeredThisTurn = <boolean>pojo.workeredThisTurn;
 
-        board.hand = Card.deserializeCards(<Array<ObjectMap>>pojo.hand);
-        board.deck = Card.deserializeCards(<Array<ObjectMap>>pojo.deck);
-        board.discard = Card.deserializeCards(<Array<ObjectMap>>pojo.discard);
+        board.playStagingArea = Card.deserializeCards(<ObjectMap[]>pojo.playStagingArea);
+        board.hand = Card.deserializeCards(<ObjectMap[]>pojo.hand);
+        board.deck = Card.deserializeCards(<ObjectMap[]>pojo.deck);
+        board.discard = Card.deserializeCards(<ObjectMap[]>pojo.discard);
 
-        board.heroZone = <Array<Hero>>Card.deserializeCards(<Array<ObjectMap>>pojo.heroZone);
-        board.inPlay = Card.deserializeCards(<Array<ObjectMap>>pojo.inPlay);
+        board.heroZone = <Hero[]>Card.deserializeCards(<ObjectMap[]>pojo.heroZone);
+        board.inPlay = Card.deserializeCards(<ObjectMap[]>pojo.inPlay);
 
         board.patrolZone = PatrolZone.deserialize(<ObjectMap>pojo.patrolZone);
 
