@@ -128,13 +128,21 @@ export class CardApi {
         CardApi.arriveCardIntoPlay(card, fromSpace);
     }
 
-    /** Hooks happen immediately; no user choice is possible or necessary */
-    static hook(game: Game, triggerFn: string, argsForTriggerFn: any[], hookSpace: SpaceType = 'AllActive') {
+    /**
+     * Hooks happen immediately; no user choice is possible or necessary
+     * @returns whether or not a hook activated
+     */
+    static hook(game: Game, triggerFn: string, argsForTriggerFn: any[], hookSpace: SpaceType = 'AllActive'): boolean {
         let hooks = this.findCardsWithProperty(this.getCardsFromSpace(game, hookSpace), triggerFn);
+
+        let atLeastOneHookActivated = false;
 
         hooks.map(cardWithHook => {
             game.addEvent((<Function>Reflect.get(cardWithHook, triggerFn)).apply(argsForTriggerFn));
+            atLeastOneHookActivated = true;
         });
+
+        return atLeastOneHookActivated;
     }
 
     /** Triggers will enter a new phase, in which the user may have to choose between which trigger happens first */
@@ -268,22 +276,9 @@ export class CardApi {
 
         this.removeCardFromPlay(card);
 
-        // this should use hook(), but it's a weird hook because we have to look at the return values for this one
-        let wouldDiscardHooks = this.findCardsWithProperty(card.game.getAllActiveCards(), 'wouldDiscard');
-        let needToDiscard = true;
+        let preventedDiscard = this.hook(card.game, 'wouldDiscard', [card]);
 
-        if (wouldDiscardHooks) {
-            wouldDiscardHooks.map(hookCard => {
-                let result = (<WouldDiscardHook>hookCard).wouldDiscard(card);
-
-                if (result) {
-                    card.game.addEvent(result);
-                    needToDiscard = false;
-                }
-            });
-        }
-
-        if (needToDiscard) {
+        if (!preventedDiscard) {
             card.ownerBoard.discard.push(card);
             card.game.addEvent(new EventDescriptor('DiscardedCards', card.name + ' was discarded', { cardId: card.cardId }));
         }
