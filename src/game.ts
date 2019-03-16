@@ -41,7 +41,9 @@ export type ServerEvent =
     | 'Ability'
     | 'Built'
     | 'Draw'
-    | 'TowerReveal';
+    | 'TowerReveal'
+    | 'TokenAdded'
+    | 'Boost';
 export type RuneEvent = 'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
 export class Game {

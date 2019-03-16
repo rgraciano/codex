@@ -2,6 +2,7 @@ import { Card, Attributes, TechLevel } from './card';
 import { EventDescriptor } from '../game';
 import { Phase } from '../actions/phase';
 import { BuildingType, BoardBuilding } from '../board';
+import { CardApi } from './card_api';
 
 export type BuildingChoice = { boardBuildings: BuildingType[]; cardBuildings: Card[] };
 
@@ -188,7 +189,9 @@ export abstract class Ability {
         return selectedCards;
     }
 
-    abstract resolveChoice(cardOrBuildingId: string): EventDescriptor;
+    resolveChoice(cardOrBuildingId: string): EventDescriptor {
+        return null;
+    }
 
     use() {
         this.payFor();
@@ -224,5 +227,24 @@ export class AddPlusOneOneAbility extends Ability {
     resolveChoice(cardOrBuildingId: string) {
         let card = Card.idToCardMap.get(cardOrBuildingId);
         return card.gainProperty('plusOneOne', 1);
+    }
+}
+
+export class CreateTokensAbility extends Ability {
+    tokenName: string;
+    numTokens: number;
+    onMyBoard: boolean;
+
+    constructor(card: Card, cost: number, tokenName: string, numTokens: number, onMyBoard: boolean = true) {
+        super(card);
+        this.tokenName = tokenName;
+        this.numTokens = numTokens;
+        this.onMyBoard = onMyBoard;
+        this.requiredGoldCost = cost;
+    }
+
+    use() {
+        super.use();
+        CardApi.makeTokens(this.card.game, this.tokenName, this.numTokens, this.onMyBoard);
     }
 }

@@ -14,13 +14,12 @@ type SpaceType = 'AllActive' | 'PlayerActive' | 'OpponentActive' | 'AllPatroller
  */
 export class CardApi {
     /** Does everything needed to bring a card into play. Note you still need to remove card from wherever it was before calling this */
-    static arriveCardIntoPlay(card: Card, fromSpace: Card[]): void {
-        let boards = card.game.getBoardAndOpponentBoard();
-        let board = boards[0];
-        let opponentBoard = boards[1];
+    static arriveCardIntoPlay(card: Card, fromSpace: Card[], toPlayerBoard: boolean = true): void {
+        let [playerBoard, opponentBoard] = card.game.getBoardAndOpponentBoard();
+        let board = toPlayerBoard ? playerBoard : opponentBoard;
 
         // Takes card out of hand, but doesn't put it in play yet
-        this.removeCardFromSpace(board.hand, card);
+        this.removeCardFromSpace(fromSpace, card);
 
         /**** GLOBAL BONUSES ****/
         // First, check if this card applies bonuses to other cards (possibly including or excluding self)
@@ -122,6 +121,8 @@ export class CardApi {
             card.game.addEvent(new EventDescriptor('PaidFor', 'Paid ' + cost + ' gold for ' + card.name));
         }
 
+        if (card.cardType == 'Spell') {
+        }
         card.gainProperty('arrivalFatigue', 1);
 
         // TODO: Add spell support. Spells don't "arrive"
@@ -171,6 +172,19 @@ export class CardApi {
         let foundCards: Card[] = this.findCardsWithProperty(space, triggerFn);
         // add all of those cards to the list of allowedActions, automatically removing those that were already resolved and ensuring there are no duplicates
         phase.markCardsToResolve(foundCards, triggerFn);
+    }
+
+    static makeTokens(game: Game, tokenName: string, numTokens: number, onMyBoard: boolean = true) {
+        let [playerBoard, opponentBoard] = game.getBoardAndOpponentBoard();
+        let board = onMyBoard ? playerBoard : opponentBoard;
+
+        let ns = require(<string>'./test/' + <string>tokenName + '.js');
+
+        let card: Card;
+        for (let i = 0; i < numTokens; i++) {
+            card = new ns[<string>tokenName](board.playerNumber, board.playerNumber, Card.makeCardId());
+            this.arriveCardIntoPlay(card, []);
+        }
     }
 
     private static getCardsFromSpace(game: Game, spaceType: SpaceType): Card[] {

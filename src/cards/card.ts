@@ -19,7 +19,8 @@ export type FlavorType =
     | 'Flagbearer'
     | 'Ninja'
     | 'Lizardman'
-    | 'Beast';
+    | 'Beast'
+    | 'Summon';
 
 export abstract class Card {
     abstract readonly cardType: CardType;
@@ -57,18 +58,20 @@ export abstract class Card {
     oppositionalControllerBoard: Board;
 
     constructor(owner: number, controller?: number, cardId?: string) {
-        this.cardId = cardId
-            ? cardId
-            : anyid()
-                  .encode('Aa0')
-                  .length(10)
-                  .random()
-                  .id();
+        this.cardId = cardId ? cardId : Card.makeCardId();
         Card.cardToIdMap.set(this, this.cardId);
         Card.idToCardMap.set(this.cardId, this);
 
         this.owner = owner;
         this.controller = this.controller ? this.controller : this.owner;
+    }
+
+    static makeCardId(): string {
+        return anyid()
+            .encode('Aa0')
+            .length(10)
+            .random()
+            .id();
     }
 
     setupGameReferences(game: Game) {
