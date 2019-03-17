@@ -1,11 +1,7 @@
-import { anyid } from 'anyid';
-import { Game, EventDescriptor, RuneEvent } from '../game';
+import { EventDescriptor } from '../game';
 import { ObjectMap } from '../game_server';
-import { Board } from '../board';
 import { Ability } from './ability';
-import * as Color from './color';
 import { Card, CardType, Attributes } from './card';
-import { CardApi } from './card_api';
 
 export type SpellLevel = 'Tech 0' | 'Normal' | 'Ultimate';
 export type SpellType = 'Burn' | 'Buff' | 'Debuff';

@@ -58,12 +58,21 @@ export function choiceAction(game: Game, cardOrBuildingId: string, action: Actio
                 // if we've chosen the max number of things we can choose, end the phase
                 game.phaseStack.endCurrentPhase();
 
+            let destroyed = false;
             if (card && <boolean>phase.extraState['usesTargetingRules']) {
                 // subtract any resistance on the targeted card
-                cardWithAbility.controllerBoard.gold -= card.effective().resist;
+                let eff = card.effective();
+                cardWithAbility.controllerBoard.gold -= eff.resist;
+
+                // some things die when targeted, eg illusions
+                if (eff.diesWhenTargeted > 0) {
+                    CardApi.destroyCard(card);
+                    destroyed = true;
+                }
             }
 
-            game.addEvent(ability.resolveChoice(cardOrBuildingId));
+            // if we killed the thing we targeted, then the event no longer occurs. otherwise, resolve
+            if (!destroyed) game.addEvent(ability.resolveChoice(cardOrBuildingId));
             break;
 
         case 'ChooseTowerReveal':

@@ -478,6 +478,11 @@ export class Attributes {
     ephemeral: number = 0;
     resist: number = 0;
 
+    // Things can go in and out of illusion mode, so we track like an attribute.  diesWhenTargeted can change
+    // when Macchiatus comes into play
+    illusion: number = 0;
+    diesWhenTargeted: number = 0;
+
     // Tracking tower ability
     towerRevealedThisTurn: number = 0;
 
