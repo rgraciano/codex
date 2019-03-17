@@ -5,6 +5,7 @@ import { BuildingType, BoardBuilding } from '../board';
 import { CardApi } from './card_api';
 
 export type BuildingChoice = { boardBuildings: BuildingType[]; cardBuildings: Card[] };
+export type ChoiceType = 'Buildings' | 'Heroes' | 'Units' | 'Characters' | 'Weakest';
 
 export abstract class Ability {
     name: string = 'Ability';
@@ -47,7 +48,10 @@ export abstract class Ability {
         if (this.requiredRuneType) attrs[this.requiredRuneType] -= this.requiresNumRunes;
     }
 
-    /** For numberRequired, use 0 to indicate ALL */
+    /**
+     * Enters a phase to choose a target for an ability
+     * @chooseNumber use 0 to indicate ALL
+     */
     choose(
         buildings: BuildingChoice,
         cards: Card[],
@@ -193,8 +197,8 @@ export abstract class Ability {
         return selectedCards;
     }
 
-    resolveChoice(cardOrBuildingId: string): EventDescriptor {
-        return null;
+    resolveChoice(cardOrBuildingId: string): EventDescriptor | undefined {
+        return undefined;
     }
 
     use() {

@@ -4,11 +4,11 @@ import { ObjectMap } from '../game_server';
 import { Board } from '../board';
 import { Ability } from './ability';
 import * as Color from './color';
+import { Spell } from './spell';
 
 export type CardType = 'Spell' | 'Hero' | 'Unit' | 'Building' | 'Upgrade' | 'Effect' | 'None';
 export type TechLevel = 0 | 1 | 2 | 3;
-export type SpellLevel = 'Tech 0' | 'Normal' | 'Ultimate';
-export type SpellType = 'Burn' | 'Buff' | 'Debuff';
+
 export type FlavorType =
     | 'Effect'
     | 'QA'
@@ -33,7 +33,7 @@ export abstract class Card {
     abstract readonly flavorType: FlavorType;
 
     abilityMap: Map<string, Ability> = new Map<string, Ability>();
-    playStagingGroup: string[] = [];
+    playStagingAbilityGroup: string[] = [];
 
     // Identifies cards uniquely, for client<->server communication
     readonly cardId: string;
@@ -112,7 +112,7 @@ export abstract class Card {
             abilities: Array.from(this.abilityMap.keys()),
             canUseAbilities: <boolean[]>[],
             canPlay: this.canPlay(),
-            playStagingGroup: this.playStagingGroup
+            playStagingAbilityGroup: this.playStagingAbilityGroup
         };
 
         this.abilityMap.forEach((ability, key, map) => objMap.canUseAbilities.push(ability.canUse()));
@@ -160,11 +160,11 @@ export abstract class Card {
      *
      * The game lets the user choose ONE of the things in the list, and then moves on.
      */
-    registerAbility(ability: Ability, playStagingGroup?: boolean) {
+    registerAbility(ability: Ability, playStagingAbilityGroup?: boolean) {
         this.abilityMap.set(ability.name, ability);
 
-        if (playStagingGroup) {
-            this.playStagingGroup.push(ability.name);
+        if (playStagingAbilityGroup) {
+            this.playStagingAbilityGroup.push(ability.name);
         }
     }
 
@@ -345,43 +345,6 @@ export abstract class Card {
             gained: add,
             numChanged: numToAdjust
         });
-    }
-}
-
-/**
- * Spells are Cards with abilities. There are two types:
- *
- *    1) Spells with a 'Cast' ability will immediately cast that ability upon use.  If channeling/ongoing/etc they will handle appropriately.
- *
- *    2) Spells with other abilities need added into this.playerStageGroup, and the game will ask the user to choose which one they
- *       want to use.  We do it this way because there are Units and other things that also require similar choices and they use the
- *       same mechanism to prompt the user for the choice.
- */
-export abstract class Spell extends Card {
-    readonly cardType: CardType = 'Spell';
-
-    abstract readonly spellLevel: SpellLevel;
-
-    serialize(): ObjectMap {
-        let pojo = super.serialize();
-        pojo.spellLevel = this.spellLevel;
-        return pojo;
-    }
-
-    deserializeExtra(pojo: ObjectMap): void {}
-
-    effective(): Attributes {
-        let attrs = super.effective();
-
-        if (!this.controllerBoard.multiColor || !(this.techLevel == 0)) return attrs;
-
-        // we only have Tech 0 spells for our chosen starting color, and if we're multi-color,
-        // casting them with a different colored hero costs 1 extra gold
-        let sameColorHeroes = this.game.getAllActiveCards(this.controllerBoard).filter(h => h.cardType == 'Hero' && h.color == this.color);
-
-        if (sameColorHeroes.length === 0) attrs.cost++;
-
-        return attrs;
     }
 }
 

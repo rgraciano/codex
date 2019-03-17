@@ -3,6 +3,7 @@ import { CardApi } from './cards/card_api';
 import { Game, EventDescriptor } from './game';
 import { ObjectMap } from './game_server';
 import { Spec } from './cards/color';
+import { UntilSpell } from 'cards/spell';
 
 export type BuildingType = 'Base' | 'Tech 1' | 'Tech 2' | 'Tech 3' | 'AddOn';
 export type AddOnType = 'Tower' | 'Surplus' | 'Heroes Hall' | 'Tech Lab' | 'None';
@@ -30,7 +31,7 @@ export class Board {
 
     // These things are "active" - cards that are in play somewhere
     inPlay: Card[] = [];
-    effects: Card[] = [];
+    activeSpells: UntilSpell[] = [];
     patrolZone: PatrolZone = new PatrolZone();
 
     base: BoardBuilding;

@@ -1,5 +1,6 @@
 import { Game, EventDescriptor } from '../game';
 import { Card, Hero } from './card';
+import { Spell, AttachSpell, ImmediateSpell, OngoingSpell, UntilSpell } from './spell';
 import { GlobalBonusHook, WouldDieHook, WouldDiscardHook } from './handlers';
 import { Phase, PhaseName, ActionName, PrimitiveMap } from '../actions/phase';
 import { Board } from '../board';
@@ -127,7 +128,7 @@ export class CardApi {
         // Most of the time, there will only be one thing to do and this stage will auto-resolve without the user needing
         // to make any choices.  But for some spells, and when Boost / Don't Boost are there, then the user has to choose what to do
         // next.
-        if (card.playStagingGroup.length > 1) {
+        if (card.playStagingAbilityGroup.length > 1) {
             let phase = new Phase('PlayStagingArea', ['PlayStagingAbility'], false);
             card.game.phaseStack.addToStack(phase);
             this.moveCard(card, fromSpace, board.playStagingArea);
@@ -142,8 +143,40 @@ export class CardApi {
         // once we're out of the staging area - either because they chose something and moved forward, or because there was nothing
         // choose (only a default), we end up here.
         if (card.cardType == 'Spell') {
-            let defaultAbility = card.abilityMap.get('Cast');
-            if (defaultAbility) defaultAbility.use();
+            let spell: Spell = <Spell>card;
+
+            switch (spell.spellLifecycle) {
+                case 'Attachment':
+                    let attachment = <AttachSpell>card;
+                    attachment.attachAbility.use(); // enters phase and resolves as if this was an ability
+                    this.moveCard(attachment, fromSpace, card.controllerBoard.inPlay); // move into play now, b/c this is really complicated otherwise...
+                    return;
+
+                case 'Immediate':
+                    let immediate = <ImmediateSpell>card;
+                    immediate.castAbility.use();
+                    this.moveCard(immediate, fromSpace, immediate.ownerBoard.discard);
+                    return;
+
+                case 'MultipleChoice':
+                    // don't need to cast, since this was done by play_staging_ability_action
+                    this.moveCard(card, fromSpace, card.ownerBoard.discard);
+                    return;
+
+                case 'Ongoing':
+                    let ongoing = <OngoingSpell>card;
+                    ongoing.enterPlay(); // might be empty, depending on the spell
+                    this.moveCard(ongoing, fromSpace, ongoing.controllerBoard.inPlay);
+                    return;
+
+                case 'UntilEndOfTurn':
+                case 'UntilNextTurn':
+                    let untilSpell = <UntilSpell>card;
+                    untilSpell.enterPlay(); // might be empty, depending on the spell...
+                    untilSpell.controllerBoard.activeSpells.push(untilSpell); // add spell to current ongoing effects
+                    this.moveCard(ongoing, fromSpace, ongoing.ownerBoard.discard);
+                    return;
+            }
         } else {
             CardApi.arriveCardIntoPlay(card, fromSpace);
         }
@@ -263,7 +296,7 @@ export class CardApi {
         }
 
         if (this.removeCardFromSpace(board.inPlay, card)) return true;
-        if (this.removeCardFromSpace(board.effects, card)) return true;
+        if (this.removeCardFromSpace(board.activeSpells, card)) return true;
         if (this.removeCardFromSpace(board.hand, card)) return true;
 
         return false;

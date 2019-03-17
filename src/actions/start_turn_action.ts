@@ -13,6 +13,12 @@ export function startTurnAction(game: Game): void {
 
     board.turnCount++; // TODO: This needs to be done per player
 
+    // clear any active spells that I have, since max duration is 'UntilNextTurn'
+    board.activeSpells = [];
+
+    // clear my opponent's spells, leaving only the 'Until Next Turn' ones alive (since those are still going on my turn)
+    opponentBoard.activeSpells = opponentBoard.activeSpells.filter(spell => spell.spellLifecycle == 'UntilNextTurn');
+
     // clear patrol zone, moving everything to "in play"
     game.addEvent(clearPatrolZone(board));
 

@@ -202,7 +202,7 @@ export class Game {
         return (
             board
                 .getPatrolZoneAsArray()
-                .concat(...board.inPlay, board.effects)
+                .concat(...board.inPlay, board.activeSpells)
                 .filter(localCard => localCard === card).length > 0
         );
     }
@@ -220,14 +220,14 @@ export class Game {
     }
 
     getAllActiveCards(useBoard?: Board): Card[] {
-        if (useBoard) return useBoard.inPlay.concat(useBoard.getPatrolZoneAsArray(), useBoard.effects);
+        if (useBoard) return useBoard.inPlay.concat(useBoard.getPatrolZoneAsArray(), useBoard.activeSpells);
         else
             return this.player1Board.inPlay.concat(
                 this.player1Board.getPatrolZoneAsArray(),
-                this.player1Board.effects,
+                this.player1Board.activeSpells,
                 this.player2Board.inPlay,
                 this.player2Board.getPatrolZoneAsArray(),
-                this.player2Board.effects
+                this.player2Board.activeSpells
             );
     }
 

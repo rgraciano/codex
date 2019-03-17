@@ -1,4 +1,5 @@
-import { Card, Spell, FlavorType, Attributes, SpellLevel, TechLevel } from '../card';
+import { Card, FlavorType, Attributes, TechLevel } from '../card';
+import { Spell, SpellLevel, SpellLifecyle } from '../spell';
 import { WouldDieHook } from '../handlers';
 import { Game, EventDescriptor } from '../../game';
 import { CardApi } from '../card_api';
@@ -14,6 +15,7 @@ export class SoulStoneTest extends Spell implements WouldDieHook {
     importPath: string = './test';
     spellLevel: SpellLevel = 'Normal';
     techLevel: TechLevel = 1;
+    spellLifecycle: SpellLifecyle = 'Attachment';
 
     constructor(owner: number, controller?: number, cardId?: string) {
         super(owner, controller, cardId);
