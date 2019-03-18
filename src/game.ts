@@ -10,6 +10,7 @@ import { Card } from './cards/card';
 
 import { ObjectMap } from './game_server';
 import { TwoAbilitiesTest } from './cards/test/TwoAbilitiesTest';
+import { BoostUnitTest } from './cards/test/BoostUnitTest';
 
 export type ServerEvent =
     | RuneEvent
@@ -43,7 +44,8 @@ export type ServerEvent =
     | 'Draw'
     | 'TowerReveal'
     | 'TokenAdded'
-    | 'Boost';
+    | 'Boost'
+    | 'PropAdjustment';
 export type RuneEvent = 'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
 export class Game {
@@ -78,15 +80,15 @@ export class Game {
         this.player2Board.addOn = new AddOn('AddOn', this.player2Board);
 
         this.player1Board.discard = [
-            new TimelyMessenger(1),
+            new BoostUnitTest(1),
             new TwoAbilitiesTest(1),
-            new TimelyMessenger(1),
+            new BoostUnitTest(1),
             new TwoAbilitiesTest(1),
-            new TimelyMessenger(1),
+            new BoostUnitTest(1),
             new TwoAbilitiesTest(1),
-            new TimelyMessenger(1),
+            new BoostUnitTest(1),
             new TwoAbilitiesTest(1),
-            new TimelyMessenger(1),
+            new BoostUnitTest(1),
             new TwoAbilitiesTest(1)
         ];
 

@@ -16,7 +16,7 @@ export function playStagingAbilityAction(game: Game, cardId: string, abilityName
     let phase = game.phaseStack.topOfStack();
 
     // the user picked an ability. does the exact same thing abilityAction does, so use that action to resolve
-    abilityAction(cardId, abilityName);
+    abilityAction(cardId, abilityName, true);
 
     // we can only choose ONE thing before play, so now that we've done that thing, we remove this phase.
     // thus, we'll flag this phase for removal on phase cleanup.

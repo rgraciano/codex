@@ -15,7 +15,7 @@ export abstract class Ability {
     requiresExhaust = false;
     requiredRuneType: keyof Attributes = undefined;
     requiresNumRunes = 0;
-    playStagingAbility = false;
+    stagingAbility: boolean = false;
 
     constructor(card: Card) {
         this.card = card;
@@ -32,8 +32,8 @@ export abstract class Ability {
 
         // some abilities are actually choices that the user has to make when playing the card.
         // for example, Boost and Not Boost are like this
-        if (this.card.game.phaseStack.topOfStack().name == 'PlayStagingArea') return this.playStagingAbility;
-        else return !this.playStagingAbility;
+        if (this.card.game.phaseStack.topOfStack().name == 'Staging') return this.stagingAbility;
+        else return !this.stagingAbility;
     }
 
     payFor() {
@@ -258,12 +258,13 @@ export class CreateTokensAbility extends Ability {
 }
 
 export class BoostAbility extends Ability {
-    useFn: () => EventDescriptor;
+    useFn: () => void;
 
     constructor(card: Card, cost: number, useFn: () => void) {
         super(card);
         this.name = 'Boost';
         this.requiredGoldCost = cost;
+        this.useFn = useFn;
     }
 
     use() {

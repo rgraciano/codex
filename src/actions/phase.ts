@@ -19,12 +19,12 @@ export type PhaseName =
     | 'AttackDestination'
     | 'ChooseAbilityTarget'
     | 'ChooseTowerReveal'
-    | 'PlayStagingArea';
+    | 'Staging';
 
 // The client uses Actions to understand what API calls are currently valid, and how to present possible actions to the user.
 export type ActionName =
     | 'NewGame'
-    | 'PlayStagingAbility'
+    | 'StagingAbility'
     | 'UpkeepChoice'
     | 'ArrivesChoice'
     | 'DiesOrLeavesChoice'
@@ -163,7 +163,8 @@ export class Phase {
             idsToResolve: this.idsToResolve,
             resolvedIds: this.resolvedIds,
             actionsForIds: this.actionsForIds,
-            extraState: this.extraState
+            extraState: this.extraState,
+            resolvesOnEmpty: this.resolvesOnEmpty
         };
     }
 
@@ -173,6 +174,7 @@ export class Phase {
         phase.resolvedIds = <string[]>pojo.resolvedIds;
         phase.actionsForIds = <StringMap>pojo.actionsForIds;
         phase.extraState = <PrimitiveMap>pojo.extraState;
+        phase.resolvesOnEmpty = <boolean>pojo.resolvesOnEmpty;
         return phase;
     }
 

@@ -33,7 +33,7 @@ export abstract class Card {
     abstract readonly flavorType: FlavorType;
 
     abilityMap: Map<string, Ability> = new Map<string, Ability>();
-    playStagingAbilityGroup: string[] = [];
+    stagingAbilityMap: Map<string, Ability> = new Map<string, Ability>();
 
     // Identifies cards uniquely, for client<->server communication
     readonly cardId: string;
@@ -110,12 +110,14 @@ export abstract class Card {
             baseAttributes: Object.assign({}, this.baseAttributes),
             attributeModifiers: Object.assign({}, this.attributeModifiers),
             abilities: Array.from(this.abilityMap.keys()),
+            stagingAbilities: Array.from(this.stagingAbilityMap.keys()),
             canUseAbilities: <boolean[]>[],
-            canPlay: this.canPlay(),
-            playStagingAbilityGroup: this.playStagingAbilityGroup
+            canUseStagingAbilities: <boolean[]>[],
+            canPlay: this.canPlay()
         };
 
         this.abilityMap.forEach((ability, key, map) => objMap.canUseAbilities.push(ability.canUse()));
+        this.stagingAbilityMap.forEach((ability, key, map) => objMap.canUseStagingAbilities.push(ability.canUse()));
         return objMap;
     }
 
@@ -160,11 +162,12 @@ export abstract class Card {
      *
      * The game lets the user choose ONE of the things in the list, and then moves on.
      */
-    registerAbility(ability: Ability, playStagingAbilityGroup?: boolean) {
-        this.abilityMap.set(ability.name, ability);
-
-        if (playStagingAbilityGroup) {
-            this.playStagingAbilityGroup.push(ability.name);
+    registerAbility(ability: Ability, stagingAbility?: boolean) {
+        if (stagingAbility) {
+            this.stagingAbilityMap.set(ability.name, ability);
+            ability.stagingAbility = true;
+        } else {
+            this.abilityMap.set(ability.name, ability);
         }
     }
 
@@ -200,6 +203,16 @@ export abstract class Card {
         }
 
         return attrSum;
+    }
+
+    get allHealth(): number {
+        let eff = this.effective();
+        return eff.health - eff.minusOneOne + eff.plusOneOne;
+    }
+
+    get allAttack(): number {
+        let eff = this.effective();
+        return eff.attack - eff.minusOneOne + eff.plusOneOne;
     }
 
     protected canDoThings(arrivalFatigueOk: boolean, checkAttacksThisTurn: boolean): boolean {
@@ -300,8 +313,7 @@ export abstract class Card {
 
     /** When this card's health is zero, or its damage meets or exceeds its health, return true */
     shouldDestroy(): boolean {
-        let attributes: Attributes = this.effective();
-        return attributes.health <= 0 || attributes.health <= attributes.damage;
+        return this.allHealth <= 0 || this.allHealth <= this.effective().damage;
     }
 
     /** Resets this card - takes off all tokens, resets all attributes, etc.  Happens when putting back into hand, putting into discard, and so on */
@@ -332,15 +344,15 @@ export abstract class Card {
         return this.adjustProperty(numToLose, property, 'subtract');
     }
 
-    private adjustProperty(numToAdjust: number, runeProperty: keyof Attributes, addOrSubtract: 'add' | 'subtract') {
+    private adjustProperty(numToAdjust: number, prop: keyof Attributes, addOrSubtract: 'add' | 'subtract') {
         let add = addOrSubtract == 'add';
 
-        if (add) this.attributeModifiers[runeProperty] += numToAdjust;
-        else this.attributeModifiers[runeProperty] -= numToAdjust;
+        if (add) this.attributeModifiers[prop] += numToAdjust;
+        else this.attributeModifiers[prop] -= numToAdjust;
 
-        let desc: string = (add ? ' gained ' : ' removed ') + numToAdjust + ' ' + runeProperty;
+        let desc: string = (add ? ' gained ' : ' removed ') + numToAdjust + ' ' + prop;
 
-        return new EventDescriptor(<RuneEvent>runeProperty, this.name + desc, {
+        return new EventDescriptor('PropAdjustment', this.name + desc, {
             cardId: this.cardId,
             gained: add,
             numChanged: numToAdjust
@@ -450,12 +462,12 @@ export class Attributes {
     // Cost in gold
     cost: number = 0;
 
-    // Sum total effective attack and health
-    private _health: number = 0;
-    private _attack: number = 0;
+    // Basic health and attack, before runes etc
+    health: number = 0;
+    attack: number = 0;
 
-    // Effective armor, not including squad leader. Some things come with armor or can have armor added
-    private _armor: number = 0;
+    // Base armor, before modifiers etc
+    armor: number = 0;
 
     // The number of things this will obliterate on attack
     obliterate: number = 0;
@@ -509,28 +521,6 @@ export class Attributes {
 
     /** This is for cards w/ readiness, to track if they've already attacked once this turn. */
     haveAttackedThisTurn: 0;
-
-    /** Whenever we discover a card that requires getters/setters, we can implement as needed.
-     * Fortunately Javascript makes the property access syntax of thing.health the same whether it's a method accessor or simple property,
-     * so no refactoring is needed elsewhere to make this switch even if we're iterating through property names or whatever. */
-
-    get health(): number {
-        return this.calcPostTokenHpOrAtk(this._health);
-    }
-    set health(newHealth: number) {
-        this._health = newHealth;
-    }
-
-    get attack(): number {
-        return this.calcPostTokenHpOrAtk(this._attack);
-    }
-    set attack(newAttack: number) {
-        this._attack = newAttack;
-    }
-
-    private calcPostTokenHpOrAtk(hpOrAtk: number) {
-        return hpOrAtk - this.minusOneOne + this.plusOneOne;
-    }
 
     // TODO: Also model temporaryArmor / temporaryAttack.  See: Aged Sensei.  He'll have to add a trigger to clear it by end of turn.
     // TODO: For Safe Attacking - maybe there's a startOfAttack trigger and an endOfAttack trigger to add / remove the armor?

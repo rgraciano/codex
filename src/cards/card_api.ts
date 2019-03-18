@@ -45,7 +45,7 @@ export class CardApi {
 
         // Set damage equal to health, as we can always tell something is dead that way. This is in case someone calls this method directly, e.g. by destroying a card
         let effective = card.effective();
-        if (effective.damage < effective.health) card.attributeModifiers.damage = effective.health;
+        if (effective.damage < card.allHealth) card.attributeModifiers.damage = card.allHealth;
 
         /**** WOULD DIE ****/
         // We run all 'would die' hooks right away, because the user doesn't get to choose anything.  They just happen.  Order really does not matter.
@@ -53,7 +53,7 @@ export class CardApi {
 
         // After the hooks are run, we again check whether or not this should die
         effective = card.effective();
-        if (effective.health > 0 && effective.damage < effective.health) {
+        if (card.allHealth > 0 && effective.damage < card.allHealth) {
             return;
         }
 
@@ -128,8 +128,9 @@ export class CardApi {
         // Most of the time, there will only be one thing to do and this stage will auto-resolve without the user needing
         // to make any choices.  But for some spells, and when Boost / Don't Boost are there, then the user has to choose what to do
         // next.
-        if (card.playStagingAbilityGroup.length > 1) {
-            let phase = new Phase('PlayStagingArea', ['PlayStagingAbility'], false);
+        if (card.stagingAbilityMap.size > 1) {
+            let phase = new Phase('Staging', ['StagingAbility'], false);
+            phase.markCardsToResolve([card]);
             card.game.phaseStack.addToStack(phase);
             this.moveCard(card, fromSpace, board.playStagingArea);
         } else {

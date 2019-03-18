@@ -119,7 +119,7 @@ export class GameServer {
         return propValue;
     }
 
-    runAction(action: string, context: StringMap, overrideWithPhase: boolean = false) {
+    runAction(action: ActionName, context: StringMap, overrideWithPhase: boolean = false) {
         let onlyPossibleTarget: string = undefined;
         let phase = this.game.phaseStack.topOfStack();
 
@@ -197,7 +197,7 @@ export class GameServer {
                 break;
             }
 
-            case 'PlayStagingAbility': {
+            case 'StagingAbility': {
                 playStagingAbilityAction(
                     this.game,
                     GameServer.requireProp('cardId', context, GameServer.alnumProperties),
@@ -212,7 +212,7 @@ export class GameServer {
                 break;
             }
 
-            case 'TowerDetect': {
+            case 'TowerReveal': {
                 towerRevealAction(this.game);
                 break;
             }
@@ -260,7 +260,12 @@ export class GameServer {
 
             if (topOfStack.name == 'GameOver') return;
 
-            if (topOfStack.name != 'PlayerPrompt' && topOfStack.validActions.length === 1 && topOfStack.idsToResolve.length === 1) {
+            if (
+                topOfStack.name != 'PlayerPrompt' &&
+                topOfStack.name != 'Staging' &&
+                topOfStack.validActions.length === 1 &&
+                topOfStack.idsToResolve.length === 1
+            ) {
                 this.runAction(topOfStack.validActions[0], {}, true);
                 clearedSingleAction = true;
             } else clearedSingleAction = false;
