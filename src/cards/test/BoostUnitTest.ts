@@ -24,12 +24,11 @@ export class BoostUnitTest extends Unit {
         this.baseAttributes.attack = 1;
         this.baseAttributes.health = 1;
 
-        this.registerAbility(
+        this.registerStagingAbility(
             new BoostAbility(this, 2, () => {
                 this.gainProperty('attack', 5);
-            }),
-            true
+            })
         );
-        this.registerAbility(new DontBoostAbility(this), true);
+        this.registerStagingAbility(new DontBoostAbility(this));
     }
 }

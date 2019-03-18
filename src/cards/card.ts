@@ -153,22 +153,47 @@ export abstract class Card {
     }
 
     /**
-     * Registers an ability, and also registers it into the "play staging group" list if desired.
+     * Normal ability.  Use for typical abilities that the user can choose to activate in play.
      *
-     * When a card is played, the game first stages it into the "staging area". It then looks for "abilities"
-     * on the card that are flagged as "playStaging", and presents them as options for the user to execute BEFORE
-     * the card is played.  For example, Boost is one option.  Another option might be Oathkeeper's choice to do
-     * one thing or another thing, or Murkwood Allies asking you which thing you intend to do.
+     * There are three types of abilities:
      *
-     * The game lets the user choose ONE of the things in the list, and then moves on.
+     *    1) Normal abilities. These show up on the front end when cards are in play or in patrol and ability.canUse()
+     *       returns true.  They are listed in card.abilityMap and when the user clicks in the front end on an ability,
+     *       the ability action looks up the ability in the map and calls its use() method on the card.
+     *
+     *    2) Staging abilities.  When a card is played, the game first stages it into the "staging area". It then looks
+     *       for staging abilities in card.stagingAbilityMap, and presents them as options for the user to execute BEFORE
+     *       the card is played.  For example, Boost is one option.  Another option might be Oathkeeper's choice to do
+     *       one thing or another thing, or Murkwood Allies asking you which thing you intend to do.  The game lets the user
+     *       choose ONE of the staging abilities in the list, and then moves on.
+     *
+     *    3) Handler abilities.  These are registered in card.abilityMap() but ability.canUse() always returns false.
+     *       Abilities are used to manage the things that would happen from in-game triggers.  For example, if onArrives()
+     *       is triggered and the card text asks the user to remove a time rune from a card.  The card with onArrives() registers
+     *       a handler ability and uses that ability to prompt the user to select a target, and then resolve the choice.  This whole
+     *       flow works just like a normal ability is would, except that ability.canUse() is set to false always, so only the game
+     *       can enter this flow via a trigger rather than the user being able to click on a link that causes it.
      */
-    registerAbility(ability: Ability, stagingAbility?: boolean) {
-        if (stagingAbility) {
-            this.stagingAbilityMap.set(ability.name, ability);
-            ability.stagingAbility = true;
-        } else {
-            this.abilityMap.set(ability.name, ability);
-        }
+    registerAbility(ability: Ability) {
+        this.abilityMap.set(ability.name, ability);
+    }
+
+    /**
+     * Staging ability. Use when this ability can only be chosen in the staging area, rather than in play.
+     * @see registerAbility
+     */
+    registerStagingAbility(ability: Ability) {
+        this.stagingAbilityMap.set(ability.name, ability);
+        ability.stagingAbility = true;
+    }
+
+    /**
+     * Handler ability. Use when only the game can trigger this ability, never the user.
+     * @see registerAbility
+     */
+    registerHandlerAbility(ability: Ability) {
+        this.abilityMap.set(ability.name, ability);
+        ability.usable = false;
     }
 
     /**

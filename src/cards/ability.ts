@@ -16,12 +16,15 @@ export abstract class Ability {
     requiredRuneType: keyof Attributes = undefined;
     requiresNumRunes = 0;
     stagingAbility: boolean = false;
+    usable: boolean = true; // set to false for abilities that are triggered, like from a handler
 
     constructor(card: Card) {
         this.card = card;
     }
 
     canUse(): boolean {
+        if (!this.usable) return false;
+
         if (this.card.controllerBoard.gold < this.requiredGoldCost) return false;
 
         let attrs = this.card.effective();
