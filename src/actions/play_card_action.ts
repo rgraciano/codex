@@ -1,7 +1,6 @@
 import { EventDescriptor } from '../game';
 import { Card } from '../cards/card';
 import { CardApi } from '../cards/card_api';
-import { Board } from 'board';
 
 export function playCardAction(cardId: string, asWorker = false): void {
     let cardToPlay = Card.idToCardMap.get(cardId);

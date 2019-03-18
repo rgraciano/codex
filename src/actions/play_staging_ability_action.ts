@@ -1,6 +1,6 @@
 import { abilityAction } from './ability_action';
 import { Game } from '../game';
-import { CardApi } from 'cards/card_api';
+import { CardApi } from '../cards/card_api';
 import { Card } from '../cards/card';
 
 /**

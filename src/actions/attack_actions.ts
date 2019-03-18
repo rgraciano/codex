@@ -1,7 +1,7 @@
 import { Card, Character, Attributes } from '../cards/card';
 import { Phase } from './phase';
 import { EventDescriptor } from '../game';
-import { CardApi } from 'cards/card_api';
+import { CardApi } from '../cards/card_api';
 
 function getAttackerFromId(attackerId: string): Character {
     // choose attacker

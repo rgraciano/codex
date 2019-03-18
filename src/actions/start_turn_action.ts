@@ -4,7 +4,7 @@ import { Board } from '../board';
 import { PatrolZone } from '../board';
 import { Phase } from './phase';
 import { UpkeepHandler } from '../cards/handlers';
-import { CardApi } from 'cards/card_api';
+import { CardApi } from '../cards/card_api';
 
 export function startTurnAction(game: Game): void {
     let boards = game.getBoardAndOpponentBoard();

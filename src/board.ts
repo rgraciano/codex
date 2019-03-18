@@ -3,7 +3,7 @@ import { CardApi } from './cards/card_api';
 import { Game, EventDescriptor } from './game';
 import { ObjectMap } from './game_server';
 import { Spec } from './cards/color';
-import { UntilSpell } from 'cards/spell';
+import { UntilSpell } from './cards/spell';
 
 export type BuildingType = 'Base' | 'Tech 1' | 'Tech 2' | 'Tech 3' | 'AddOn';
 export type AddOnType = 'Tower' | 'Surplus' | 'Heroes Hall' | 'Tech Lab' | 'None';

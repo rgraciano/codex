@@ -1,5 +1,5 @@
 import { Game, EventDescriptor } from '../game';
-import { BoardBuilding, AddOnType } from 'board';
+import { BoardBuilding, AddOnType } from '../board';
 
 export function buildAction(game: Game, buildingId: string, addOnExtra: AddOnType = undefined): void {
     let building: BoardBuilding;
