@@ -59,7 +59,7 @@ export class CardApi {
 
         /**** DEAD. SO DEAD. ****/
         this.trigger(game, 'DiesOrLeaves', 'DiesOrLeavesChoice', 'onDies', 'AllActive', { dyingCardId: card.cardId });
-        this.leavePlay(card, 'Discard', false, true); // TODO: Add Hero logic, which may also necessitate player choices
+        this.leavePlay(card, 'Discard', false, true);
     }
 
     /** Called specifically when a card leaves play, such as when Undo is used to bounce a card to hand */
@@ -90,7 +90,7 @@ export class CardApi {
                 this.discardCardFromPlay(card, isDying);
                 break;
             case 'HeroZone':
-                this.putCardBackInHeroZone(<Hero>card);
+                this.putCardBackInHeroZone(<Hero>card, isDying);
                 break;
             default:
                 return;
@@ -321,8 +321,11 @@ export class CardApi {
     }
 
     /** Will NOT trigger leaves play and similar handlers.  Is supposed to be called directly by that sort of thing */
-    private static putCardBackInHeroZone(card: Hero) {
+    private static putCardBackInHeroZone(card: Hero, preventSummonNextTurn = true) {
         card.resetCard();
+
+        if (preventSummonNextTurn) card.markCantBeSummonedNextTurn();
+
         this.removeCardFromPlay(card);
         card.ownerBoard.heroZone.push(card);
         card.game.addEvent(new EventDescriptor('ReturnToHeroZone', card.name + ' was returned to hero zone', { cardId: card.cardId }));

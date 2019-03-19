@@ -288,7 +288,7 @@ export abstract class Card {
             if (this.controllerBoard.addOnIsActive() && addOn.addOnType == 'Heroes Hall')
                 maxHeroesInPlay = maxHeroesInPlay == 3 ? 3 : maxHeroesInPlay + 1;
 
-            return hero.turnsTilAvailable === 0 && heroesInPlay < maxHeroesInPlay;
+            return hero.canBeSummoned() && heroesInPlay < maxHeroesInPlay;
         }
 
         // spells can be played if a hero of the same type is out there, or if we have any hero out there for tech 0 spells
@@ -439,13 +439,14 @@ export abstract class Unit extends Character {
 export abstract class Hero extends Character {
     readonly cardType: CardType = 'Hero';
 
-    level: number = 1;
-
     abstract readonly midLevel: number;
     abstract readonly maxLevel: number;
 
-    turnsTilAvailable: number = 0;
-    turnsTilCastUltimate: number = 1; // some heroes may set this to 0, e.g. Prynn
+    castsUltimateImmediately: boolean = false; // some heroes may set this to true, e.g. Prynn
+
+    private _level: number = 1;
+    private turnsTilAvailable: number = 0;
+    private turnsTilCastUltimate: number = 1;
 
     serialize(): ObjectMap {
         let pojo = super.serialize();
@@ -458,7 +459,7 @@ export abstract class Hero extends Character {
     }
 
     deserializeExtra(pojo: ObjectMap): void {
-        this.level = <number>pojo.level;
+        this._level = <number>pojo.level;
         this.turnsTilAvailable = <number>pojo.turnsTilAvailable;
         this.turnsTilCastUltimate = <number>pojo.turnsTilCastUltimate;
     }
@@ -467,14 +468,36 @@ export abstract class Hero extends Character {
         return this.level == this.maxLevel && this.turnsTilCastUltimate === 0;
     }
 
+    canBeSummoned() {
+        return this.turnsTilAvailable === 0;
+    }
+
     markCantBeSummonedNextTurn() {
         this.turnsTilAvailable = 2;
+    }
+
+    get level() {
+        return this._level;
+    }
+
+    set level(newLvl: number) {
+        this._level = newLvl;
+
+        if (this._level > this.maxLevel) this._level = this.maxLevel;
+
+        if (this._level === this.maxLevel) this.turnsTilCastUltimate = this.castsUltimateImmediately ? 0 : 1;
+    }
+
+    newTurn() {
+        if (this.turnsTilAvailable > 0) this.turnsTilAvailable--;
+        if (this.level == this.maxLevel && this.turnsTilCastUltimate > 0) this.turnsTilCastUltimate--;
     }
 
     /** Note that for heroes, this makes them available immediately */
     resetCard() {
         super.resetCard();
         this.turnsTilAvailable = 0;
+        this.turnsTilCastUltimate = this.castsUltimateImmediately ? 0 : 1;
         this.level = 1;
     }
 }

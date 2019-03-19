@@ -24,14 +24,13 @@ export class MurkwoodAlliesTest extends MultipleChoiceSpell {
         super(owner, controller, cardId);
         this.baseAttributes.cost = 5;
 
-        this.registerAbility(this.ability1, true);
-        this.registerAbility(this.ability2, true);
-        this.registerAbility(
+        this.registerStagingAbility(this.ability1);
+        this.registerStagingAbility(this.ability2);
+        this.registerStagingAbility(
             new BoostAbility(this, 4, () => {
                 this.ability1.use();
                 this.ability2.use();
-            }),
-            true
+            })
         );
     }
 }
