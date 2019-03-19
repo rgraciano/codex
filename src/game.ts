@@ -45,7 +45,10 @@ export type ServerEvent =
     | 'TowerReveal'
     | 'TokenAdded'
     | 'Boost'
-    | 'PropAdjustment';
+    | 'PropAdjustment'
+    | 'HeroMid'
+    | 'HeroMax'
+    | 'HeroGainLvl';
 export type RuneEvent = 'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
 export class Game {

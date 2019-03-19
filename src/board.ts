@@ -1,4 +1,5 @@
-import { Card, Hero, TechLevel } from './cards/card';
+import { Card, TechLevel } from './cards/card';
+import { Hero } from './cards/hero';
 import { CardApi } from './cards/card_api';
 import { Game, EventDescriptor } from './game';
 import { ObjectMap } from './game_server';
