@@ -40,6 +40,16 @@ export interface WouldDiscardHook extends Card {
     wouldDiscard(cardToDiscard: Card): EventDescriptor;
 }
 
+/** Called when a Hero hits mid-level if applicable. Not all heroes will implement */
+export interface HeroMidHook extends Card {
+    heroMid(): EventDescriptor;
+}
+
+/** Called when a Hero hits max-level if applicable. Not all heroes will implement */
+export interface HeroMaxHook extends Card {
+    heroMax(): EventDescriptor;
+}
+
 /*
 *
 *

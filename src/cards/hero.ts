@@ -1,6 +1,7 @@
 import { Character, CardType } from './card';
 import { ObjectMap } from '../game_server';
 import { Game, EventDescriptor } from 'game';
+import { CardApi } from './card_api';
 
 export abstract class Hero extends Character {
     readonly cardType: CardType = 'Hero';
@@ -50,25 +51,37 @@ export abstract class Hero extends Character {
         if (newLvl > this.maxLevel) newLvl = this.maxLevel;
 
         if (newLvl > this._level) {
-            let damage = this.effective().damage;
-            let healDamage = false;
+            let hittingMid = false,
+                hittingMax = false;
 
-            if (this._level < this.midLevel && newLvl >= this.midLevel && newLvl < this.maxLevel) {
-                this.game.addEvent(new EventDescriptor('HeroMid', this.name + ' is now mid-level'));
-                healDamage = true;
-            } else if (this._level < this.maxLevel && newLvl == this.maxLevel) {
-                this.game.addEvent(new EventDescriptor('HeroMax', this.name + ' is now max-level'));
-                healDamage = true;
-            } else {
-                this.game.addEvent(new EventDescriptor('HeroGainLvl', this.name + ' is now level ' + newLvl));
+            if (this._level < this.midLevel && newLvl >= this.midLevel) {
+                hittingMid = true;
             }
 
-            if (healDamage && damage > 0) this.loseProperty('damage', damage);
+            if (this._level < this.maxLevel && newLvl == this.maxLevel) {
+                hittingMax = true;
+            }
+
+            this._level = newLvl;
+
+            if (hittingMid || hittingMax) {
+                this.healAllDamage();
+            }
+
+            if (hittingMid) CardApi.hook(this.game, 'heroMid', [], 'None', this);
+            if (hittingMax) CardApi.hook(this.game, 'heroMax', [], 'None', this);
+
+            if (hittingMax) this.game.addEvent(new EventDescriptor('HeroMax', this.name + ' is now max-band (level ' + newLvl + ')'));
+            else if (hittingMid) this.game.addEvent(new EventDescriptor('HeroMid', this.name + ' is now mid-band  (level ' + newLvl + ')'));
+            else this.game.addEvent(new EventDescriptor('HeroGainLvl', this.name + ' is now level ' + newLvl));
         }
 
-        this._level = newLvl;
-
         if (this._level === this.maxLevel) this.turnsTilCastUltimate = this.castsUltimateImmediately ? 0 : 1;
+    }
+
+    healAllDamage() {
+        let damage = this.effective().damage;
+        if (damage > 0) this.loseProperty('damage', damage);
     }
 
     newTurn() {

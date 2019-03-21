@@ -6,7 +6,7 @@ import { GlobalBonusHook, WouldDieHook, WouldDiscardHook } from './handlers';
 import { Phase, PhaseName, ActionName, PrimitiveMap } from '../actions/phase';
 import { Board } from '../board';
 
-type SpaceType = 'AllActive' | 'PlayerActive' | 'OpponentActive' | 'AllPatroller' | 'OpponentPatroller';
+type SpaceType = 'AllActive' | 'PlayerActive' | 'OpponentActive' | 'AllPatroller' | 'OpponentPatroller' | 'None';
 /**
  * Everything in here is designed to be called by a card when something happens, e.g., something is made to arrive.
  *
@@ -186,10 +186,13 @@ export class CardApi {
 
     /**
      * Hooks happen immediately; no user choice is possible or necessary
+     * @param singleCard if set, activate hook on this one card instead of searching hookSpace
+     * @param hookSpace if singleCard is not set, then apply the hook to everything in this search space
      * @returns whether or not a hook activated
      */
-    static hook(game: Game, triggerFn: string, argsForTriggerFn: any[], hookSpace: SpaceType = 'AllActive'): boolean {
-        let hooks = this.findCardsWithProperty(this.getCardsFromSpace(game, hookSpace), triggerFn);
+    static hook(game: Game, triggerFn: string, argsForTriggerFn: any[], hookSpace: SpaceType = 'AllActive', singleCard?: Card): boolean {
+        let spaceCards = singleCard ? [singleCard] : this.getCardsFromSpace(game, hookSpace);
+        let hooks = this.findCardsWithProperty(spaceCards, triggerFn);
 
         let atLeastOneHookActivated = false;
 
@@ -259,6 +262,9 @@ export class CardApi {
                 break;
             case 'OpponentPatroller':
                 space = game.getAllPatrollers(game.getBoardAndOpponentBoard()[1]);
+                break;
+            case 'None':
+                space = [];
                 break;
         }
         return space;
