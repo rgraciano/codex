@@ -1,4 +1,4 @@
-import { FlavorType, TechLevel, Attributes, Unit } from '../card';
+import { TechLevel, Attributes, Unit } from '../card';
 import { Game, EventDescriptor } from '../../game';
 import * as Color from '../color';
 
@@ -7,7 +7,7 @@ export class TimelyMessenger extends Unit {
 
     color: Color.ColorName = 'Neutral';
     spec: Color.Spec = 'Starter';
-    flavorType: FlavorType = 'Mercenary';
+    flavorType = 'Mercenary';
     name: string = 'Timely Messenger';
     techLevel: TechLevel = 0;
     importPath: string = './neutral';

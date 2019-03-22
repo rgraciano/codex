@@ -8,7 +8,7 @@ export type BuildingChoice = { boardBuildings: BuildingType[]; cardBuildings: Ca
 export type ChoiceType = 'Buildings' | 'Heroes' | 'Units' | 'Characters' | 'Weakest';
 
 export abstract class Ability {
-    name: string = 'Ability';
+    abstract name: string;
     card: Card;
 
     requiredGoldCost = 0;
@@ -209,27 +209,53 @@ export abstract class Ability {
     }
 }
 
-export class AddPlusOneOneAbility extends Ability {
+export abstract class CommonAbility extends Ability {
     minTechLevel: TechLevel;
     maxTechLevel: TechLevel;
     numTargets: number;
+    includeUnits: boolean;
+    includeHeroes: boolean;
+    choicesRequired: boolean;
+    usesTargetingRules: boolean;
 
-    constructor(card: Card, minTechLevel: TechLevel, maxTechLevel: TechLevel, numTargets: number) {
+    constructor(
+        card: Card,
+        minTechLevel: TechLevel,
+        maxTechLevel: TechLevel,
+        numTargets: number,
+        includeUnits = true,
+        includeHeroes = true,
+        choicesRequired = true,
+        usesTargetingRules = true
+    ) {
         super(card);
         this.minTechLevel = minTechLevel;
         this.maxTechLevel = maxTechLevel;
         this.numTargets = numTargets;
-        this.name = 'Add +1/+1';
+        this.includeUnits = includeUnits;
+        this.includeHeroes = includeHeroes;
+        this.choicesRequired = choicesRequired;
+        this.usesTargetingRules = usesTargetingRules;
     }
+}
+
+export class AddPlusOneOneAbility extends CommonAbility {
+    name = 'Add +1/+1';
 
     use() {
         super.use();
         return this.choose(
             undefined,
-            this.choicesUnits(this.card.game.getAllActiveCards(), this.minTechLevel, this.maxTechLevel),
+            this.choicesCharacters(
+                this.card.game.getAllActiveCards(),
+                this.includeUnits,
+                this.includeHeroes,
+                this.minTechLevel,
+                this.maxTechLevel
+            ),
             this.numTargets,
-            'Add +1/+1',
-            false,
+            this.name,
+            this.choicesRequired,
             true
         );
         // need to check - what happens if ability requires more targets than actually exist?
@@ -242,12 +268,14 @@ export class AddPlusOneOneAbility extends Ability {
 }
 
 export class CreateTokensAbility extends Ability {
+    name: string;
     tokenName: string;
     numTokens: number;
     onMyBoard: boolean;
 
     constructor(card: Card, cost: number, tokenName: string, numTokens: number, onMyBoard: boolean = true) {
         super(card);
+        this.name = 'Create ' + tokenName;
         this.tokenName = tokenName;
         this.numTokens = numTokens;
         this.onMyBoard = onMyBoard;
@@ -261,11 +289,11 @@ export class CreateTokensAbility extends Ability {
 }
 
 export class BoostAbility extends Ability {
+    name = 'Boost';
     useFn: () => void;
 
     constructor(card: Card, cost: number, useFn: () => void) {
         super(card);
-        this.name = 'Boost';
         this.requiredGoldCost = cost;
         this.useFn = useFn;
     }
@@ -278,8 +306,8 @@ export class BoostAbility extends Ability {
 }
 
 export class DontBoostAbility extends Ability {
+    name = 'No Boost';
     constructor(card: Card) {
         super(card);
-        this.name = 'No Boost';
     }
 }

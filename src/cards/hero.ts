@@ -9,6 +9,9 @@ export abstract class Hero extends Character {
     abstract readonly midLevel: number;
     abstract readonly maxLevel: number;
 
+    abstract readonly healthMinMidMax: number[];
+    abstract readonly attackMinMidMax: number[];
+
     castsUltimateImmediately: boolean = false; // some heroes may set this to true, e.g. Prynn
 
     private _level: number = 1;
@@ -68,8 +71,16 @@ export abstract class Hero extends Character {
                 this.healAllDamage();
             }
 
-            if (hittingMid) CardApi.hook(this.game, 'heroMid', [], 'None', this);
-            if (hittingMax) CardApi.hook(this.game, 'heroMax', [], 'None', this);
+            if (hittingMid) {
+                CardApi.hook(this.game, 'heroMid', [], 'None', this);
+                this.baseAttributes.health = this.healthMinMidMax[1];
+                this.baseAttributes.attack = this.attackMinMidMax[1];
+            }
+            if (hittingMax) {
+                CardApi.hook(this.game, 'heroMax', [], 'None', this);
+                this.baseAttributes.health = this.healthMinMidMax[2];
+                this.baseAttributes.attack = this.attackMinMidMax[2];
+            }
 
             if (hittingMax) this.game.addEvent(new EventDescriptor('HeroMax', this.name + ' is now max-band (level ' + newLvl + ')'));
             else if (hittingMid) this.game.addEvent(new EventDescriptor('HeroMid', this.name + ' is now mid-band  (level ' + newLvl + ')'));

@@ -1,4 +1,4 @@
-import { Card, FlavorType, TechLevel, Attributes, Unit } from '../card';
+import { TechLevel, Attributes, Unit } from '../card';
 import { Spell, SpellLevel, SpellLifecyle, MultipleChoiceSpell } from '../spell';
 import { Ability, BoostAbility, DontBoostAbility, CreateTokensAbility } from '../ability';
 import { Game, EventDescriptor } from '../../game';
@@ -13,7 +13,7 @@ export class MurkwoodAlliesTest extends MultipleChoiceSpell {
 
     color: Color.ColorName = 'Neutral';
     spec: Color.Spec = 'Starter';
-    flavorType: FlavorType = 'Summon';
+    flavorType = 'Summon';
     spellLevel: SpellLevel = 'Normal';
     name: string = 'Murkwood Allies';
     techLevel: TechLevel = 0;

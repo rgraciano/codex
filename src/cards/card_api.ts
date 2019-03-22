@@ -121,7 +121,7 @@ export class CardApi {
 
         if (!free) {
             let cost = card.effective().cost;
-            board.gold -= cost;
+            board.gold -= cost > 0 ? cost : 0;
             card.game.addEvent(new EventDescriptor('PaidFor', 'Paid ' + cost + ' gold for ' + card.name));
         }
 

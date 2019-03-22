@@ -10,28 +10,16 @@ import { Hero } from './hero';
 export type CardType = 'Spell' | 'Hero' | 'Unit' | 'Building' | 'Upgrade' | 'Effect' | 'None';
 export type TechLevel = 0 | 1 | 2 | 3;
 
-export type FlavorType =
-    | 'Effect'
-    | 'QA'
-    | 'Mercenary'
-    | 'Virtuoso'
-    | 'Drunkard'
-    | 'Cute Animal'
-    | 'Flagbearer'
-    | 'Ninja'
-    | 'Lizardman'
-    | 'Beast'
-    | 'Summon';
-
 export abstract class Card {
     abstract readonly cardType: CardType;
 
-    abstract readonly techLevel: TechLevel;
     abstract readonly color: Color.ColorName;
     abstract readonly spec: Color.Spec;
 
+    abstract readonly flavorType: string;
     abstract readonly name: string;
-    abstract readonly flavorType: FlavorType;
+
+    abstract readonly techLevel: TechLevel;
 
     abilityMap: Map<string, Ability> = new Map<string, Ability>();
     stagingAbilityMap: Map<string, Ability> = new Map<string, Ability>();
@@ -317,7 +305,8 @@ export abstract class Card {
 
         // for all other cards, we just check the tech level
         else {
-            if (this.techLevel == 0) return true;
+            let techCard: Unit | Spell | Upgrade | Building = <(Unit | Spell | Upgrade | Building)>(<unknown>this);
+            if (techCard.techLevel == 0) return true;
 
             if (!this.controllerBoard.techBuildingIsActive(this.techLevel)) return false;
 
@@ -355,7 +344,7 @@ export abstract class Card {
     }
 
     /** When otherCard is controlled by the same player, and its FlavorType matches, run fn(otherCard) */
-    doIfYourCardAndFlavorType(otherCard: Card, flavorType: FlavorType, fn: (otherCard: Card) => EventDescriptor): EventDescriptor {
+    doIfYourCardAndFlavorType(otherCard: Card, flavorType: string, fn: (otherCard: Card) => EventDescriptor): EventDescriptor {
         if (otherCard.controller === this.controller && otherCard.flavorType && otherCard.flavorType === flavorType) return fn(otherCard);
         else return undefined;
     }
