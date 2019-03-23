@@ -404,11 +404,13 @@ export abstract class Character extends Card {
     }
 
     canAttack(): boolean {
-        return this.canDoThings(false, true);
+        if (this.effective().cantAttack > 0) return false;
+        else return this.canDoThings(false, true);
     }
 
     canPatrol(): boolean {
-        return this.canDoThings(true, false);
+        if (this.effective().cantPatrol > 0) return false;
+        else return this.canDoThings(true, false);
     }
 }
 
@@ -473,6 +475,7 @@ export class Attributes {
     // Some cards say "cant sacrifice", "cant patrol", etc.  Track those here
     cantSacrifice: number = 0;
     cantPatrol: number = 0;
+    cantAttack: number = 0;
 
     // Counting how many runes are on the card
     timeRunes: number = 0;

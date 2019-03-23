@@ -258,7 +258,6 @@ export class AddPlusOneOneAbility extends CommonAbility {
             this.choicesRequired,
             true
         );
-        // need to check - what happens if ability requires more targets than actually exist?
     }
 
     resolveChoice(cardOrBuildingId: string) {
