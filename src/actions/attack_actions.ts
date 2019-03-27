@@ -2,6 +2,7 @@ import { Card, Character, Attributes } from '../cards/card';
 import { Phase } from './phase';
 import { EventDescriptor } from '../game';
 import { CardApi } from '../cards/card_api';
+import { StringMap } from '../game_server';
 
 function getAttackerFromId(attackerId: string): Character {
     // choose attacker
@@ -139,6 +140,17 @@ export function prepareAttackTargetsAction(attackerId: string) {
             );
         }
     }
+}
+
+export function prepareAttackTargetsChoice(choiceValue: string, card: Card, action: string, context: StringMap): boolean {
+    if (!card.game.phaseStack.topOfStack().ifToResolve(choiceValue)) throw new Error('Invalid choice');
+
+    if (action == 'AttackCardsOrBuildingsChoice') {
+        context.building ? attackChosenTarget(card, context.building) : attackChosenTarget(card, undefined, context.validCardTargetId);
+    } else {
+        attackChosenTarget(card, undefined, context.validCardTargetId);
+    }
+    return true;
 }
 
 function sendAllTargetsAreValid(attacker: Character) {

@@ -1,5 +1,6 @@
 import { Game, EventDescriptor } from '../game';
 import { Phase } from './phase';
+import { Card } from '../cards/card';
 
 export function towerRevealAction(game: Game): void {
     let board = game.activePlayer == 1 ? game.player1Board : game.player2Board;
@@ -23,4 +24,11 @@ export function towerRevealAction(game: Game): void {
     phase.markCardsToResolve(eligibleCards);
 
     board.addOn.towerRevealedThisTurn = true;
+}
+
+export function chooseTowerRevealChoice(card: Card) {
+    if (!card.game.phaseStack.topOfStack().ifToResolve(card.cardId)) throw new Error('Invalid choice');
+    card.gainProperty('towerRevealedThisTurn');
+    card.game.addEvent(new EventDescriptor('TowerReveal', 'Tower revealed ' + card.name));
+    return true;
 }

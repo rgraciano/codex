@@ -1,5 +1,7 @@
 import { Card, Character } from '../cards/card';
 import { Phase } from './phase';
+import { Game, EventDescriptor } from '../game';
+import { CardApi } from '../cards/card_api';
 
 export function patrolAction(cardId: string): void {
     let cardToPatrol = Card.idToCardMap.get(cardId);
@@ -16,6 +18,26 @@ export function patrolAction(cardId: string): void {
     let phase = new Phase('ChoosePatrolSlot', ['PatrolChoice'], false);
     phase.extraState['patrolCardId'] = cardId;
     cardToPatrol.game.phaseStack.addToStack(phase);
+}
+
+export function choosePatrolSlotChoice(game: Game, choiceValue: string): boolean {
+    let patrolCardId = <string>game.phaseStack.topOfStack().extraState['patrolCardId'];
+    if (!patrolCardId) throw new Error('Could not find patroller ID');
+
+    let character = <Character>Card.idToCardMap.get(patrolCardId);
+
+    if (!Reflect.ownKeys(character.controllerBoard.patrolZone).includes(choiceValue)) throw new Error('Invalid patroller slot');
+
+    if (!character.canPatrol() || character.controllerBoard.patrolZone[choiceValue])
+        throw new Error('Patroller and slot combination is not possible');
+
+    CardApi.removeCardFromPlay(character);
+    character.controllerBoard.patrolZone[choiceValue] = character;
+    game.addEvent(new EventDescriptor('Patrol', character.name + ' patrolled as ' + choiceValue));
+
+    game.phaseStack.endCurrentPhase();
+
+    return false;
 }
 
 export function stopPatrollingAction(cardId: string): void {}

@@ -1,4 +1,6 @@
 import { Card } from '../cards/card';
+import { Game } from '../game';
+import { CardApi } from '../cards/card_api';
 
 export function abilityAction(cardId: string, abilityName: string, stagingAbility: boolean = false): void {
     let cardWithAbility = Card.idToCardMap.get(cardId);
@@ -11,4 +13,47 @@ export function abilityAction(cardId: string, abilityName: string, stagingAbilit
         throw new Error('Do not meet the requirements to use ability ' + abilityName + ' on card ' + cardWithAbility.name);
 
     ability.use();
+}
+
+export function chooseAbilityTargetChoice(game: Game, card: Card, cardId: string) {
+    let phase = game.phaseStack.topOfStack();
+    let cardWithAbility = Card.idToCardMap.get(<string>phase.extraState['cardWithAbility']);
+    let ability = cardWithAbility.abilityMap.get(<string>phase.extraState['abilityName']);
+
+    if (!card.game.phaseStack.topOfStack().ifToResolve(cardId)) throw new Error('Invalid choice');
+
+    /*if (none) {
+        // if the user chose 'none', end phase and do not resolve
+        game.addEvent(new EventDescriptor('NoneChosen', 'Player chose not to target anything'));
+        game.phaseStack.endCurrentPhase();
+        return false;
+    }*/
+
+    let chooseNumber = <number>phase.extraState['chooseNumber'];
+    let haveChosen = <number>phase.extraState['haveChosen'];
+
+    haveChosen++; // count this choice
+    phase.extraState['haveChosen'] = haveChosen;
+
+    if (haveChosen == chooseNumber)
+        // if we've chosen the max number of things we can choose, end the phase
+        game.phaseStack.endCurrentPhase();
+
+    let destroyed = false;
+    if (card && <boolean>phase.extraState['usesTargetingRules']) {
+        // subtract any resistance on the targeted card
+        let eff = card.effective();
+        cardWithAbility.controllerBoard.gold -= eff.resist;
+
+        // some things die when targeted, eg illusions
+        if (eff.diesWhenTargeted > 0) {
+            CardApi.destroyCard(card);
+            destroyed = true;
+        }
+    }
+
+    // if we killed the thing we targeted, then the event no longer occurs. otherwise, resolve
+    if (!destroyed) game.addEvent(ability.resolveChoice(cardId));
+
+    return true;
 }

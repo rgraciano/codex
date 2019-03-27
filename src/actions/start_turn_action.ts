@@ -58,20 +58,10 @@ export function startTurnAction(game: Game): void {
     CardApi.trigger(game, 'Upkeep', 'UpkeepChoice', 'onUpkeep', 'PlayerActive');
 }
 
-export function upkeepChoiceAction(game: Game, cardId: string): void {
-    let phase = game.phaseStack.topOfStack();
-
-    if (phase.name != 'Upkeep' || !phase.ifToResolve(cardId)) {
-        game.addEvent(new EventDescriptor('Error', 'Upkeep is not valid for ID ' + cardId));
-        return;
-    }
-
-    // We are about to fire this handler, so we'll mark its ID done
-    phase.markResolved(cardId);
-
-    // Do the upkeep thing
-    let upkpHandler: UpkeepHandler = <UpkeepHandler>Card.idToCardMap.get(cardId);
-    game.addEvent(upkpHandler.onUpkeep());
+export function upkeepChoice(game: Game, card: Card): boolean {
+    if (!game.phaseStack.topOfStack().ifToResolve(card.cardId)) throw new Error('Invalid choice');
+    game.addEvent((<UpkeepHandler>card).onUpkeep());
+    return true;
 }
 
 function clearPatrolZone(board: Board) {
