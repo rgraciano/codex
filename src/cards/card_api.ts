@@ -285,7 +285,7 @@ export class CardApi {
         });
     }
 
-    private static removeCardFromPlay(card: Card) {
+    public static removeCardFromPlay(card: Card) {
         let game: Game = card.game;
         let found = false;
 

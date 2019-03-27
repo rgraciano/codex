@@ -4,13 +4,14 @@ import * as fs from 'fs';
 import { startTurnAction } from './actions/start_turn_action';
 import { ActionName } from './actions/phase';
 import { playCardAction } from './actions/play_card_action';
-import { choiceAction } from './actions/choice_actions';
+import { choiceAction, ChoiceCategory } from './actions/choice_actions';
 import { attackAction, prepareAttackTargetsAction } from './actions/attack_actions';
 import { abilityAction } from './actions/ability_action';
 import { buildAction } from './actions/build_action';
 import { AddOnType, Board } from './board';
 import { towerRevealAction } from './actions/tower_reveal_action';
 import { playStagingAbilityAction } from './actions/play_staging_ability_action';
+import { patrolAction } from './actions/patrol_action';
 
 const savePath = '/Users/rg/gamestates';
 
@@ -127,7 +128,8 @@ export class GameServer {
 
         if (action.endsWith('Choice')) {
             let safeContext: StringMap = {};
-            let choiceId: string;
+            let choiceValue: string;
+            let choiceCategory: ChoiceCategory = 'Card';
 
             // when attacking, if there's an "only possible choice" then it's a target building or target attack,
             // and we have to get the attacking card ID from the extra state
@@ -141,8 +143,13 @@ export class GameServer {
                         else cardChoice = onlyPossibleTarget;
                     }
 
-                    if (buildingChoice) safeContext.building = buildingChoice;
-                    else if (cardChoice) safeContext.validCardTargetId = cardChoice;
+                    if (buildingChoice) {
+                        choiceCategory = 'Building';
+                        safeContext.building = buildingChoice;
+                    } else if (cardChoice) {
+                        choiceCategory = 'Card';
+                        safeContext.validCardTargetId = cardChoice;
+                    }
                 } else if (action == 'AttackCardsChoice') {
                     safeContext.validCardTargetId = GameServer.requireProp(
                         'targetCardId',
@@ -153,17 +160,20 @@ export class GameServer {
                 }
 
                 if (overrideWithPhase) {
-                    choiceId = <string>phase.extraState.attackingCardId;
+                    choiceValue = <string>phase.extraState.attackingCardId;
                 } else {
-                    choiceId = GameServer.requireProp('cardId', context, GameServer.alnumProperties);
+                    choiceValue = GameServer.requireProp('cardId', context, GameServer.alnumProperties);
                 }
+            } else if (action == 'PatrolChoice') {
+                choiceCategory = 'Arbitrary';
+                choiceValue = GameServer.requireProp('patrolSlot', context, GameServer.alnumProperties);
             }
             // when not attacking, the only possible choice is simple
             else if (overrideWithPhase) {
-                choiceId = onlyPossibleTarget;
+                choiceValue = onlyPossibleTarget;
             }
 
-            choiceAction(this.game, choiceId, <ActionName>action, safeContext);
+            choiceAction(this.game, choiceValue, choiceCategory, <ActionName>action, safeContext);
 
             return;
         }
@@ -191,9 +201,21 @@ export class GameServer {
                 break;
             }
 
+            case 'Patrol': {
+                let cardId = GameServer.requireProp('cardId', context, GameServer.alnumProperties);
+                patrolAction(cardId);
+                break;
+            }
+
             case 'PlayCard': {
                 let cardId = GameServer.requireProp('cardId', context, GameServer.alnumProperties); // no onlyPossibleTarget possible
                 playCardAction(cardId);
+                break;
+            }
+
+            case 'PrepareAttackTargets': {
+                let cardId = GameServer.requireProp('cardId', context, GameServer.alnumProperties, onlyPossibleTarget);
+                prepareAttackTargetsAction(cardId);
                 break;
             }
 
@@ -203,12 +225,6 @@ export class GameServer {
                     GameServer.requireProp('cardId', context, GameServer.alnumProperties),
                     GameServer.requireProp('abilityName', context, GameServer.nameProperties)
                 );
-                break;
-            }
-
-            case 'PrepareAttackTargets': {
-                let cardId = GameServer.requireProp('cardId', context, GameServer.alnumProperties, onlyPossibleTarget);
-                prepareAttackTargetsAction(cardId);
                 break;
             }
 

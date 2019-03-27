@@ -48,7 +48,8 @@ export type ServerEvent =
     | 'PropAdjustment'
     | 'HeroMid'
     | 'HeroMax'
-    | 'HeroGainLvl';
+    | 'HeroGainLvl'
+    | 'Patrol';
 export type RuneEvent = 'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
 export class Game {
