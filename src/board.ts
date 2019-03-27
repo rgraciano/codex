@@ -502,8 +502,8 @@ export class PatrolZone {
 
     static serialize(pz: PatrolZone): ObjectMap {
         let objmap = new ObjectMap();
-        for (let key in this) {
-            if (key) objmap[key] = pz[key].serialize();
+        for (let key in pz) {
+            if (pz[key]) objmap[key] = pz[key].serialize();
         }
         return objmap;
     }

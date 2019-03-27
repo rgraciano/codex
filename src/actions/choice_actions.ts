@@ -1,8 +1,7 @@
 import { Game, EventDescriptor } from '../game';
 import { StringMap } from '../game_server';
 import { ActionName } from './phase';
-import { attackChosenTarget } from './attack_actions';
-import { Card, Character } from '../cards/card';
+import { Card } from '../cards/card';
 import { ArrivesHandler, DiesHandler, LeavesHandler, UpkeepHandler, AttacksHandler } from '../cards/handlers';
 import { CardApi } from '../cards/card_api';
 
