@@ -111,6 +111,8 @@ export abstract class UntilSpell extends OngoingSpell {}
  * Game calls resolveChoice() with the target.
  */
 export abstract class AttachAbility extends Ability {
+    name: string;
+
     constructor(card: Card) {
         super(card);
         this.name = 'Attach';

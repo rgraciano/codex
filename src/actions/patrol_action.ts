@@ -1,6 +1,8 @@
 import { Card, Character } from '../cards/card';
+import { PatrolZone } from 'board';
+import { Phase } from './phase';
 
-export function patrolAction(cardId: string, patrolSpot: string): void {
+export function patrolAction(cardId: string, patrolSpot: keyof PatrolZone): void {
     let cardToPatrol = Card.idToCardMap.get(cardId);
     if (!cardToPatrol) throw new Error('Card ID ' + cardId + ' can not be found');
 
@@ -11,6 +13,8 @@ export function patrolAction(cardId: string, patrolSpot: string): void {
     let character = <Character>cardToPatrol;
 
     if (!character.canPatrol()) throw new Error('This character is unable to patrol');
+
+    cardToPatrol.game.phaseStack.addToStack(new Phase('ChoosePatrolSlot', ['PatrolChoice']));
 }
 
 export function stopPatrollingAction(cardId: string): void {}

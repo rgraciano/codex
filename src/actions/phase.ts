@@ -19,7 +19,8 @@ export type PhaseName =
     | 'AttackDestination'
     | 'ChooseAbilityTarget'
     | 'ChooseTowerReveal'
-    | 'Staging';
+    | 'Staging'
+    | 'ChoosePatrolSlot';
 
 // The client uses Actions to understand what API calls are currently valid, and how to present possible actions to the user.
 export type ActionName =
@@ -35,6 +36,7 @@ export type ActionName =
     | 'AttackCardsOrBuildingsChoice'
     | 'AbilityChoice'
     | 'TowerRevealChoice'
+    | 'PatrolChoice'
     | TurnActionName;
 
 export type TurnActionName =

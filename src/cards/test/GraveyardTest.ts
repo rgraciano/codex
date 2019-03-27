@@ -1,4 +1,4 @@
-import { Unit, Card, Building, FlavorType, Attributes, TechLevel } from '../card';
+import { Unit, Card, Building, Attributes, TechLevel } from '../card';
 import { WouldDiscardHook } from '../handlers';
 import { Game, EventDescriptor } from '../../game';
 import * as Color from '../color';
@@ -8,7 +8,7 @@ export class GraveyardTest extends Building implements WouldDiscardHook {
 
     color: Color.ColorName = 'Neutral';
     spec: Color.Spec = 'Starter';
-    flavorType: FlavorType = 'QA';
+    flavorType: string = 'QA';
     name: string = 'Graveyard Test';
     importPath: string = './test';
     techLevel: TechLevel = 0;

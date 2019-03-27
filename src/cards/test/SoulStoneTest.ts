@@ -1,4 +1,4 @@
-import { Card, FlavorType, Attributes, TechLevel } from '../card';
+import { Card, Attributes, TechLevel } from '../card';
 import { Spell, SpellLevel, SpellLifecyle } from '../spell';
 import { WouldDieHook } from '../handlers';
 import { Game, EventDescriptor } from '../../game';
@@ -10,7 +10,7 @@ export class SoulStoneTest extends Spell implements WouldDieHook {
 
     color: Color.ColorName = 'Neutral';
     spec: Color.Spec = 'Starter';
-    flavorType: FlavorType = 'QA';
+    flavorType: string = 'QA';
     name: string = 'Soul Stone Test';
     importPath: string = './test';
     spellLevel: SpellLevel = 'Normal';

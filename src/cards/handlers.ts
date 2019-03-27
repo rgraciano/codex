@@ -1,5 +1,6 @@
 import { Card } from './card';
 import { EventDescriptor } from '../game';
+import { PatrolZone } from 'board';
 
 /*
  *
@@ -48,6 +49,10 @@ export interface HeroMidHook extends Card {
 /** Called when a Hero hits max-level if applicable. Not all heroes will implement */
 export interface HeroMaxHook extends Card {
     heroMax(): EventDescriptor;
+}
+
+export interface PatrolHook extends Card {
+    patrol(slot: keyof PatrolZone): EventDescriptor;
 }
 
 /*

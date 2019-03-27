@@ -1,4 +1,4 @@
-import { Card, TechLevel, Unit, FlavorType, Attributes } from '../card';
+import { Card, TechLevel, Unit, Attributes } from '../card';
 import { DiesHandler } from '../handlers';
 import { Game, EventDescriptor } from '../../game';
 import * as Color from '../color';
@@ -8,7 +8,7 @@ export class CapturedBugblatterTest extends Unit implements DiesHandler {
 
     color: Color.ColorName = 'Neutral';
     spec: Color.Spec = 'Starter';
-    flavorType: FlavorType = 'Beast';
+    flavorType: string = 'Beast';
     name: string = 'Captured Bugblatter Test';
     techLevel: TechLevel = 2;
     importPath: string = './test';

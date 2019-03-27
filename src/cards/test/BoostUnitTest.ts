@@ -1,4 +1,4 @@
-import { Card, FlavorType, TechLevel, Attributes, Unit } from '../card';
+import { Card, TechLevel, Attributes, Unit } from '../card';
 import { Spell, SpellLevel, SpellLifecyle, MultipleChoiceSpell } from '../spell';
 import { Ability, BoostAbility, DontBoostAbility, CreateTokensAbility } from '../ability';
 import { Game, EventDescriptor } from '../../game';
@@ -13,7 +13,7 @@ export class BoostUnitTest extends Unit {
 
     color: Color.ColorName = 'Neutral';
     spec: Color.Spec = 'Starter';
-    flavorType: FlavorType = 'Virtuoso';
+    flavorType: string = 'Virtuoso';
     name: string = 'Boost Test';
     techLevel: TechLevel = 0;
     importPath: string = './test';

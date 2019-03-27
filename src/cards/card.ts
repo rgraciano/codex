@@ -410,6 +410,7 @@ export abstract class Character extends Card {
 
     canPatrol(): boolean {
         if (this.effective().cantPatrol > 0) return false;
+        if (this.controllerBoard.getPatrolZoneAsArray().length == 5) return false;
         else return this.canDoThings(true, false);
     }
 }

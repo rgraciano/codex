@@ -1,4 +1,4 @@
-import { Card, FlavorType, TechLevel, Attributes, Unit } from '../card';
+import { Card, TechLevel, Attributes, Unit } from '../card';
 import { Ability, AddPlusOneOneAbility } from '../ability';
 import { Game, EventDescriptor } from '../../game';
 import * as Color from '../color';
@@ -9,7 +9,7 @@ export class TwoAbilitiesTest extends Unit {
 
     color: Color.ColorName = 'Neutral';
     spec: Color.Spec = 'Starter';
-    flavorType: FlavorType = 'Virtuoso';
+    flavorType: string = 'Virtuoso';
     name: string = 'All The Abilities';
     techLevel: TechLevel = 0;
     importPath: string = './test';
@@ -26,6 +26,7 @@ export class TwoAbilitiesTest extends Unit {
 }
 
 class DestroyAbility extends Ability {
+    name: string;
     constructor(card: Card) {
         super(card);
         this.name = 'Destroy';

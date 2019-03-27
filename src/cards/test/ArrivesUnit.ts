@@ -1,4 +1,4 @@
-import { Card, FlavorType, TechLevel, Attributes, Unit } from '../card';
+import { Card, TechLevel, Attributes, Unit } from '../card';
 import { ArrivesHandler } from '../handlers';
 import { Game, EventDescriptor } from '../../game';
 import * as Color from '../color';
@@ -8,7 +8,7 @@ export class ArrivesUnit extends Unit implements ArrivesHandler {
 
     color: Color.ColorName = 'Neutral';
     spec: Color.Spec = 'Starter';
-    flavorType: FlavorType = 'Virtuoso';
+    flavorType: string = 'Virtuoso';
     name: string = 'Mr Arrives';
     techLevel: TechLevel = 0;
     importPath: string = './test';
