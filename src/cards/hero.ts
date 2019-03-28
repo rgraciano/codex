@@ -52,18 +52,14 @@ export abstract class Hero extends Character {
 
     set level(newLvl: number) {
         if (newLvl > this.maxLevel) newLvl = this.maxLevel;
+        else if (newLvl < 1) newLvl = 1;
 
         if (newLvl > this._level) {
             let hittingMid = false,
                 hittingMax = false;
 
-            if (this._level < this.midLevel && newLvl >= this.midLevel) {
-                hittingMid = true;
-            }
-
-            if (this._level < this.maxLevel && newLvl == this.maxLevel) {
-                hittingMax = true;
-            }
+            hittingMid = this._level < this.midLevel && newLvl >= this.midLevel;
+            hittingMax = this._level < this.maxLevel && newLvl == this.maxLevel;
 
             this._level = newLvl;
 
@@ -85,6 +81,24 @@ export abstract class Hero extends Character {
             if (hittingMax) this.game.addEvent(new EventDescriptor('HeroMax', this.name + ' is now max-band (level ' + newLvl + ')'));
             else if (hittingMid) this.game.addEvent(new EventDescriptor('HeroMid', this.name + ' is now mid-band  (level ' + newLvl + ')'));
             else this.game.addEvent(new EventDescriptor('HeroGainLvl', this.name + ' is now level ' + newLvl));
+        } else if (newLvl < this._level) {
+            let losingMid = this._level >= this.midLevel && newLvl < this.midLevel;
+            let losingMax = this._level >= this.maxLevel && newLvl < this.maxLevel;
+
+            this._level = newLvl;
+
+            if (losingMax) {
+                CardApi.hook(this.game, 'heroLoseMax', [], 'None', this);
+                this.baseAttributes.health = this.healthMinMidMax[1];
+                this.baseAttributes.attack = this.attackMinMidMax[1];
+            }
+            if (losingMid) {
+                CardApi.hook(this.game, 'heroLoseMid', [], 'None', this);
+                this.baseAttributes.health = this.healthMinMidMax[0];
+                this.baseAttributes.attack = this.attackMinMidMax[0];
+            }
+
+            this.game.addEvent(new EventDescriptor('HeroDrain', this.name + ' is now level ' + newLvl));
         }
 
         if (this._level === this.maxLevel) this.turnsTilCastUltimate = this.castsUltimateImmediately ? 0 : 1;

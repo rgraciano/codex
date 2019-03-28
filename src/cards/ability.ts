@@ -3,6 +3,7 @@ import { EventDescriptor, Game } from '../game';
 import { Phase } from '../actions/phase';
 import { BuildingType, BoardBuilding } from '../board';
 import { CardApi } from './card_api';
+import { Hero } from './hero';
 
 export type BuildingChoice = { boardBuildings: BuildingType[]; cardBuildings: Card[] };
 export type ChoiceType = 'Buildings' | 'Heroes' | 'Units' | 'Characters' | 'Weakest';
@@ -11,6 +12,7 @@ export abstract class Ability {
     abstract name: string;
     card: Card;
 
+    requiresHeroLvl = 0;
     requiredGoldCost = 0;
     requiresExhaust = false;
     requiredRuneType: keyof Attributes = undefined;
@@ -26,6 +28,8 @@ export abstract class Ability {
         if (!this.usable) return false;
 
         if (this.card.controllerBoard.gold < this.requiredGoldCost) return false;
+
+        if (this.requiresHeroLvl && this.card instanceof Hero && (<Hero>this.card).level < this.requiresHeroLvl) return false;
 
         let attrs = this.card.effective();
 
@@ -263,6 +267,34 @@ export class AddPlusOneOneAbility extends CommonAbility {
     resolveChoice(cardOrBuildingId: string) {
         let card = Card.idToCardMap.get(cardOrBuildingId);
         return card.gainProperty('plusOneOne', 1);
+    }
+}
+
+export class SidelineAbility extends CommonAbility {
+    name = 'Sideline';
+
+    use() {
+        super.use();
+        return this.choose(
+            undefined,
+            this.choicesCharacters(
+                this.card.game.getAllPatrollers(),
+                this.includeUnits,
+                this.includeHeroes,
+                this.minTechLevel,
+                this.maxTechLevel
+            ),
+            this.numTargets,
+            this.name,
+            this.choicesRequired,
+            true
+        );
+    }
+
+    resolveChoice(cardOrBuildingId: string) {
+        let card = Card.idToCardMap.get(cardOrBuildingId);
+        CardApi.sidelineCard(card);
+        return new EventDescriptor('Sideline', 'Sidelined ' + card.name);
     }
 }
 

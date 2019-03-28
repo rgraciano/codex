@@ -130,7 +130,7 @@ export class CardApi {
         if (!card.canPlay()) throw new Error(card.name + ' is not currently playable');
 
         if (!free) {
-            let cost = card.effective().cost;
+            let cost: number = card.costAfterAlterations;
             board.gold -= cost > 0 ? cost : 0;
             card.game.addEvent(new EventDescriptor('PaidFor', 'Paid ' + cost + ' gold for ' + card.name));
         }
@@ -200,18 +200,13 @@ export class CardApi {
      * @param hookSpace if singleCard is not set, then apply the hook to everything in this search space
      * @returns whether or not a hook activated
      */
-    static hook(game: Game, triggerFn: string, argsForTriggerFn: any[], hookSpace: SpaceType = 'AllActive', singleCard?: Card): boolean {
+    static hook(game: Game, triggerFn: string, argsForTriggerFn: any[], hookSpace: SpaceType = 'AllActive', singleCard?: Card): any[] {
         let spaceCards = singleCard ? [singleCard] : this.getCardsFromSpace(game, hookSpace);
         let hooks = this.findCardsWithProperty(spaceCards, triggerFn);
 
-        let atLeastOneHookActivated = false;
-
-        hooks.map(cardWithHook => {
-            game.addEvent((<Function>Reflect.get(cardWithHook, triggerFn)).apply(argsForTriggerFn));
-            atLeastOneHookActivated = true;
+        return hooks.map(cardWithHook => {
+            (<Function>Reflect.get(cardWithHook, triggerFn)).apply(argsForTriggerFn);
         });
-
-        return atLeastOneHookActivated;
     }
 
     /** Triggers will enter a new phase, in which the user may have to choose between which trigger happens first */

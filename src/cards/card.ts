@@ -6,6 +6,7 @@ import { Ability } from './ability';
 import * as Color from './color';
 import { Spell } from './spell';
 import { Hero } from './hero';
+import { CardApi } from './card_api';
 
 export type CardType = 'Spell' | 'Hero' | 'Unit' | 'Building' | 'Upgrade' | 'Effect' | 'None';
 export type TechLevel = 0 | 1 | 2 | 3;
@@ -229,6 +230,15 @@ export abstract class Card {
         return eff.attack - eff.minusOneOne + eff.plusOneOne;
     }
 
+    get costAfterAlterations(): number {
+        let cost: number = this.effective().cost;
+        let costAlterations = <number[]>CardApi.hook(this.game, 'alterCost', [this, cost], 'AllActive');
+        cost += costAlterations.reduce((previousValue: number, currentValue: number, currentIndex: number, array: number[]) => {
+            return previousValue + currentValue;
+        });
+        return cost;
+    }
+
     protected canDoThings(arrivalFatigueOk: boolean, checkAttacksThisTurn: boolean): boolean {
         if (!this.game.cardIsInPlay(this.controllerBoard, this)) {
             return false;
@@ -261,7 +271,7 @@ export abstract class Card {
 
         let attrs = this.effective(); // get effective gold cost, since many things may modify it
 
-        if (attrs.cost > this.controllerBoard.gold) return false;
+        if (this.costAfterAlterations > this.controllerBoard.gold) return false;
 
         // to play a hero, max heroes must not be exceeded, and this hero can't have died recently or otherwise been made unavailable
         if (this.cardType == 'Hero') {

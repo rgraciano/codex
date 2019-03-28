@@ -14,6 +14,11 @@ export interface WorkersAreFreeAlteration extends Card {
     workersAreFree: boolean;
 }
 
+/** Alters the cost of a card. Returns the alteration, not the final cost.  E.g., returns -1 to reduce cost by 1 */
+export interface CardCostAlteration extends Card {
+    alterCost(card: Card): number;
+}
+
 /*
 *
 *
@@ -44,11 +49,13 @@ export interface WouldDiscardHook extends Card {
 /** Called when a Hero hits mid-level if applicable. Not all heroes will implement */
 export interface HeroMidHook extends Card {
     heroMid(): EventDescriptor;
+    heroLoseMid(): EventDescriptor;
 }
 
 /** Called when a Hero hits max-level if applicable. Not all heroes will implement */
 export interface HeroMaxHook extends Card {
     heroMax(): EventDescriptor;
+    heroLoseMax(): EventDescriptor;
 }
 
 export interface PatrolHook extends Card {
