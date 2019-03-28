@@ -53,6 +53,7 @@ export interface HeroMaxHook extends Card {
 
 export interface PatrolHook extends Card {
     patrol(slot: keyof PatrolZone): EventDescriptor;
+    sideline(slot: keyof PatrolZone): EventDescriptor;
 }
 
 /*

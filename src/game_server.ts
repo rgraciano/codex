@@ -11,7 +11,7 @@ import { buildAction } from './actions/build_action';
 import { AddOnType, Board } from './board';
 import { towerRevealAction } from './actions/tower_reveal_action';
 import { playStagingAbilityAction } from './actions/play_staging_ability_action';
-import { patrolAction } from './actions/patrol_action';
+import { patrolAction, sidelineAction } from './actions/patrol_action';
 
 const savePath = '/Users/rg/gamestates';
 
@@ -216,6 +216,12 @@ export class GameServer {
             case 'PrepareAttackTargets': {
                 let cardId = GameServer.requireProp('cardId', context, GameServer.alnumProperties, onlyPossibleTarget);
                 prepareAttackTargetsAction(cardId);
+                break;
+            }
+
+            case 'Sideline': {
+                let cardId = GameServer.requireProp('cardId', context, GameServer.alnumProperties);
+                sidelineAction(cardId);
                 break;
             }
 

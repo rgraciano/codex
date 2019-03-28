@@ -49,7 +49,20 @@ export function startTurnAction(game: Game): void {
     game.phaseStack.addToStack(
         new Phase(
             'PlayerTurn',
-            ['PlayCard', 'Worker', 'Tech', 'Build', 'Patrol', 'Ability', 'Attack', 'HeroSummon', 'HeroLevel', 'EndTurn', 'TowerReveal'],
+            [
+                'PlayCard',
+                'Worker',
+                'Tech',
+                'Build',
+                'Patrol',
+                'Ability',
+                'Attack',
+                'HeroSummon',
+                'HeroLevel',
+                'EndTurn',
+                'TowerReveal',
+                'Sideline'
+            ],
             false
         )
     );
@@ -73,6 +86,7 @@ function clearPatrolZone(board: Board) {
         if (patroller) {
             board.inPlay.push(patroller);
             board.patrolZone[patrolSlot] = null;
+            CardApi.hook(patroller.game, 'sideline', [patrolSlot], 'None', patroller);
         }
     }
 

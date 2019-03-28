@@ -500,6 +500,15 @@ export class PatrolZone {
     technician: Card = null;
     lookout: Card = null;
 
+    /** Finds which slot this card is in, or undefined */
+    static getSlotNameForCard(pz: PatrolZone, card: Card): string {
+        for (let key in pz) {
+            if (pz[key] == card) return key;
+        }
+
+        return undefined;
+    }
+
     static serialize(pz: PatrolZone): ObjectMap {
         let objmap = new ObjectMap();
         for (let key in pz) {

@@ -396,6 +396,7 @@ export abstract class Character extends Card {
         pojo.attacksPerTurn = this.attacksPerTurn;
         pojo.canAttack = this.canAttack();
         pojo.canPatrol = this.canPatrol();
+        pojo.canSideline = this.canSideline();
         return pojo;
     }
 
@@ -412,6 +413,10 @@ export abstract class Character extends Card {
         if (this.effective().cantPatrol > 0) return false;
         if (this.controllerBoard.getPatrolZoneAsArray().length == 5) return false;
         else return this.canDoThings(true, false);
+    }
+
+    canSideline(): boolean {
+        return this.controllerBoard.getPatrolZoneAsArray().includes(this);
     }
 }
 

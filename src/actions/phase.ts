@@ -50,7 +50,8 @@ export type TurnActionName =
     | 'HeroSummon'
     | 'HeroLevel'
     | 'EndTurn'
-    | 'TowerReveal';
+    | 'TowerReveal'
+    | 'Sideline';
 
 // note patrol and un-patrol will BOTH need to be options, or attack/ability/exhaust will need to check if patrolling and
 // remove from that state
