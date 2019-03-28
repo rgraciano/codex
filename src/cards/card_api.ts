@@ -4,7 +4,7 @@ import { Hero } from './hero';
 import { Spell, AttachSpell, ImmediateSpell, OngoingSpell, UntilSpell } from './spell';
 import { GlobalBonusHook, WouldDieHook, WouldDiscardHook } from './handlers';
 import { Phase, PhaseName, ActionName, PrimitiveMap } from '../actions/phase';
-import { Board } from '../board';
+import { Board, PatrolZone } from '../board';
 
 type SpaceType = 'AllActive' | 'PlayerActive' | 'OpponentActive' | 'AllPatroller' | 'OpponentPatroller' | 'None';
 /**
@@ -96,6 +96,16 @@ export class CardApi {
             default:
                 return;
         }
+    }
+
+    static sidelineCard(cardToSideline: Card) {
+        let patrolSlot = PatrolZone.getSlotNameForCard(cardToSideline.controllerBoard.patrolZone, cardToSideline);
+        if (!patrolSlot) throw new Error('Cant find patrol slot for card');
+
+        CardApi.removeCardFromPlay(cardToSideline);
+        cardToSideline.controllerBoard.inPlay.push(cardToSideline);
+
+        CardApi.hook(cardToSideline.game, 'sideline', [patrolSlot], 'None', cardToSideline);
     }
 
     static checkWorkersAreFree(playerBoard: Board): boolean {

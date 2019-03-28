@@ -31,13 +31,7 @@ export function sidelineAction(cardId: string): void {
 
     if (!cardToSideline.canSideline()) throw new Error('Card can not be sidelined');
 
-    let patrolSlot = PatrolZone.getSlotNameForCard(cardToSideline.controllerBoard.patrolZone, cardToSideline);
-    if (!patrolSlot) throw new Error('Cant find patrol slot for card');
-
-    CardApi.removeCardFromPlay(cardToSideline);
-    cardToSideline.controllerBoard.inPlay.push(cardToSideline);
-
-    CardApi.hook(cardToSideline.game, 'sideline', [patrolSlot], 'None', cardToSideline);
+    CardApi.sidelineCard(cardToSideline);
     cardToSideline.game.addEvent(new EventDescriptor('Sideline', 'Sidelined ' + cardToSideline.name));
 }
 
