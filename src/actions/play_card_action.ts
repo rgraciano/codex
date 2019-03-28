@@ -11,8 +11,10 @@ export function playCardAction(cardId: string, asWorker = false): void {
     let boards = game.getBoardAndOpponentBoard();
     let board = boards[0];
 
-    if (!game.cardIsInHand(board, cardToPlay)) throw new Error('Card ID ' + cardId + ' can not be found in hand');
+    if (!cardToPlay.canPlay()) throw new Error('Can not play card');
+
+    let fromSpace = cardToPlay.cardType == 'Hero' ? board.heroZone : board.hand;
 
     if (asWorker) CardApi.worker(board, cardToPlay);
-    else CardApi.play(board, cardToPlay, board.hand);
+    else CardApi.play(board, cardToPlay, fromSpace);
 }

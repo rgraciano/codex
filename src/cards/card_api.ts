@@ -205,7 +205,7 @@ export class CardApi {
         let hooks = this.findCardsWithProperty(spaceCards, triggerFn);
 
         return hooks.map(cardWithHook => {
-            (<Function>Reflect.get(cardWithHook, triggerFn)).apply(argsForTriggerFn);
+            Reflect.apply(Reflect.get(cardWithHook, triggerFn), cardWithHook, argsForTriggerFn);
         });
     }
 

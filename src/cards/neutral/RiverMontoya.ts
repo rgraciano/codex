@@ -36,5 +36,6 @@ export class RiverMontoya extends Hero implements CardCostAlteration {
 
     alterCost(card: Card): number {
         if (this.level == this.maxLevel && card.controller == this.controller && card.techLevel === 0 && card.cardType == 'Unit') return -1;
+        else return 0;
     }
 }

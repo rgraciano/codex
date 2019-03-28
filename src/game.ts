@@ -11,6 +11,7 @@ import { Card } from './cards/card';
 import { ObjectMap } from './game_server';
 import { TwoAbilitiesTest } from './cards/test/TwoAbilitiesTest';
 import { BoostUnitTest } from './cards/test/BoostUnitTest';
+import { RiverMontoya } from './cards/neutral/RiverMontoya';
 
 export type ServerEvent =
     | RuneEvent
@@ -84,6 +85,8 @@ export class Game {
         this.player2Board.tech2 = new TechBuilding('Tech 2', this.player2Board, 2);
         this.player2Board.tech3 = new TechBuilding('Tech 3', this.player2Board, 3);
         this.player2Board.addOn = new AddOn('AddOn', this.player2Board);
+
+        this.player1Board.heroZone = [new RiverMontoya(1)];
 
         this.player1Board.discard = [
             new BoostUnitTest(1),

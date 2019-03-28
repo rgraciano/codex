@@ -207,7 +207,7 @@ export class Board {
 
         let bldg: TechBuilding = Reflect.get(this, 'tech' + new Number(techLevel).toString());
 
-        if (!bldg) return false;
+        if (!bldg || !bldg.built) return false;
 
         if (bldg.constructionInProgress || bldg.destroyed || bldg.disabled) return false;
 

@@ -54,7 +54,7 @@ export abstract class Card {
         Card.idToCardMap.set(this.cardId, this);
 
         this.owner = owner;
-        this.controller = this.controller ? this.controller : this.owner;
+        this.controller = controller ? controller : owner;
     }
 
     static makeCardId(): string {
@@ -232,10 +232,11 @@ export abstract class Card {
 
     get costAfterAlterations(): number {
         let cost: number = this.effective().cost;
-        let costAlterations = <number[]>CardApi.hook(this.game, 'alterCost', [this, cost], 'AllActive');
-        cost += costAlterations.reduce((previousValue: number, currentValue: number, currentIndex: number, array: number[]) => {
-            return previousValue + currentValue;
-        });
+        let costAlterations = <number[]>CardApi.hook(this.game, 'alterCost', [this], 'AllActive');
+        if (costAlterations && costAlterations.length > 0)
+            cost += costAlterations.reduce((previousValue: number, currentValue: number, currentIndex: number, array: number[]) => {
+                return previousValue + currentValue;
+            });
         return cost;
     }
 
@@ -265,17 +266,12 @@ export abstract class Card {
     }
 
     canPlay(): boolean {
-        if (!this.game.cardIsInHand(this.controllerBoard, this)) {
-            return false;
-        }
-
-        let attrs = this.effective(); // get effective gold cost, since many things may modify it
-
         if (this.costAfterAlterations > this.controllerBoard.gold) return false;
 
         // to play a hero, max heroes must not be exceeded, and this hero can't have died recently or otherwise been made unavailable
         if (this.cardType == 'Hero') {
             let hero: Hero = <Hero>(<unknown>this);
+            if (!this.controllerBoard.heroZone.includes(hero)) return false;
 
             let heroesInPlay: number = this.game.getAllActiveCards(this.controllerBoard).filter(h => h.cardType == 'Hero').length;
             let maxHeroesInPlay = 1;
@@ -292,6 +288,10 @@ export abstract class Card {
 
         // spells can be played if a hero of the same type is out there, or if we have any hero out there for tech 0 spells
         else if (this.cardType == 'Spell') {
+            if (!this.game.cardIsInHand(this.controllerBoard, this)) {
+                return false;
+            }
+
             let heroesInPlay: Hero[] = <Hero[]>this.game.getAllActiveCards(this.controllerBoard).filter(h => h.cardType == 'Hero');
 
             // when no heroes in play, we can't cast spells
@@ -315,6 +315,10 @@ export abstract class Card {
 
         // for all other cards, we just check the tech level
         else {
+            if (!this.game.cardIsInHand(this.controllerBoard, this)) {
+                return false;
+            }
+
             let techCard: Unit | Spell | Upgrade | Building = <(Unit | Spell | Upgrade | Building)>(<unknown>this);
             if (techCard.techLevel == 0) return true;
 

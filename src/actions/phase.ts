@@ -47,7 +47,6 @@ export type TurnActionName =
     | 'Patrol'
     | 'Ability'
     | 'Attack'
-    | 'HeroSummon'
     | 'HeroLevel'
     | 'EndTurn'
     | 'TowerReveal'

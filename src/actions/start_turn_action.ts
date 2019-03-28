@@ -49,20 +49,7 @@ export function startTurnAction(game: Game): void {
     game.phaseStack.addToStack(
         new Phase(
             'PlayerTurn',
-            [
-                'PlayCard',
-                'Worker',
-                'Tech',
-                'Build',
-                'Patrol',
-                'Ability',
-                'Attack',
-                'HeroSummon',
-                'HeroLevel',
-                'EndTurn',
-                'TowerReveal',
-                'Sideline'
-            ],
+            ['PlayCard', 'Worker', 'Tech', 'Build', 'Patrol', 'Ability', 'Attack', 'HeroLevel', 'EndTurn', 'TowerReveal', 'Sideline'],
             false
         )
     );

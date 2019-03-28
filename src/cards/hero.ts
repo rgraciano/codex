@@ -1,6 +1,6 @@
 import { Character, CardType } from './card';
 import { ObjectMap } from '../game_server';
-import { Game, EventDescriptor } from 'game';
+import { Game, EventDescriptor } from '../game';
 import { CardApi } from './card_api';
 
 export abstract class Hero extends Character {
