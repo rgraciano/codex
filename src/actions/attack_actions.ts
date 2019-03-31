@@ -1,5 +1,5 @@
 import { Card, Character, Attributes } from '../cards/card';
-import { Phase } from './phase';
+import { Phase, Action } from './phase';
 import { EventDescriptor } from '../game';
 import { CardApi } from '../cards/card_api';
 import { StringMap } from '../game_server';
@@ -43,13 +43,14 @@ export function attackAction(attackerId: string) {
 
     // enter phase that is empty, to choose the target of the attack. give it one resolveId (attacker) so that it will auto-execute
     // when the attack handlers are all done
-    game.phaseStack.addToStack(new Phase('PrepareAttackTargets', ['PrepareAttackTargets']));
-    game.phaseStack.topOfStack().markIdsToResolve([attacker.cardId]);
+    let prepTargetsAction = new Action('PrepareAttackTargets', 1);
+    prepTargetsAction.idsToResolve.push(attacker.cardId);
+    game.phaseStack.addToStack(new Phase([prepTargetsAction]));
 
     // enter phase for attack handlers
     // fire attacks, obliterate handlers. cards may modify attacks, e.g. safe attacking, giving temporary 'while attacking' stats
     // .. how to handle armor? we need to track armor in the duration of a turn
-    CardApi.trigger(game, 'Attack', 'AttacksChoice', 'onAttacks', 'AllActive', { attackingCardId: attacker.cardId });
+    CardApi.trigger(game, 'AttacksChoice', 'onAttacks', 'AllActive', { attackingCardId: attacker.cardId }, 1, false);
 }
 
 /** Second phase of an attack: prepare a list of possible defenders and ask the user to choose their attack target */

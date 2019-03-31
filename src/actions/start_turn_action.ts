@@ -2,7 +2,7 @@ import { Game, EventDescriptor } from '../game';
 import { Card } from '../cards/card';
 import { Board } from '../board';
 import { PatrolZone } from '../board';
-import { Phase } from './phase';
+import { Phase, Action } from './phase';
 import { UpkeepHandler } from '../cards/handlers';
 import { CardApi } from '../cards/card_api';
 
@@ -48,14 +48,25 @@ export function startTurnAction(game: Game): void {
     // enter player turn phase
     game.phaseStack.addToStack(
         new Phase(
-            'PlayerTurn',
-            ['PlayCard', 'Worker', 'Tech', 'Build', 'Patrol', 'Ability', 'Attack', 'HeroLevel', 'EndTurn', 'TowerReveal', 'Sideline'],
+            [
+                new Action('PlayCard', 0),
+                new Action('Worker', 0),
+                new Action('Tech', 0),
+                new Action('Build', 0),
+                new Action('Patrol', 0),
+                new Action('Ability', 0),
+                new Action('Attack', 0),
+                new Action('HeroLevel', 0),
+                new Action('EndTurn', 0),
+                new Action('TowerReveal', 0),
+                new Action('Sideline', 0)
+            ],
             false
         )
     );
 
     // enter upkeep phase, process upkeep events. when this is resolved, we'll exit into the PlayerTurn phase just beneath
-    CardApi.trigger(game, 'Upkeep', 'UpkeepChoice', 'onUpkeep', 'PlayerActive');
+    CardApi.trigger(game, 'UpkeepChoice', 'onUpkeep', 'PlayerActive', {}, 0, true);
 }
 
 export function upkeepChoice(game: Game, card: Card): boolean {

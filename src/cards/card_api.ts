@@ -3,7 +3,7 @@ import { Card } from './card';
 import { Hero } from './hero';
 import { Spell, AttachSpell, ImmediateSpell, OngoingSpell, UntilSpell } from './spell';
 import { GlobalBonusHook, WouldDieHook, WouldDiscardHook } from './handlers';
-import { Phase, PhaseName, ActionName, PrimitiveMap } from '../actions/phase';
+import { Phase, PhaseName, ActionName, PrimitiveMap, Action } from '../actions/phase';
 import { Board, PatrolZone } from '../board';
 
 type SpaceType = 'AllActive' | 'PlayerActive' | 'OpponentActive' | 'AllPatroller' | 'OpponentPatroller' | 'None';
@@ -37,7 +37,7 @@ export class CardApi {
         board.inPlay.push(card);
 
         /**** ARRIVES PHASE ****/
-        this.trigger(card.game, 'Arrives', 'ArrivesChoice', 'onArrives', 'AllActive', { arrivingCardId: card.cardId });
+        this.trigger(card.game, 'ArrivesChoice', 'onArrives', 'AllActive', { arrivingCardId: card.cardId }, 0, true);
     }
 
     /** Does everything needed to destroy a card.  Triggers Dies, Leaves Play, & Would Discard. */
@@ -59,25 +59,25 @@ export class CardApi {
         }
 
         /**** DEAD. SO DEAD. ****/
-        this.trigger(game, 'Dying', 'DiesChoice', 'onDies', 'AllActive', { dyingCardId: card.cardId });
+        this.trigger(game, 'DiesChoice', 'onDies', 'AllActive', { dyingCardId: card.cardId }, 0, true);
 
         if (card.cardType == 'Hero') {
             let phase = game.phaseStack.topOfStack();
-            phase.validActions.push('HeroLevelChoice');
-            phase.markCardsToResolve(
-                this.getCardsFromSpace(game, 'OpponentActive').filter(opponentCard => opponentCard.cardType == 'Hero'),
-                'HeroLevelChoice'
+            let action = new Action('HeroLevelChoice', 1, false);
+            action.resolveCards(
+                this.getCardsFromSpace(game, 'OpponentActive').filter(opponentCard => opponentCard.cardType == 'Hero')
             );
+            phase.actions.push(action);
         }
 
-        this.leavePlay(card, 'Discard', false, true);
+        this.leavePlay(card, 'Discard', true, true);
     }
 
     /** Called specifically when a card leaves play, such as when Undo is used to bounce a card to hand */
-    static leavePlay(card: Card, destination: Destination, enterNewPhase: boolean, isDying: boolean) {
+    static leavePlay(card: Card, destination: Destination, useExistingPhase: boolean, isDying: boolean) {
         let game: Game = card.game;
 
-        this.trigger(game, 'DiesOrLeaves', 'DiesOrLeavesChoice', 'onLeaves', 'AllActive', { dyingCardId: card.cardId }, !enterNewPhase);
+        this.trigger(game, 'LeavesChoice', 'onLeaves', 'AllActive', { dyingCardId: card.cardId }, 0, true, useExistingPhase);
 
         switch (destination) {
             case 'Hand':
@@ -208,21 +208,22 @@ export class CardApi {
     /** Triggers will enter a new phase, in which the user may have to choose between which trigger happens first */
     static trigger(
         game: Game,
-        phaseName: PhaseName,
         actionName: ActionName,
         triggerFn: string,
         triggerSpace: SpaceType = 'AllActive',
         extraState?: PrimitiveMap,
-        skipPhaseCreationIfExists = false
+        mandatoryActionChoices = 0,
+        mustChooseAll = true,
+        useExistingPhase = false
     ) {
         let phase: Phase = undefined;
 
-        if (skipPhaseCreationIfExists) {
+        if (useExistingPhase) {
             let topOfStack = game.phaseStack.topOfStack();
-            if (topOfStack.name == phaseName) phase = topOfStack;
+            phase = topOfStack;
         }
 
-        if (phase === undefined) phase = new Phase(phaseName, [actionName]);
+        if (phase === undefined) phase = new Phase([new Action(actionName, mandatoryActionChoices, mustChooseAll)];
 
         if (extraState) phase.extraState = extraState;
 
@@ -230,7 +231,7 @@ export class CardApi {
 
         let foundCards: Card[] = this.findCardsWithProperty(space, triggerFn);
         // add all of those cards to the list of allowedActions, automatically removing those that were already resolved and ensuring there are no duplicates
-        phase.markCardsToResolve(foundCards, actionName);
+        phase.getAction(actionName).resolveCards(foundCards);
     }
 
     static makeTokens(game: Game, tokenName: string, numTokens: number, onMyBoard: boolean = true) {

@@ -1,27 +1,6 @@
 import { Card } from '../cards/card';
 import { ObjectMap, StringMap } from '../game_server';
 
-// Phase names have no meaning to the client. They could actually be empty or removed altogether,
-// but naming the phases makes it a little easier to debug the stack and follow what's going on.
-// The game server does use phase names a little, primarily to figure out how many actions it should
-// currently be seeing and whether or not it can auto-resolve this phase.
-export type PhaseName =
-    | 'PlayerTurn'
-    | 'NewGame'
-    | 'Upkeep'
-    | 'Arrives'
-    | 'Dies'
-    | 'PlayerPrompt'
-    | 'GameOver'
-    | 'Destroy'
-    | 'Attack'
-    | 'PrepareAttackTargets'
-    | 'AttackDestination'
-    | 'ChooseAbilityTarget'
-    | 'ChooseTowerReveal'
-    | 'Staging'
-    | 'ChoosePatrolSlot';
-
 // The client uses Actions to understand what API calls are currently valid, and how to present possible actions to the user.
 export type ActionName =
     | 'NewGame'
@@ -70,7 +49,7 @@ export class PhaseStack {
     stack: Phase[] = [];
 
     setupForNewGame() {
-        this.stack = [new Phase('NewGame', [], false)];
+        this.stack = [new Phase([], false)];
     }
 
     serialize(): ObjectMap {
@@ -98,11 +77,15 @@ export class PhaseStack {
         let beginLen = this.stack.length;
 
         this.stack = this.stack.filter(phase => {
-            // keep actions that havent yet been resolved
-            // note if mandatoryChoices is zero, then this action is always going to be valid
-            phase.actions = phase.actions.filter(action => action.resolvedIds.length < action.mandatoryChoices);
+            // first, if we've chosen everything possible, then we clear the action
+            phase.actions = phase.actions.filter(action => action.resolvedIds.length < action.idsToResolve.length);
 
-            // if all actions have been resolved, exit this phase
+            // next, if we've chosen the correct number already, clear the action
+            phase.actions = phase.actions.filter(
+                action => !action.mustChooseAll && action.mandatoryChoices > 0 && action.mandatoryChoices < action.resolveIds.length
+            );
+
+            // if all actions have been resolved, or if we are marked with "end this phase", exit this phase
             if (phase.resolvesOnEmpty && phase.actions.length == 0) return false;
             else return !phase.endThisPhase;
         });
@@ -120,12 +103,14 @@ export class PhaseStack {
 export class Action {
     name: ActionName;
     mandatoryChoices: number = 1;
+    mustChooseAll: boolean = false;
     idsToResolve: string[] = [];
     resolvedIds: string[] = [];
 
-    constructor(name: ActionName, mandatoryChoices = 1) {
+    constructor(name: ActionName, mandatoryChoices = 1, mustChooseAll = false) {
         this.name = name;
         this.mandatoryChoices = mandatoryChoices;
+        this.mustChooseAll = mustChooseAll;
     }
 
     serialize(): ObjectMap {
@@ -133,12 +118,13 @@ export class Action {
             name: this.name,
             idsToResolve: this.idsToResolve,
             resolvedIds: this.resolvedIds,
-            mandatoryChoices: this.mandatoryChoices
+            mandatoryChoices: this.mandatoryChoices,
+            mustChooseAll: this.mustChooseAll
         };
     }
 
     static deserialize(pojo: ObjectMap): Action {
-        let action = new Action(<ActionName>pojo.name, <number>pojo.mandatoryChoices);
+        let action = new Action(<ActionName>pojo.name, <number>pojo.mandatoryChoices, <boolean>pojo.mustChooseAll);
         action.idsToResolve = <string[]>pojo.idsToResolve;
         action.resolvedIds = <string[]>pojo.resolvedIds;
         return action;
@@ -182,15 +168,13 @@ export class Phase {
     // e.g., which attacker we're currently resolving.
     extraState: PrimitiveMap = {};
 
-    constructor(name: PhaseName, actions: Action[], resolvesOnEmpty: boolean = true) {
-        this.name = name;
+    constructor(actions: Action[], resolvesOnEmpty: boolean = true) {
         this.actions = actions;
         this.resolvesOnEmpty = resolvesOnEmpty;
     }
 
     serialize(): ObjectMap {
         return {
-            name: this.name,
             actions: this.actions.map(action => action.serialize()),
             actionsForIds: this.actionsForIds,
             extraState: this.extraState,
@@ -200,7 +184,7 @@ export class Phase {
 
     static deserialize(pojo: ObjectMap): Phase {
         let actions = (<ObjectMap[]>pojo.actions).map(action => Action.deserialize(action));
-        let phase = new Phase(<PhaseName>pojo.name, actions);
+        let phase = new Phase(actions);
         phase.actionsForIds = <StringMap>pojo.actionsForIds;
         phase.extraState = <PrimitiveMap>pojo.extraState;
         phase.resolvesOnEmpty = <boolean>pojo.resolvesOnEmpty;
