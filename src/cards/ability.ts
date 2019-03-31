@@ -1,6 +1,6 @@
 import { Card, Attributes, TechLevel } from './card';
 import { EventDescriptor, Game } from '../game';
-import { Phase } from '../actions/phase';
+import { Phase, Action } from '../actions/phase';
 import { BuildingType, BoardBuilding } from '../board';
 import { CardApi } from './card_api';
 import { Hero } from './hero';
@@ -39,7 +39,7 @@ export abstract class Ability {
 
         // some abilities are actually choices that the user has to make when playing the card.
         // for example, Boost and Not Boost are like this
-        if (this.card.game.phaseStack.topOfStack().name == 'Staging') return this.stagingAbility;
+        if (this.card.game.phaseStack.topOfStack().isValidAction('StagingAbility')) return this.stagingAbility;
         else return !this.stagingAbility;
     }
 
@@ -64,8 +64,9 @@ export abstract class Ability {
         cards: Card[],
         chooseNumber: number,
         label: string,
-        choicesRequired = true,
-        usesTargetingRules = true
+        choicesRequired: boolean,
+        canChooseTargetsMoreThanOnce: boolean,
+        usesTargetingRules: boolean
     ) {
         let phaseStack = this.card.game.phaseStack;
 
@@ -84,17 +85,15 @@ export abstract class Ability {
             });
         }
 
-        let phase = phaseStack.topOfStack();
-        if (phase.name != 'ChooseAbilityTarget') {
-            phase = new Phase('ChooseAbilityTarget', ['AbilityChoice']);
-            phaseStack.addToStack(phase);
-        }
+        let action = new Action('AbilityChoice', false, chooseNumber, choicesRequired);
+        let phase = new Phase([action], true);
+        phaseStack.addToStack(phase);
 
         // can we ever choose the same thing more than once? i don't think so... and the default here is to cross things off the list
-        phase.markCardsToResolve(allCards);
-        if (buildings && buildings.boardBuildings) phase.markIdsToResolve(buildings.boardBuildings);
+        action.resolveNeededForCards(allCards);
+        if (buildings && buildings.boardBuildings) action.resolveNeededForIds(buildings.boardBuildings);
 
-        if (!choicesRequired) phase.markIdsToResolve(['None']);
+        if (!choicesRequired) action.idsToResolve.push('None');
 
         // gives the back-end the ability to find the resolve() method for this card
         phase.extraState.cardWithAbility = this.card.cardId;
@@ -102,9 +101,6 @@ export abstract class Ability {
 
         // we use the choice of 'None' to end the chain when choices are not required, so we don't need to explicitly track
         // whether or not things are required
-        phase.extraState.chooseNumber = chooseNumber;
-        phase.extraState.haveChosen = 0;
-
         phase.extraState.label = label;
 
         phase.extraState.usesTargetingRules = usesTargetingRules;
@@ -221,6 +217,7 @@ export abstract class CommonAbility extends Ability {
     includeHeroes: boolean;
     choicesRequired: boolean;
     usesTargetingRules: boolean;
+    canChooseTargetMoreThanOnce: boolean;
 
     constructor(
         card: Card,
@@ -230,7 +227,8 @@ export abstract class CommonAbility extends Ability {
         includeUnits = true,
         includeHeroes = true,
         choicesRequired = true,
-        usesTargetingRules = true
+        usesTargetingRules = true,
+        canChooseTargetMoreThanOnce = false
     ) {
         super(card);
         this.minTechLevel = minTechLevel;
@@ -240,6 +238,7 @@ export abstract class CommonAbility extends Ability {
         this.includeHeroes = includeHeroes;
         this.choicesRequired = choicesRequired;
         this.usesTargetingRules = usesTargetingRules;
+        this.canChooseTargetMoreThanOnce = canChooseTargetMoreThanOnce;
     }
 }
 
@@ -260,6 +259,7 @@ export class AddPlusOneOneAbility extends CommonAbility {
             this.numTargets,
             this.name,
             this.choicesRequired,
+            this.canChooseTargetMoreThanOnce,
             true
         );
     }
@@ -287,6 +287,7 @@ export class SidelineAbility extends CommonAbility {
             this.numTargets,
             this.name,
             this.choicesRequired,
+            this.canChooseTargetMoreThanOnce,
             true
         );
     }

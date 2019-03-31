@@ -77,12 +77,16 @@ export class PhaseStack {
         let beginLen = this.stack.length;
 
         this.stack = this.stack.filter(phase => {
+            if (phase.gameOver) return true;
+
             // first, if we've chosen everything possible, then we clear the action
-            phase.actions = phase.actions.filter(action => action.resolvedIds.length < action.idsToResolve.length);
+            phase.actions = phase.actions.filter(
+                action => !action.canChooseTargetsMoreThanOnce && action.resolvedIds.length < action.idsToResolve.length
+            );
 
             // next, if we've chosen the correct number already, clear the action
             phase.actions = phase.actions.filter(
-                action => !action.mustChooseAll && action.mandatoryChoices > 0 && action.mandatoryChoices < action.resolveIds.length
+                action => !action.mustChooseAll && action.chooseNumber > 0 && action.chooseNumber < action.resolveIds.length
             );
 
             // if all actions have been resolved, or if we are marked with "end this phase", exit this phase
@@ -102,15 +106,26 @@ export class PhaseStack {
 
 export class Action {
     name: ActionName;
-    mandatoryChoices: number = 1;
-    mustChooseAll: boolean = false;
+    chooseNumber: number;
+    mustChooseAll: boolean;
+    mustChooseExactNumber: boolean;
+    canChooseTargetsMoreThanOnce: boolean;
     idsToResolve: string[] = [];
     resolvedIds: string[] = [];
+    neverAutoResolve = false;
 
-    constructor(name: ActionName, mandatoryChoices = 1, mustChooseAll = false) {
+    constructor(
+        name: ActionName,
+        mustChooseAll: boolean = false,
+        chooseNumber: number = 1,
+        mustChooseExactNumber: boolean = true,
+        canChooseTargetsMoreThanOnce: boolean = false
+    ) {
         this.name = name;
-        this.mandatoryChoices = mandatoryChoices;
+        this.chooseNumber = chooseNumber;
+        this.mustChooseExactNumber = mustChooseExactNumber;
         this.mustChooseAll = mustChooseAll;
+        this.canChooseTargetsMoreThanOnce = canChooseTargetsMoreThanOnce;
     }
 
     serialize(): ObjectMap {
@@ -118,16 +133,32 @@ export class Action {
             name: this.name,
             idsToResolve: this.idsToResolve,
             resolvedIds: this.resolvedIds,
-            mandatoryChoices: this.mandatoryChoices,
-            mustChooseAll: this.mustChooseAll
+            mustChooseExactNumber: this.mustChooseExactNumber,
+            mustChooseAll: this.mustChooseAll,
+            chooseNumber: this.chooseNumber,
+            canChooseTargetsMoreThanOnce: this.canChooseTargetsMoreThanOnce
         };
     }
 
     static deserialize(pojo: ObjectMap): Action {
-        let action = new Action(<ActionName>pojo.name, <number>pojo.mandatoryChoices, <boolean>pojo.mustChooseAll);
+        let action = new Action(
+            <ActionName>pojo.name,
+            <boolean>pojo.mustChooseAll,
+            <number>pojo.chooseNumber,
+            <boolean>pojo.mustChooseExactNumber,
+            <boolean>pojo.canChooseTargetsMoreThanOnce
+        );
         action.idsToResolve = <string[]>pojo.idsToResolve;
         action.resolvedIds = <string[]>pojo.resolvedIds;
         return action;
+    }
+
+    resolveNeededForCards(cards: Card[]) {
+        this.idsToResolve.push(...cards.map(card => card.cardId));
+    }
+
+    resolveNeededForIds(ids: string[]) {
+        this.idsToResolve.push(...ids);
     }
 
     resolveCards(cards: Card[]): void {
@@ -159,6 +190,8 @@ export class Phase {
 
     resolvesOnEmpty: boolean = true;
     endThisPhase: boolean = false;
+
+    gameOver: boolean = false;
 
     // In some cases, we may do different things based on which ID is selected.
     // If necessary, we record the thing to do for each ID here.

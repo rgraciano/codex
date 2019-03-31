@@ -3,7 +3,7 @@ import { Card } from './card';
 import { Hero } from './hero';
 import { Spell, AttachSpell, ImmediateSpell, OngoingSpell, UntilSpell } from './spell';
 import { GlobalBonusHook, WouldDieHook, WouldDiscardHook } from './handlers';
-import { Phase, PhaseName, ActionName, PrimitiveMap, Action } from '../actions/phase';
+import { Phase, ActionName, PrimitiveMap, Action } from '../actions/phase';
 import { Board, PatrolZone } from '../board';
 
 type SpaceType = 'AllActive' | 'PlayerActive' | 'OpponentActive' | 'AllPatroller' | 'OpponentPatroller' | 'None';
@@ -37,7 +37,7 @@ export class CardApi {
         board.inPlay.push(card);
 
         /**** ARRIVES PHASE ****/
-        this.trigger(card.game, 'ArrivesChoice', 'onArrives', 'AllActive', { arrivingCardId: card.cardId }, 0, true);
+        this.trigger(card.game, 'ArrivesChoice', 'onArrives', 'AllActive', { arrivingCardId: card.cardId });
     }
 
     /** Does everything needed to destroy a card.  Triggers Dies, Leaves Play, & Would Discard. */
@@ -59,14 +59,12 @@ export class CardApi {
         }
 
         /**** DEAD. SO DEAD. ****/
-        this.trigger(game, 'DiesChoice', 'onDies', 'AllActive', { dyingCardId: card.cardId }, 0, true);
+        this.trigger(game, 'DiesChoice', 'onDies', 'AllActive', { dyingCardId: card.cardId });
 
         if (card.cardType == 'Hero') {
             let phase = game.phaseStack.topOfStack();
-            let action = new Action('HeroLevelChoice', 1, false);
-            action.resolveCards(
-                this.getCardsFromSpace(game, 'OpponentActive').filter(opponentCard => opponentCard.cardType == 'Hero')
-            );
+            let action = new Action('HeroLevelChoice', false, 1, true, false);
+            action.resolveCards(this.getCardsFromSpace(game, 'OpponentActive').filter(opponentCard => opponentCard.cardType == 'Hero'));
             phase.actions.push(action);
         }
 
@@ -77,7 +75,7 @@ export class CardApi {
     static leavePlay(card: Card, destination: Destination, useExistingPhase: boolean, isDying: boolean) {
         let game: Game = card.game;
 
-        this.trigger(game, 'LeavesChoice', 'onLeaves', 'AllActive', { dyingCardId: card.cardId }, 0, true, useExistingPhase);
+        this.trigger(game, 'LeavesChoice', 'onLeaves', 'AllActive', { dyingCardId: card.cardId }, useExistingPhase);
 
         switch (destination) {
             case 'Hand':
@@ -136,8 +134,10 @@ export class CardApi {
         // to make any choices.  But for some spells, and when Boost / Don't Boost are there, then the user has to choose what to do
         // next.
         if (card.stagingAbilityMap.size > 1) {
-            let phase = new Phase('Staging', ['StagingAbility'], false);
-            phase.markCardsToResolve([card]);
+            let action = new Action('StagingAbility', false, 1, true, false);
+            action.neverAutoResolve = true;
+            let phase = new Phase([action], false);
+            action.idsToResolve.push(card.cardId);
             card.game.phaseStack.addToStack(phase);
             this.moveCard(card, fromSpace, board.playStagingArea);
         } else {
@@ -212,8 +212,6 @@ export class CardApi {
         triggerFn: string,
         triggerSpace: SpaceType = 'AllActive',
         extraState?: PrimitiveMap,
-        mandatoryActionChoices = 0,
-        mustChooseAll = true,
         useExistingPhase = false
     ) {
         let phase: Phase = undefined;
@@ -223,7 +221,7 @@ export class CardApi {
             phase = topOfStack;
         }
 
-        if (phase === undefined) phase = new Phase([new Action(actionName, mandatoryActionChoices, mustChooseAll)];
+        if (phase === undefined) phase = new Phase([new Action(actionName, true)]);
 
         if (extraState) phase.extraState = extraState;
 

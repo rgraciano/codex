@@ -12,8 +12,17 @@ import { prepareAttackTargetsChoice } from './attack_actions';
 import { chooseTowerRevealChoice } from './tower_reveal_action';
 
 export type ChoiceCategory = 'Card' | 'Building' | 'Arbitrary';
-export function choiceAction(game: Game, choiceValue: string, choiceType: ChoiceCategory, action: ActionName, context: StringMap): void {
+export function choiceAction(
+    game: Game,
+    choiceValue: string,
+    choiceType: ChoiceCategory,
+    actionName: ActionName,
+    context: StringMap
+): void {
     let phase = game.phaseStack.topOfStack();
+    let action = phase.getAction(actionName);
+
+    if (!action) throw new Error('Invalid action');
 
     let buildingId: string;
     //let none: boolean = false;
@@ -41,69 +50,79 @@ export function choiceAction(game: Game, choiceValue: string, choiceType: Choice
             break;
     }
 
-    switch (phase.name) {
-        case 'Arrives':
+    switch (actionName) {
+        case 'ArrivesChoice':
             game.addEvent((<ArrivesHandler>card).onArrives(Card.idToCardMap.get(<string>phase.extraState['arrivingCardId'])));
             break;
 
-        case 'Attack':
+        case 'AttacksChoice':
             game.addEvent((<AttacksHandler>card).onAttacks(Card.idToCardMap.get(<string>phase.extraState['attackingCardId'])));
             break;
 
-        case 'ChooseAbilityTarget':
+        case 'AbilityChoice':
             markResolved = chooseAbilityTargetChoice(game, card, choiceValue);
             break;
 
-        case 'ChooseTowerReveal':
+        case 'TowerRevealChoice':
             markResolved = chooseTowerRevealChoice(card);
             break;
 
-        case 'Destroy':
+        case 'DestroyChoice':
             markResolved = destroyChoice(card, cardId);
             break;
 
-        case 'DiesOrLeaves':
-            markResolved = diesOrLeavesChoice(game, cardId, card);
+        case 'DiesChoice':
+        case 'LeavesChoice':
+            markResolved = diesOrLeavesChoice(game, actionName, cardId, card);
             break;
 
-        case 'ChoosePatrolSlot':
+        case 'PatrolChoice':
             markResolved = choosePatrolSlotChoice(game, choiceValue);
             break;
 
         case 'PrepareAttackTargets':
-            markResolved = prepareAttackTargetsChoice(choiceValue, card, action, context);
+            markResolved = prepareAttackTargetsChoice(choiceValue, card, actionName, context);
             break;
 
-        case 'Upkeep':
+        case 'UpkeepChoice':
             markResolved = upkeepChoice(game, card);
-            break;
-
-        case 'PlayerPrompt':
             break;
 
         default:
             throw new Error('Could not find a phase for this choice');
     }
 
-    if (markResolved) phase.markResolved(choiceValue);
+    if (markResolved) action.resolveId(choiceValue);
 }
 
-function diesOrLeavesChoice(game: Game, cardId: string, card: Card): boolean {
-    if (!card.game.phaseStack.topOfStack().ifToResolve(cardId)) throw new Error('Invalid choice');
+function diesOrLeavesChoice(game: Game, actionName: ActionName, cardId: string, card: Card): boolean {
+    if (
+        !card.game.phaseStack
+            .topOfStack()
+            .getAction(actionName)
+            .ifToResolve(cardId)
+    )
+        throw new Error('Invalid choice');
     let phase = game.phaseStack.topOfStack();
 
-    if (!phase.actionsForIds['cardId']) throw new Error('Card ' + cardId + ' is not valid for DiesOrLeaves');
+    if (!phase.actionsForIds['cardId']) throw new Error('Card ' + cardId + ' is not valid');
 
     let dyingOrLeavingCard = Card.idToCardMap.get(<string>phase.extraState['dyingCardId']);
 
-    if (phase.actionsForIds['cardId'] == 'onDies') game.addEvent((<DiesHandler>card).onDies(dyingOrLeavingCard));
+    if (actionName == 'DiesChoice') game.addEvent((<DiesHandler>card).onDies(dyingOrLeavingCard));
     else game.addEvent((<LeavesHandler>card).onLeaves(dyingOrLeavingCard));
 
     return true;
 }
 
 function destroyChoice(card: Card, cardId: string): boolean {
-    if (!card.game.phaseStack.topOfStack().ifToResolve(cardId)) throw new Error('Invalid choice');
+    if (
+        !card.game.phaseStack
+            .topOfStack()
+            .getAction('DestroyChoice')
+            .ifToResolve(cardId)
+    )
+        throw new Error('Invalid choice');
     CardApi.destroyCard(card);
     return true;
 }

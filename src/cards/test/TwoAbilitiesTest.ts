@@ -34,7 +34,7 @@ class DestroyAbility extends Ability {
 
     use() {
         super.use();
-        return this.choose(undefined, this.choicesUnits(this.card.game.getAllActiveCards(), 0, 0), 2, 'Destroy', true, true);
+        return this.choose(undefined, this.choicesUnits(this.card.game.getAllActiveCards(), 0, 0), 2, 'Destroy', false, false, true);
     }
 
     resolveChoice(cardOrBuildingId: string) {

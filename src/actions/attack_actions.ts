@@ -43,14 +43,14 @@ export function attackAction(attackerId: string) {
 
     // enter phase that is empty, to choose the target of the attack. give it one resolveId (attacker) so that it will auto-execute
     // when the attack handlers are all done
-    let prepTargetsAction = new Action('PrepareAttackTargets', 1);
+    let prepTargetsAction = new Action('PrepareAttackTargets', false, 1, true, false);
     prepTargetsAction.idsToResolve.push(attacker.cardId);
     game.phaseStack.addToStack(new Phase([prepTargetsAction]));
 
     // enter phase for attack handlers
     // fire attacks, obliterate handlers. cards may modify attacks, e.g. safe attacking, giving temporary 'while attacking' stats
     // .. how to handle armor? we need to track armor in the duration of a turn
-    CardApi.trigger(game, 'AttacksChoice', 'onAttacks', 'AllActive', { attackingCardId: attacker.cardId }, 1, false);
+    CardApi.trigger(game, 'AttacksChoice', 'onAttacks', 'AllActive', { attackingCardId: attacker.cardId });
 }
 
 /** Second phase of an attack: prepare a list of possible defenders and ask the user to choose their attack target */
@@ -117,11 +117,12 @@ export function prepareAttackTargetsAction(attackerId: string) {
 
     // if a patroller can block, then return the possible patrollers we can attack
     else {
-        game.phaseStack.addToStack(new Phase('AttackDestination', ['AttackCardsChoice']));
+        let action = new Action('AttackCardsChoice', false, 1, true, false);
+        game.phaseStack.addToStack(new Phase([action]));
 
         // check squad leader first
         if (patrollersAbleToBlock.find(patroller => patroller === attacker.oppositionalControllerBoard.patrolZone.squadLeader)) {
-            game.phaseStack.topOfStack().markIdsToResolve([attacker.oppositionalControllerBoard.patrolZone.squadLeader.cardId]);
+            action.idsToResolve.push(attacker.oppositionalControllerBoard.patrolZone.squadLeader.cardId);
             game.addEvent(
                 new EventDescriptor('PossibleAttackTargets', 'The squad leader must be attacked first', {
                     buldings: false,
@@ -132,7 +133,7 @@ export function prepareAttackTargetsAction(attackerId: string) {
         // if no squad leader can block, all patrollers are fair game
         else {
             let patrollerIds = patrollersAbleToBlock.map(card => card.cardId);
-            game.phaseStack.topOfStack().markIdsToResolve(patrollerIds);
+            action.idsToResolve.push(...patrollerIds);
             game.addEvent(
                 new EventDescriptor('PossibleAttackTargets', 'A patroller must be attacked first', {
                     buildings: true,
@@ -144,11 +145,23 @@ export function prepareAttackTargetsAction(attackerId: string) {
 }
 
 export function prepareAttackTargetsChoice(choiceValue: string, card: Card, action: string, context: StringMap): boolean {
-    if (!card.game.phaseStack.topOfStack().ifToResolve(choiceValue)) throw new Error('Invalid choice');
-
     if (action == 'AttackCardsOrBuildingsChoice') {
+        if (
+            !card.game.phaseStack
+                .topOfStack()
+                .getAction('AttackCardsOrBuildingsChoice')
+                .ifToResolve(choiceValue)
+        )
+            throw new Error('Invalid choice');
         context.building ? attackChosenTarget(card, context.building) : attackChosenTarget(card, undefined, context.validCardTargetId);
     } else {
+        if (
+            !card.game.phaseStack
+                .topOfStack()
+                .getAction('AttackCardsChoice')
+                .ifToResolve(choiceValue)
+        )
+            throw new Error('Invalid choice');
         attackChosenTarget(card, undefined, context.validCardTargetId);
     }
     return true;
@@ -161,8 +174,9 @@ function sendAllTargetsAreValid(attacker: Character) {
     let defenderAttackableCards = game.getAllAttackableCards(defenderCards);
     let defenderIds = defenderAttackableCards.map(localCard => localCard.cardId);
 
-    game.phaseStack.addToStack(new Phase('AttackDestination', ['AttackCardsOrBuildingsChoice']));
-    game.phaseStack.topOfStack().markIdsToResolve(defenderIds);
+    let action = new Action('AttackCardsOrBuildingsChoice', false, 1, true);
+    game.phaseStack.addToStack(new Phase([action]));
+    action.idsToResolve.push(...defenderIds);
     game.addEvent(
         new EventDescriptor('PossibleAttackTargets', 'No blockers are available. All attack destinations are valid', {
             buildings: true,

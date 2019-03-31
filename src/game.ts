@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 
-import { PhaseStack, Phase } from './actions/phase';
+import { PhaseStack, Phase, Action } from './actions/phase';
 
 import { Board, BoardBuilding, BuildingType, TechBuilding, AddOn } from './board';
 
@@ -163,8 +163,9 @@ export class Game {
         });
 
         if (cardsToDestroy.length > 0) {
-            this.phaseStack.addToStack(new Phase('Destroy', ['DestroyChoice']));
-            this.phaseStack.topOfStack().markCardsToResolve(cardsToDestroy);
+            let action = new Action('DestroyChoice');
+            action.resolveNeededForCards(cardsToDestroy);
+            this.phaseStack.addToStack(new Phase([action]));
         }
 
         return results;
@@ -176,7 +177,7 @@ export class Game {
         // check base buildings. if base blown up, gg!
         let baseDestroyed = board.destroyIfRequired('Base');
         if (baseDestroyed) {
-            this.phaseStack.addToStack(new Phase('GameOver', []));
+            this.phaseStack.topOfStack().gameOver = true;
             return baseDestroyed; // if the game is over, no need to figure everything else out. just end it
         }
 

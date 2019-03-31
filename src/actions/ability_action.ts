@@ -20,7 +20,13 @@ export function chooseAbilityTargetChoice(game: Game, card: Card, cardId: string
     let cardWithAbility = Card.idToCardMap.get(<string>phase.extraState['cardWithAbility']);
     let ability = cardWithAbility.abilityMap.get(<string>phase.extraState['abilityName']);
 
-    if (!card.game.phaseStack.topOfStack().ifToResolve(cardId)) throw new Error('Invalid choice');
+    if (
+        !card.game.phaseStack
+            .topOfStack()
+            .getAction('AbilityChoice')
+            .ifToResolve(cardId)
+    )
+        throw new Error('Invalid choice');
 
     /*if (none) {
         // if the user chose 'none', end phase and do not resolve
@@ -28,16 +34,6 @@ export function chooseAbilityTargetChoice(game: Game, card: Card, cardId: string
         game.phaseStack.endCurrentPhase();
         return false;
     }*/
-
-    let chooseNumber = <number>phase.extraState['chooseNumber'];
-    let haveChosen = <number>phase.extraState['haveChosen'];
-
-    haveChosen++; // count this choice
-    phase.extraState['haveChosen'] = haveChosen;
-
-    if (haveChosen == chooseNumber)
-        // if we've chosen the max number of things we can choose, end the phase
-        game.phaseStack.endCurrentPhase();
 
     let destroyed = false;
     if (card && <boolean>phase.extraState['usesTargetingRules']) {

@@ -119,7 +119,7 @@ export class GameServer {
         let onlyPossibleTarget: string = undefined;
         let phase = this.game.phaseStack.topOfStack();
 
-        if (overrideWithPhase) onlyPossibleTarget = <string>phase.idsToResolve[0];
+        if (overrideWithPhase) onlyPossibleTarget = <string>phase.actions[0].idsToResolve[0];
 
         if (action.endsWith('Choice')) {
             let safeContext: StringMap = {};
@@ -268,22 +268,20 @@ export class GameServer {
         do {
             clearedEmptyPhase = this.game.phaseStack.resolveEmptyPhases();
 
-            // Must happen after we clear empty phases, because GameOver is an empty phase
             this.game.addEvents(this.game.processGameState());
 
             // If there's only one action that can be performed, and the game knows how to perform that action, then we do it automatically now before
             // returning to the user.  'PlayerChoice' indicates that the player MUST do something.
             let topOfStack = this.game.phaseStack.topOfStack();
 
-            if (topOfStack.name == 'GameOver') return;
+            if (topOfStack.gameOver) return;
 
             if (
-                topOfStack.name != 'PlayerPrompt' &&
-                topOfStack.name != 'Staging' &&
-                topOfStack.validActions.length === 1 &&
-                topOfStack.idsToResolve.length === 1
+                topOfStack.actions.length === 1 &&
+                !topOfStack.actions[0].neverAutoResolve &&
+                topOfStack.actions[0].idsToResolve.length === 1
             ) {
-                this.runAction(topOfStack.validActions[0], {}, true);
+                this.runAction(topOfStack.actions[0].name, {}, true);
                 clearedSingleAction = true;
             } else clearedSingleAction = false;
         } while (clearedEmptyPhase || clearedSingleAction);

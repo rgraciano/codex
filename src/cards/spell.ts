@@ -126,7 +126,7 @@ export abstract class AttachAbility extends Ability {
 
     use() {
         super.use();
-        this.choose(undefined, this.choices(), 1, 'Attach', true, true);
+        this.choose(undefined, this.choices(), 1, 'Attach', true, false, true);
     }
 
     resolveChoice(cardOrBuildingId: string): EventDescriptor | undefined {

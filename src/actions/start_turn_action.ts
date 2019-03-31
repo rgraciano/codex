@@ -49,28 +49,34 @@ export function startTurnAction(game: Game): void {
     game.phaseStack.addToStack(
         new Phase(
             [
-                new Action('PlayCard', 0),
-                new Action('Worker', 0),
-                new Action('Tech', 0),
-                new Action('Build', 0),
-                new Action('Patrol', 0),
-                new Action('Ability', 0),
-                new Action('Attack', 0),
-                new Action('HeroLevel', 0),
-                new Action('EndTurn', 0),
-                new Action('TowerReveal', 0),
-                new Action('Sideline', 0)
+                new Action('PlayCard'),
+                new Action('Worker'),
+                new Action('Tech'),
+                new Action('Build'),
+                new Action('Patrol'),
+                new Action('Ability'),
+                new Action('Attack'),
+                new Action('HeroLevel'),
+                new Action('EndTurn'),
+                new Action('TowerReveal'),
+                new Action('Sideline')
             ],
             false
         )
     );
 
     // enter upkeep phase, process upkeep events. when this is resolved, we'll exit into the PlayerTurn phase just beneath
-    CardApi.trigger(game, 'UpkeepChoice', 'onUpkeep', 'PlayerActive', {}, 0, true);
+    CardApi.trigger(game, 'UpkeepChoice', 'onUpkeep', 'PlayerActive', {});
 }
 
 export function upkeepChoice(game: Game, card: Card): boolean {
-    if (!game.phaseStack.topOfStack().ifToResolve(card.cardId)) throw new Error('Invalid choice');
+    if (
+        !game.phaseStack
+            .topOfStack()
+            .getAction('UpkeepChoice')
+            .ifToResolve(card.cardId)
+    )
+        throw new Error('Invalid choice');
     game.addEvent((<UpkeepHandler>card).onUpkeep());
     return true;
 }
