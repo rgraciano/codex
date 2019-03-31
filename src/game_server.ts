@@ -90,12 +90,7 @@ export class GameServer {
         this.loadGameState(state);
 
         if (!this.game.phaseStack.topOfStack().isValidAction(action)) {
-            return this.responseError(
-                'Action ' +
-                    action +
-                    ' is not currently valid.  Currently valid actions include ' +
-                    this.game.phaseStack.validActions().toString
-            );
+            return this.responseError('Action ' + action + ' is not currently valid');
         }
 
         try {

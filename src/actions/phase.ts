@@ -10,7 +10,7 @@ export type PhaseName =
     | 'NewGame'
     | 'Upkeep'
     | 'Arrives'
-    | 'DiesOrLeaves'
+    | 'Dies'
     | 'PlayerPrompt'
     | 'GameOver'
     | 'Destroy'
@@ -28,7 +28,9 @@ export type ActionName =
     | 'StagingAbility'
     | 'UpkeepChoice'
     | 'ArrivesChoice'
-    | 'DiesOrLeavesChoice'
+    | 'DiesChoice'
+    | 'LeavesChoice'
+    | 'HeroLevelChoice'
     | 'DestroyChoice'
     | 'AttacksChoice'
     | 'PrepareAttackTargets'
@@ -89,10 +91,6 @@ export class PhaseStack {
         return this.stack[this.stack.length - 1];
     }
 
-    validActions(): ActionName[] {
-        return this.topOfStack().validActions;
-    }
-
     /** This will clear out any phases that are no longer valid because they have cleared out all required cards.
      * Cards may have died due to effects or simply been resolved.
      * @returns true if phases were eliminated, false if not */
@@ -100,7 +98,12 @@ export class PhaseStack {
         let beginLen = this.stack.length;
 
         this.stack = this.stack.filter(phase => {
-            if (phase.resolvesOnEmpty) return phase.idsToResolve && phase.idsToResolve.length > 0;
+            // keep actions that havent yet been resolved
+            // note if mandatoryChoices is zero, then this action is always going to be valid
+            phase.actions = phase.actions.filter(action => action.resolvedIds.length < action.mandatoryChoices);
+
+            // if all actions have been resolved, exit this phase
+            if (phase.resolvesOnEmpty && phase.actions.length == 0) return false;
             else return !phase.endThisPhase;
         });
 
@@ -114,31 +117,62 @@ export class PhaseStack {
     }
 }
 
-export class Phase {
-    name: PhaseName;
+export class Action {
+    name: ActionName;
+    mandatoryChoices: number = 1;
+    idsToResolve: string[] = [];
+    resolvedIds: string[] = [];
 
-    validActions: ActionName[] = [];
+    constructor(name: ActionName, mandatoryChoices = 1) {
+        this.name = name;
+        this.mandatoryChoices = mandatoryChoices;
+    }
+
+    serialize(): ObjectMap {
+        return {
+            name: this.name,
+            idsToResolve: this.idsToResolve,
+            resolvedIds: this.resolvedIds,
+            mandatoryChoices: this.mandatoryChoices
+        };
+    }
+
+    static deserialize(pojo: ObjectMap): Action {
+        let action = new Action(<ActionName>pojo.name, <number>pojo.mandatoryChoices);
+        action.idsToResolve = <string[]>pojo.idsToResolve;
+        action.resolvedIds = <string[]>pojo.resolvedIds;
+        return action;
+    }
+
+    resolveCards(cards: Card[]): void {
+        cards.map(card => this.resolveId(card.cardId));
+    }
+
+    /** @ids could be card IDs OR BuildingTypes */
+    resolveIds(ids: string[]): void {
+        ids.map(id => this.resolveId(id));
+    }
+
+    resolveId(id: string) {
+        this.resolvedIds.push(id);
+
+        let index = this.idsToResolve.findIndex(thisId => thisId === id);
+        if (index > -1) {
+            this.idsToResolve.splice(index, 1);
+        }
+    }
+
+    /** @returns whether or not card can be found in list of must resolved */
+    ifToResolve(cardId: string): boolean {
+        return this.idsToResolve.filter(thisId => thisId === cardId).length > 0;
+    }
+}
+
+export class Phase {
+    actions: Action[] = [];
 
     resolvesOnEmpty: boolean = true;
     endThisPhase: boolean = false;
-
-    /*
-     * We both keep a list of cards we have to resolve still,
-     * as well as a list of resolved, because we will recalculate the list as we go.
-     *
-     * In some actions, it will be mandatory to resolve all of them to move forward.
-     * In other actions, it will be a choice between things to resolve.
-     *
-     * The client doesn't need to know or care either way. It highlights everything
-     * in the list, and when the user clicks something in the list, the back-end
-     * updates the list by either clearing it or removing the option they just resolved.
-     * The client then simply (dumbly) again highlights the whatever is on the list.
-     *
-     * Each map has:
-     * 'resolveId'
-     */
-    idsToResolve: string[];
-    resolvedIds: string[];
 
     // In some cases, we may do different things based on which ID is selected.
     // If necessary, we record the thing to do for each ID here.
@@ -148,22 +182,16 @@ export class Phase {
     // e.g., which attacker we're currently resolving.
     extraState: PrimitiveMap = {};
 
-    constructor(name: PhaseName, validActions: ActionName[], resolvesOnEmpty: boolean = true) {
+    constructor(name: PhaseName, actions: Action[], resolvesOnEmpty: boolean = true) {
         this.name = name;
-        this.validActions = validActions;
-
-        this.idsToResolve = [];
-        this.resolvedIds = [];
-
+        this.actions = actions;
         this.resolvesOnEmpty = resolvesOnEmpty;
     }
 
     serialize(): ObjectMap {
         return {
             name: this.name,
-            validActions: this.validActions,
-            idsToResolve: this.idsToResolve,
-            resolvedIds: this.resolvedIds,
+            actions: this.actions.map(action => action.serialize()),
             actionsForIds: this.actionsForIds,
             extraState: this.extraState,
             resolvesOnEmpty: this.resolvesOnEmpty
@@ -171,46 +199,20 @@ export class Phase {
     }
 
     static deserialize(pojo: ObjectMap): Phase {
-        let phase = new Phase(<PhaseName>pojo.name, <ActionName[]>pojo.validActions);
-        phase.idsToResolve = <string[]>pojo.idsToResolve;
-        phase.resolvedIds = <string[]>pojo.resolvedIds;
+        let actions = (<ObjectMap[]>pojo.actions).map(action => Action.deserialize(action));
+        let phase = new Phase(<PhaseName>pojo.name, actions);
         phase.actionsForIds = <StringMap>pojo.actionsForIds;
         phase.extraState = <PrimitiveMap>pojo.extraState;
         phase.resolvesOnEmpty = <boolean>pojo.resolvesOnEmpty;
         return phase;
     }
 
-    markCardsToResolve(cards: Card[], action?: string): void {
-        this.markIdsToResolve(cards.map(card => card.cardId), action);
-    }
-
-    /** @ids could be card IDs OR BuildingTypes */
-    markIdsToResolve(ids: string[], action?: string): void {
-        this.idsToResolve.push(...ids);
-
-        if (action) ids.map(id => (this.actionsForIds[id] = action));
-    }
-
-    /** @returns whether or not card can be found in list of must resolved */
-    ifToResolve(cardId: string): boolean {
-        return this.idsToResolve.filter(thisId => thisId === cardId).length > 0;
+    getAction(actionName: ActionName): Action {
+        return this.actions.find((action: Action) => action.name == actionName);
     }
 
     isValidAction(action: ActionName): boolean {
-        return this.validActions.indexOf(action) !== -1;
-    }
-
-    markResolved(cardId: string) {
-        this.resolvedIds.push(cardId);
-
-        let index = this.idsToResolve.findIndex(thisId => thisId === cardId);
-        if (index > -1) {
-            this.idsToResolve.splice(index, 1);
-        }
-    }
-
-    wasDone(cardId: string): boolean {
-        return this.resolvedIds.indexOf(cardId) !== -1;
+        return this.actions.find((curAction: Action) => curAction.name == action) !== undefined;
     }
 }
 

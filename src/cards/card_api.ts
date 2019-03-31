@@ -59,7 +59,17 @@ export class CardApi {
         }
 
         /**** DEAD. SO DEAD. ****/
-        this.trigger(game, 'DiesOrLeaves', 'DiesOrLeavesChoice', 'onDies', 'AllActive', { dyingCardId: card.cardId });
+        this.trigger(game, 'Dying', 'DiesChoice', 'onDies', 'AllActive', { dyingCardId: card.cardId });
+
+        if (card.cardType == 'Hero') {
+            let phase = game.phaseStack.topOfStack();
+            phase.validActions.push('HeroLevelChoice');
+            phase.markCardsToResolve(
+                this.getCardsFromSpace(game, 'OpponentActive').filter(opponentCard => opponentCard.cardType == 'Hero'),
+                'HeroLevelChoice'
+            );
+        }
+
         this.leavePlay(card, 'Discard', false, true);
     }
 
@@ -67,21 +77,7 @@ export class CardApi {
     static leavePlay(card: Card, destination: Destination, enterNewPhase: boolean, isDying: boolean) {
         let game: Game = card.game;
 
-        let skipPhaseCreationIfExists: boolean = !enterNewPhase;
-        if (enterNewPhase) {
-            game.phaseStack.addToStack(new Phase('DiesOrLeaves', ['DiesOrLeavesChoice']));
-            game.phaseStack.topOfStack().extraState.dyingCardId = card.cardId;
-        }
-
-        this.trigger(
-            game,
-            'DiesOrLeaves',
-            'DiesOrLeavesChoice',
-            'onLeaves',
-            'AllActive',
-            { dyingCardId: card.cardId },
-            skipPhaseCreationIfExists
-        );
+        this.trigger(game, 'DiesOrLeaves', 'DiesOrLeavesChoice', 'onLeaves', 'AllActive', { dyingCardId: card.cardId }, !enterNewPhase);
 
         switch (destination) {
             case 'Hand':
@@ -234,7 +230,7 @@ export class CardApi {
 
         let foundCards: Card[] = this.findCardsWithProperty(space, triggerFn);
         // add all of those cards to the list of allowedActions, automatically removing those that were already resolved and ensuring there are no duplicates
-        phase.markCardsToResolve(foundCards, triggerFn);
+        phase.markCardsToResolve(foundCards, actionName);
     }
 
     static makeTokens(game: Game, tokenName: string, numTokens: number, onMyBoard: boolean = true) {
