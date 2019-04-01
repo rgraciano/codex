@@ -462,6 +462,7 @@ export class Attributes {
 
     // Base armor, before modifiers etc
     armor: number = 0;
+    armorDamageThisTurn: number = 0;
 
     // The number of things this will obliterate on attack
     obliterate: number = 0;

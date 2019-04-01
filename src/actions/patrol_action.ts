@@ -51,13 +51,23 @@ export function choosePatrolSlotChoice(game: Game, choiceValue: string): boolean
     CardApi.removeCardFromPlay(character);
     character.controllerBoard.patrolZone[choiceValue] = character;
 
-    // Run the PatrolHook, for cards that get bonuses when patrolling
+    // Run the PatrolHook, for cards that get extra bonuses when patrolling
     CardApi.hook(game, 'patrol', [choiceValue], 'None', character);
+
+    switch (choiceValue) {
+        case 'squadLeader':
+            character.attributeModifiers.armor++;
+            break;
+        case 'elite':
+            character.attributeModifiers.attack++;
+            break;
+        case 'lookout':
+            character.attributeModifiers.resist++;
+            break;
+    }
 
     game.addEvent(new EventDescriptor('Patrol', character.name + ' patrolled as ' + choiceValue));
 
     game.phaseStack.endCurrentPhase();
     return false;
 }
-
-export function stopPatrollingAction(cardId: string): void {}

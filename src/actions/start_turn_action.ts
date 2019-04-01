@@ -25,6 +25,9 @@ export function startTurnAction(game: Game): void {
     // ready everything
     game.addEvents(readyAllCards(game, board));
 
+    // undo any armor damage. all armor resets on every turn
+    game.getAllActiveCards().map(card => (card.attributeModifiers.armorDamageThisTurn = 0));
+
     // mark recently deceased heroes as being one turn closer to available,
     // and heroes that were max leveled as being able to cast ultimate
     board.heroZone.map(hero => hero.newTurn());

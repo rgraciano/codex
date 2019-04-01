@@ -99,6 +99,18 @@ export class CardApi {
         CardApi.removeCardFromPlay(cardToSideline);
         cardToSideline.controllerBoard.inPlay.push(cardToSideline);
 
+        switch (patrolSlot) {
+            case 'squadLeader':
+                cardToSideline.attributeModifiers.armor--;
+                break;
+            case 'elite':
+                cardToSideline.attributeModifiers.attack--;
+                break;
+            case 'lookout':
+                cardToSideline.attributeModifiers.resist--;
+                break;
+        }
+
         CardApi.hook(cardToSideline.game, 'sideline', [patrolSlot], 'None', cardToSideline);
     }
 
