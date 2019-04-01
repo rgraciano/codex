@@ -52,7 +52,8 @@ export type ServerEvent =
     | 'HeroGainLvl'
     | 'HeroDrain'
     | 'Patrol'
-    | 'Sideline';
+    | 'Sideline'
+    | 'Healing';
 export type RuneEvent = 'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
 export class Game {

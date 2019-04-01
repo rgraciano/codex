@@ -37,6 +37,7 @@ export function startTurnAction(game: Game): void {
             card.attributeModifiers.damage = net > 0 ? net : 0;
         }
     });
+    if (healing > 0) game.addEvent(new EventDescriptor('Healing', 'Healed up to ' + healing + 'damage on units and heroes'));
 
     // mark recently deceased heroes as being one turn closer to available,
     // and heroes that were max leveled as being able to cast ultimate
