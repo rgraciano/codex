@@ -12,6 +12,7 @@ import { AddOnType, Board } from './board';
 import { towerRevealAction } from './actions/tower_reveal_action';
 import { playStagingAbilityAction } from './actions/play_staging_ability_action';
 import { patrolAction, sidelineAction } from './actions/patrol_action';
+import { heroLevelAction } from './actions/hero_level_action';
 
 const savePath = '/Users/rg/gamestates';
 
@@ -193,6 +194,12 @@ export class GameServer {
                 if (buildingId == 'AddOn') addOnType = GameServer.requireProp('addOnType', context, GameServer.nameProperties);
 
                 buildAction(this.game, buildingId, <AddOnType>addOnType);
+                break;
+            }
+
+            case 'HeroLevel': {
+                let cardId = GameServer.requireProp('cardId', context, GameServer.alnumProperties);
+                heroLevelAction(cardId);
                 break;
             }
 
