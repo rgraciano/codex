@@ -28,6 +28,16 @@ export function startTurnAction(game: Game): void {
     // undo any armor damage. all armor resets on every turn
     game.getAllActiveCards().map(card => (card.attributeModifiers.armorDamageThisTurn = 0));
 
+    // add up all healing abilities and heal friendly units & heroes
+    let healing = 0;
+    game.getAllActiveCards(board).map(card => (healing += card.effective().healing));
+    game.getAllActiveCards(board).map(card => {
+        if (card.cardType == 'Unit' || card.cardType == 'Hero') {
+            let net = card.attributeModifiers.damage - healing;
+            card.attributeModifiers.damage = net > 0 ? net : 0;
+        }
+    });
+
     // mark recently deceased heroes as being one turn closer to available,
     // and heroes that were max leveled as being able to cast ultimate
     board.heroZone.map(hero => hero.newTurn());

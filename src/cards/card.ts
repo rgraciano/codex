@@ -484,6 +484,7 @@ export class Attributes {
     untargetable: number = 0;
     ephemeral: number = 0;
     resist: number = 0;
+    healing: number = 0;
 
     // Things can go in and out of illusion mode, so we track like an attribute.  diesWhenTargeted can change
     // when Macchiatus comes into play
