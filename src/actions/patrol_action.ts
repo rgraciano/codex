@@ -16,7 +16,8 @@ export function patrolAction(cardId: string): void {
 
     if (!character.canPatrol()) throw new Error('This character is unable to patrol');
 
-    let phase = new Phase([new Action('PatrolChoice')], false);
+    let action = new Action('PatrolChoice').registerNeverAutoResolve();
+    let phase = new Phase([action]);
     phase.extraState['patrolCardId'] = cardId;
     cardToPatrol.game.phaseStack.addToStack(phase);
 }

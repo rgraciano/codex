@@ -134,9 +134,8 @@ export class CardApi {
         // to make any choices.  But for some spells, and when Boost / Don't Boost are there, then the user has to choose what to do
         // next.
         if (card.stagingAbilityMap.size > 1) {
-            let action = new Action('StagingAbility', false, 1, true, false);
-            action.neverAutoResolve = true;
-            let phase = new Phase([action], false);
+            let action = new Action('StagingAbility', false, 1, true, false).registerNeverAutoResolve();
+            let phase = new Phase([action]);
             action.idsToResolve.push(card.cardId);
             card.game.phaseStack.addToStack(phase);
             this.moveCard(card, fromSpace, board.playStagingArea);

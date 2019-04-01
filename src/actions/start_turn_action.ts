@@ -47,22 +47,19 @@ export function startTurnAction(game: Game): void {
 
     // enter player turn phase
     game.phaseStack.addToStack(
-        new Phase(
-            [
-                new Action('PlayCard'),
-                new Action('Worker'),
-                new Action('Tech'),
-                new Action('Build'),
-                new Action('Patrol'),
-                new Action('Ability'),
-                new Action('Attack'),
-                new Action('HeroLevel'),
-                new Action('EndTurn'),
-                new Action('TowerReveal'),
-                new Action('Sideline')
-            ],
-            false
-        )
+        new Phase([
+            new Action('PlayCard').registerNeverAutoResolve(),
+            new Action('Worker').registerNeverAutoResolve(),
+            new Action('Tech').registerNeverAutoResolve(),
+            new Action('Build').registerNeverAutoResolve(),
+            new Action('Patrol').registerNeverAutoResolve(),
+            new Action('Ability').registerNeverAutoResolve(),
+            new Action('Attack').registerNeverAutoResolve(),
+            new Action('HeroLevel').registerNeverAutoResolve(),
+            new Action('EndTurn').registerNeverAutoResolve(),
+            new Action('TowerReveal').registerNeverAutoResolve(),
+            new Action('Sideline').registerNeverAutoResolve()
+        ])
     );
 
     // enter upkeep phase, process upkeep events. when this is resolved, we'll exit into the PlayerTurn phase just beneath

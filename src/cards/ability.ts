@@ -86,7 +86,7 @@ export abstract class Ability {
         }
 
         let action = new Action('AbilityChoice', false, chooseNumber, choicesRequired);
-        let phase = new Phase([action], true);
+        let phase = new Phase([action]);
         phaseStack.addToStack(phase);
 
         // can we ever choose the same thing more than once? i don't think so... and the default here is to cross things off the list

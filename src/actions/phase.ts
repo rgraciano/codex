@@ -49,7 +49,7 @@ export class PhaseStack {
     stack: Phase[] = [];
 
     setupForNewGame() {
-        this.stack = [new Phase([], false)];
+        this.stack = [];
     }
 
     serialize(): ObjectMap {
@@ -81,16 +81,20 @@ export class PhaseStack {
 
             // first, if we've chosen everything possible, then we clear the action
             phase.actions = phase.actions.filter(
-                action => !action.canChooseTargetsMoreThanOnce && action.resolvedIds.length < action.idsToResolve.length
+                action =>
+                    action.neverAutoResolve ||
+                    (!action.canChooseTargetsMoreThanOnce && action.resolvedIds.length < action.idsToResolve.length)
             );
 
             // next, if we've chosen the correct number already, clear the action
             phase.actions = phase.actions.filter(
-                action => !action.mustChooseAll && action.chooseNumber > 0 && action.chooseNumber < action.resolveIds.length
+                action =>
+                    action.neverAutoResolve ||
+                    (!action.mustChooseAll && action.chooseNumber > 0 && action.chooseNumber < action.resolveIds.length)
             );
 
             // if all actions have been resolved, or if we are marked with "end this phase", exit this phase
-            if (phase.resolvesOnEmpty && phase.actions.length == 0) return false;
+            if (phase.actions.length == 0) return false;
             else return !phase.endThisPhase;
         });
 
@@ -136,7 +140,8 @@ export class Action {
             mustChooseExactNumber: this.mustChooseExactNumber,
             mustChooseAll: this.mustChooseAll,
             chooseNumber: this.chooseNumber,
-            canChooseTargetsMoreThanOnce: this.canChooseTargetsMoreThanOnce
+            canChooseTargetsMoreThanOnce: this.canChooseTargetsMoreThanOnce,
+            neverAutoResolve: this.neverAutoResolve
         };
     }
 
@@ -150,7 +155,13 @@ export class Action {
         );
         action.idsToResolve = <string[]>pojo.idsToResolve;
         action.resolvedIds = <string[]>pojo.resolvedIds;
+        action.neverAutoResolve = <boolean>pojo.neverAutoResolve;
         return action;
+    }
+
+    registerNeverAutoResolve(): Action {
+        this.neverAutoResolve = true;
+        return this;
     }
 
     resolveNeededForCards(cards: Card[]) {
@@ -188,7 +199,6 @@ export class Action {
 export class Phase {
     actions: Action[] = [];
 
-    resolvesOnEmpty: boolean = true;
     endThisPhase: boolean = false;
 
     gameOver: boolean = false;
@@ -201,17 +211,15 @@ export class Phase {
     // e.g., which attacker we're currently resolving.
     extraState: PrimitiveMap = {};
 
-    constructor(actions: Action[], resolvesOnEmpty: boolean = true) {
+    constructor(actions: Action[]) {
         this.actions = actions;
-        this.resolvesOnEmpty = resolvesOnEmpty;
     }
 
     serialize(): ObjectMap {
         return {
             actions: this.actions.map(action => action.serialize()),
             actionsForIds: this.actionsForIds,
-            extraState: this.extraState,
-            resolvesOnEmpty: this.resolvesOnEmpty
+            extraState: this.extraState
         };
     }
 
@@ -220,7 +228,6 @@ export class Phase {
         let phase = new Phase(actions);
         phase.actionsForIds = <StringMap>pojo.actionsForIds;
         phase.extraState = <PrimitiveMap>pojo.extraState;
-        phase.resolvesOnEmpty = <boolean>pojo.resolvesOnEmpty;
         return phase;
     }
 
