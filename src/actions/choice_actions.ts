@@ -2,6 +2,7 @@ import { Game, EventDescriptor } from '../game';
 import { StringMap } from '../game_server';
 import { ActionName } from './phase';
 import { Card } from '../cards/card';
+import { Hero } from '../cards/hero';
 import { ArrivesHandler, DiesHandler, LeavesHandler, UpkeepHandler, AttacksHandler } from '../cards/handlers';
 import { CardApi } from '../cards/card_api';
 
@@ -68,13 +69,16 @@ export function choiceAction(
             break;
 
         case 'DestroyChoice':
-            markResolved = destroyChoice(card, cardId);
+            markResolved = destroyChoice(card);
             break;
 
         case 'DiesChoice':
         case 'LeavesChoice':
             markResolved = diesOrLeavesChoice(game, actionName, cardId, card);
             break;
+
+        case 'HeroLevelChoice':
+            markResolved = heroLevelChoice(card);
 
         case 'PatrolChoice':
             markResolved = choosePatrolSlotChoice(game, choiceValue);
@@ -96,13 +100,7 @@ export function choiceAction(
 }
 
 function diesOrLeavesChoice(game: Game, actionName: ActionName, cardId: string, card: Card): boolean {
-    if (
-        !card.game.phaseStack
-            .topOfStack()
-            .getAction(actionName)
-            .ifToResolve(cardId)
-    )
-        throw new Error('Invalid choice');
+    validateChoiceForAction(game, actionName, card.cardId);
     let phase = game.phaseStack.topOfStack();
 
     if (!phase.actionsForIds['cardId']) throw new Error('Card ' + cardId + ' is not valid');
@@ -115,14 +113,25 @@ function diesOrLeavesChoice(game: Game, actionName: ActionName, cardId: string, 
     return true;
 }
 
-function destroyChoice(card: Card, cardId: string): boolean {
-    if (
-        !card.game.phaseStack
-            .topOfStack()
-            .getAction('DestroyChoice')
-            .ifToResolve(cardId)
-    )
-        throw new Error('Invalid choice');
+function destroyChoice(card: Card): boolean {
+    validateChoiceForAction(card.game, 'DestroyChoice', card.cardId);
     CardApi.destroyCard(card);
     return true;
+}
+
+function heroLevelChoice(card: Card): boolean {
+    validateChoiceForAction(card.game, 'HeroLevelChoice', card.cardId);
+    let hero = <Hero>card;
+    hero.level = hero.level + 2;
+    return true;
+}
+
+function validateChoiceForAction(game: Game, actionName: ActionName, id: string) {
+    if (
+        !game.phaseStack
+            .topOfStack()
+            .getAction(actionName)
+            .ifToResolve(id)
+    )
+        throw new Error('Invalid choice');
 }
