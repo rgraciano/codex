@@ -1,4 +1,4 @@
-import { Card, TechLevel } from './cards/card';
+import { Card, TechLevel, Building } from './cards/card';
 import { Hero } from './cards/hero';
 import { CardApi } from './cards/card_api';
 import { Game, EventDescriptor } from './game';
@@ -207,15 +207,7 @@ export class Board {
 
         let bldg: TechBuilding = Reflect.get(this, 'tech' + new Number(techLevel).toString());
 
-        if (!bldg || !bldg.built) return false;
-
-        if (bldg.constructionInProgress || bldg.destroyed || bldg.disabled) return false;
-
-        return true;
-    }
-
-    addOnIsActive(): boolean {
-        return this.addOn && !this.addOn.constructionInProgress && !this.addOn.destroyed && this.addOn.health > 0;
+        return bldg.isActive();
     }
 
     static isBuildingId(id: string): boolean {
@@ -278,6 +270,16 @@ export class BoardBuilding {
         this.name = name;
         if (this.name == 'Base') this.built = true;
         this.board = board;
+    }
+
+    isActive(): boolean {
+        if (!this.built) return false;
+
+        if (this.constructionInProgress || this.destroyed || this.disabled) return false;
+
+        if (this.health <= 0) return false;
+
+        return true;
     }
 
     canBuild(type: BuildingOrAddOnType): boolean {

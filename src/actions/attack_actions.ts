@@ -1,8 +1,9 @@
-import { Card, Character, Attributes } from '../cards/card';
+import { Card, Character, Attributes, Building } from '../cards/card';
 import { Phase, Action } from './phase';
-import { EventDescriptor } from '../game';
+import { EventDescriptor, Game } from '../game';
 import { CardApi } from '../cards/card_api';
 import { StringMap } from '../game_server';
+import { BoardBuilding, Board } from 'board';
 
 function getAttackerFromId(attackerId: string): Character {
     // choose attacker
@@ -177,12 +178,29 @@ function sendAllTargetsAreValid(attacker: Character) {
     let action = new Action('AttackCardsOrBuildingsChoice', false, 1, true);
     game.phaseStack.addToStack(new Phase([action]));
     action.idsToResolve.push(...defenderIds);
+
+    sendBuildingTargetIfValid(attacker, attacker.oppositionalControllerBoard.base, action);
+    sendBuildingTargetIfValid(attacker, attacker.oppositionalControllerBoard.tech1, action);
+    sendBuildingTargetIfValid(attacker, attacker.oppositionalControllerBoard.tech2, action);
+    sendBuildingTargetIfValid(attacker, attacker.oppositionalControllerBoard.tech3, action);
+    sendBuildingTargetIfValid(attacker, attacker.oppositionalControllerBoard.addOn, action);
+
     game.addEvent(
         new EventDescriptor('PossibleAttackTargets', 'No blockers are available. All attack destinations are valid', {
             buildings: true,
             validCardTargetIds: [defenderIds]
         })
     );
+}
+
+function sendBuildingTargetIfValid(attacker: Character, boardBuilding: BoardBuilding, action: Action) {
+    let hookResults = CardApi.hook(attacker.game, 'alterCanAttackBuildings', [attacker, boardBuilding], 'AllActive');
+    let preventedFromAttacking = false;
+
+    if (hookResults)
+        preventedFromAttacking = hookResults.reduce((previousValue: any, currentValue: any) => !previousValue || !currentValue);
+
+    if (!preventedFromAttacking && boardBuilding.isActive()) action.idsToResolve.push(boardBuilding.name);
 }
 
 /** Only takes into account flying & not flying. Stealth, invisible, etc is handled elsewhere */
@@ -200,6 +218,48 @@ function checkPatrollerCanBlockAttacker(attackerAttrs: Attributes, patroller: Ca
 
 export function attackChosenTarget(attacker: Card, building?: string, validCardTargetId?: string) {
     // check what was chosen. if it's a card then it should be in the resolveMap.  if it's a building then it should be not destroyed
+    if (building) {
+        let boardBuilding: BoardBuilding;
+        switch (building) {
+            case 'Base':
+                boardBuilding = attacker.opponentBoard.base;
+                break;
+            case 'Tech 1':
+                boardBuilding = attacker.opponentBoard.tech1;
+                break;
+            case 'Tech 2':
+                boardBuilding = attacker.opponentBoard.tech2;
+                break;
+            case 'Tech 3':
+                boardBuilding = attacker.opponentBoard.tech3;
+                break;
+            case 'AddOn':
+                boardBuilding = attacker.opponentBoard.addOn;
+                break;
+            default:
+                throw new Error('Invalid building target');
+        }
+        if (!boardBuilding.built || boardBuilding.constructionInProgress || boardBuilding.destroyed)
+            throw new Error(boardBuilding.name + ' is not attackable');
+
+        attackBuilding(attacker, boardBuilding);
+    } else {
+        let card = Card.idToCardMap.get(validCardTargetId);
+        if (!card) throw new Error('Could not find card ' + validCardTargetId);
+        attackCard(attacker, card);
+    }
+}
+
+function attackBuilding(attacker: Card, building: BoardBuilding) {
+    /* 1) have to check if building can actually be damaged, as it could be flying or it could be unattackable due to a card effect
+     *    1a- call a hook that checks whether or not buildings are attackable? also put this in card targeting rules
+     *        alterCanAttackBuildings(cardAttacking: Card, buildingDefender: BoardBuilding): boolean;
+     */
+    /* 2) deal dmg to building */
+    /* 3) if flying, take dmg from anti-air */
+    /* 4)  if tower, take dmg from that */
+}
+function attackCard(attacker: Card, defender: Card) {
     // enter phase that is empty, to resolve the attack. give it one resolveId (attacker) so it will execute
     // a defender was chosen; fire any defense handlers
     // I think Debilitator Alpha is the only card in the game that is impacted here.  There's no "Safe Defending" card

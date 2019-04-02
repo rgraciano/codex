@@ -1,6 +1,6 @@
 import { Card } from './card';
 import { EventDescriptor } from '../game';
-import { PatrolZone } from 'board';
+import { BoardBuilding, PatrolZone } from '../board';
 
 /*
  *
@@ -17,6 +17,12 @@ export interface WorkersAreFreeAlteration extends Card {
 /** Alters the cost of a card. Returns the alteration, not the final cost.  E.g., returns -1 to reduce cost by 1 */
 export interface CardCostAlteration extends Card {
     alterCost(card: Card): number;
+}
+
+/** Returns true if this unit can attack this building (assuming no patrollers etc).  Some cards make buildings flying or unattackable,
+ *  and this accounts for those situations */
+export interface BuildingAttackableAlteration extends Card {
+    alterCanAttackBuildings(cardAttacking: Card, buildingDefender: BoardBuilding): boolean;
 }
 
 /*
