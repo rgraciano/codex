@@ -1,6 +1,6 @@
 import { Card } from './card';
 import { EventDescriptor } from '../game';
-import { BoardBuilding, PatrolZone } from '../board';
+import { BoardBuilding, PatrolZone, Board } from '../board';
 
 /*
  *
@@ -23,6 +23,16 @@ export interface CardCostAlteration extends Card {
  *  and this accounts for those situations */
 export interface BuildingAttackableAlteration extends Card {
     alterCanAttackBuildings(cardAttacking: Card, buildingDefender: BoardBuilding): boolean;
+}
+
+/** Returns the alteration (amount of damage to add or subtract) given a defender. E.g., returns 3 to add 3 damage to an attack */
+export interface DealCombatDamageAlteration extends Card {
+    alterCombatDamage(cardAttacking: Card, cardDefending?: Card, buildingDefender?: BoardBuilding): number;
+}
+
+/** Returns the alteration (amount of damage to add or subtract) given a target. E.g., returns 3 to add 3 direct damage */
+export interface DealDirectDamageAlteration extends Card {
+    alterDamage(cardDamaging: Card, cardTarget?: Card, buildingTarget?: BoardBuilding): number;
 }
 
 /*

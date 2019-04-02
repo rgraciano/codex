@@ -194,13 +194,17 @@ function sendAllTargetsAreValid(attacker: Character) {
 }
 
 function sendBuildingTargetIfValid(attacker: Character, boardBuilding: BoardBuilding, action: Action) {
+    if (checkBuildingIsAttackable(attacker, boardBuilding)) action.idsToResolve.push(boardBuilding.name);
+}
+
+function checkBuildingIsAttackable(attacker: Character, boardBuilding: BoardBuilding): boolean {
     let hookResults = CardApi.hook(attacker.game, 'alterCanAttackBuildings', [attacker, boardBuilding], 'AllActive');
     let preventedFromAttacking = false;
 
     if (hookResults)
         preventedFromAttacking = hookResults.reduce((previousValue: any, currentValue: any) => !previousValue || !currentValue);
 
-    if (!preventedFromAttacking && boardBuilding.isActive()) action.idsToResolve.push(boardBuilding.name);
+    return !preventedFromAttacking && boardBuilding.isActive();
 }
 
 /** Only takes into account flying & not flying. Stealth, invisible, etc is handled elsewhere */
@@ -218,6 +222,12 @@ function checkPatrollerCanBlockAttacker(attackerAttrs: Attributes, patroller: Ca
 
 export function attackChosenTarget(attacker: Card, building?: string, validCardTargetId?: string) {
     // check what was chosen. if it's a card then it should be in the resolveMap.  if it's a building then it should be not destroyed
+    if (attacker.cardType != 'Unit' && attacker.cardType != 'Hero') {
+        throw new Error('Attacker must be a character');
+    }
+
+    let attackChar = <Character>attacker;
+
     if (building) {
         let boardBuilding: BoardBuilding;
         switch (building) {
@@ -242,22 +252,26 @@ export function attackChosenTarget(attacker: Card, building?: string, validCardT
         if (!boardBuilding.built || boardBuilding.constructionInProgress || boardBuilding.destroyed)
             throw new Error(boardBuilding.name + ' is not attackable');
 
-        attackBuilding(attacker, boardBuilding);
+        attackBuilding(attackChar, boardBuilding);
     } else {
         let card = Card.idToCardMap.get(validCardTargetId);
         if (!card) throw new Error('Could not find card ' + validCardTargetId);
-        attackCard(attacker, card);
+        attackCard(attackChar, card);
     }
 }
 
-function attackBuilding(attacker: Card, building: BoardBuilding) {
+function attackBuilding(attacker: Character, building: BoardBuilding) {
     /* 1) have to check if building can actually be damaged, as it could be flying or it could be unattackable due to a card effect
      *    1a- call a hook that checks whether or not buildings are attackable? also put this in card targeting rules
      *        alterCanAttackBuildings(cardAttacking: Card, buildingDefender: BoardBuilding): boolean;
      */
-    /* 2) deal dmg to building */
+    if (!checkBuildingIsAttackable(attacker, building)) {
+        throw new Error();
+    }
+
+    /* 2) deal dmg to building. use alterCombatDamage */
     /* 3) if flying, take dmg from anti-air */
-    /* 4)  if tower, take dmg from that */
+    /* 4) if tower, take dmg from that */
 }
 function attackCard(attacker: Card, defender: Card) {
     // enter phase that is empty, to resolve the attack. give it one resolveId (attacker) so it will execute
