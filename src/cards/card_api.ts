@@ -50,7 +50,7 @@ export class CardApi {
 
         /**** WOULD DIE ****/
         // We run all 'would die' hooks right away, because the user doesn't get to choose anything.  They just happen.  Order really does not matter.
-        this.hook(game, 'wouldDie', [card]);
+        this.hookOrAlteration(game, 'wouldDie', [card]);
 
         // After the hooks are run, we again check whether or not this should die
         effective = card.effective();
@@ -111,7 +111,7 @@ export class CardApi {
                 break;
         }
 
-        CardApi.hook(cardToSideline.game, 'sideline', [patrolSlot], 'None', cardToSideline);
+        CardApi.hookOrAlteration(cardToSideline.game, 'sideline', [patrolSlot], 'None', cardToSideline);
     }
 
     static checkWorkersAreFree(playerBoard: Board): boolean {
@@ -207,7 +207,13 @@ export class CardApi {
      * @param hookSpace if singleCard is not set, then apply the hook to everything in this search space
      * @returns whether or not a hook activated
      */
-    static hook(game: Game, triggerFn: string, argsForTriggerFn: any[], hookSpace: SpaceType = 'AllActive', singleCard?: Card): any[] {
+    static hookOrAlteration(
+        game: Game,
+        triggerFn: string,
+        argsForTriggerFn: any[],
+        hookSpace: SpaceType = 'AllActive',
+        singleCard?: Card
+    ): any[] {
         let spaceCards = singleCard ? [singleCard] : this.getCardsFromSpace(game, hookSpace);
         let hooks = this.findCardsWithProperty(spaceCards, triggerFn);
 
@@ -377,7 +383,7 @@ export class CardApi {
 
         this.removeCardFromPlay(card);
 
-        let preventedDiscard = this.hook(card.game, 'wouldDiscard', [card]);
+        let preventedDiscard = this.hookOrAlteration(card.game, 'wouldDiscard', [card]);
 
         if (!preventedDiscard) {
             card.ownerBoard.discard.push(card);

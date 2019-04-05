@@ -1,9 +1,10 @@
-import { Card, Character, Attributes, Building } from '../cards/card';
+import { Card, Character, Attributes } from '../cards/card';
 import { Phase, Action } from './phase';
-import { EventDescriptor, Game } from '../game';
+import { EventDescriptor } from '../game';
 import { CardApi } from '../cards/card_api';
 import { StringMap } from '../game_server';
-import { BoardBuilding, Board } from 'board';
+import { BoardBuilding } from '../board';
+import { UnstoppableWhenAttacking } from '../cards/handlers';
 
 function getAttackerFromId(attackerId: string): Character {
     // choose attacker
@@ -118,8 +119,38 @@ export function prepareAttackTargetsAction(attackerId: string) {
 
     // if a patroller can block, then return the possible patrollers we can attack
     else {
-        let action = new Action('AttackCardsChoice', false, 1, true, false);
+        let action = new Action('DefenderChoice', false, 1, true, false);
         game.phaseStack.addToStack(new Phase([action]));
+
+        // check to see if we have an alteration that allows us to skip patrollers when attacking specific targets.
+        // for example, "unstoppable when attacking a base".
+        let unstoppableForAry = <UnstoppableWhenAttacking[]>(
+            CardApi.hookOrAlteration(game, 'alterUnstoppable', [attacker], 'None', attacker)
+        );
+        let unstoppableFor: UnstoppableWhenAttacking = 'None';
+        if (unstoppableForAry && unstoppableForAry.length > 0) unstoppableFor = unstoppableForAry[0];
+
+        // if we're unstoppable when attacking the opponent's base, add the base to the list of targets
+        if (unstoppableFor == 'Base' && checkBuildingIsAttackable(attacker, attacker.oppositionalControllerBoard.base)) {
+            action.idsToResolve.push(attacker.oppositionalControllerBoard.base.name);
+        } else if (unstoppableFor == 'Hero') {
+            action.idsToResolve.push(
+                ...game
+                    .getAllAttackableCards(game.getAllActiveCards(attacker.oppositionalControllerBoard))
+                    .filter(attackable => attackable.cardType == 'Hero')
+                    .map(attackable => attackable.cardId)
+            );
+        } else if (unstoppableFor == 'Everything') {
+            sendAllTargetsAreValid(attacker);
+            return;
+        } else if (unstoppableFor == 'SkipsTech0Patrollers') {
+            patrollersAbleToBlock = patrollersAbleToBlock.filter(defender => defender.cardType != 'Unit' || defender.techLevel != 0);
+
+            if (patrollersAbleToBlock.length == 0) {
+                sendAllTargetsAreValid(attacker);
+                return;
+            }
+        }
 
         // check squad leader first
         if (patrollersAbleToBlock.find(patroller => patroller === attacker.oppositionalControllerBoard.patrolZone.squadLeader)) {
@@ -146,25 +177,15 @@ export function prepareAttackTargetsAction(attackerId: string) {
 }
 
 export function prepareAttackTargetsChoice(choiceValue: string, card: Card, action: string, context: StringMap): boolean {
-    if (action == 'AttackCardsOrBuildingsChoice') {
-        if (
-            !card.game.phaseStack
-                .topOfStack()
-                .getAction('AttackCardsOrBuildingsChoice')
-                .ifToResolve(choiceValue)
-        )
-            throw new Error('Invalid choice');
-        context.building ? attackChosenTarget(card, context.building) : attackChosenTarget(card, undefined, context.validCardTargetId);
-    } else {
-        if (
-            !card.game.phaseStack
-                .topOfStack()
-                .getAction('AttackCardsChoice')
-                .ifToResolve(choiceValue)
-        )
-            throw new Error('Invalid choice');
-        attackChosenTarget(card, undefined, context.validCardTargetId);
-    }
+    if (
+        !card.game.phaseStack
+            .topOfStack()
+            .getAction('DefenderChoice')
+            .ifToResolve(choiceValue)
+    )
+        throw new Error('Invalid choice');
+    context.building ? attackChosenTarget(card, context.building) : attackChosenTarget(card, undefined, context.validCardTargetId);
+
     return true;
 }
 
@@ -175,7 +196,7 @@ function sendAllTargetsAreValid(attacker: Character) {
     let defenderAttackableCards = game.getAllAttackableCards(defenderCards);
     let defenderIds = defenderAttackableCards.map(localCard => localCard.cardId);
 
-    let action = new Action('AttackCardsOrBuildingsChoice', false, 1, true);
+    let action = new Action('DefenderChoice', false, 1, true);
     game.phaseStack.addToStack(new Phase([action]));
     action.idsToResolve.push(...defenderIds);
 
@@ -198,7 +219,7 @@ function sendBuildingTargetIfValid(attacker: Character, boardBuilding: BoardBuil
 }
 
 function checkBuildingIsAttackable(attacker: Character, boardBuilding: BoardBuilding): boolean {
-    let hookResults = CardApi.hook(attacker.game, 'alterCanAttackBuildings', [attacker, boardBuilding], 'AllActive');
+    let hookResults = CardApi.hookOrAlteration(attacker.game, 'alterCanAttackBuildings', [attacker, boardBuilding], 'AllActive');
     let preventedFromAttacking = false;
 
     if (hookResults)
@@ -270,6 +291,7 @@ function attackBuilding(attacker: Character, building: BoardBuilding) {
     }
 
     /* 2) deal dmg to building. use alterCombatDamage */
+
     /* 3) if flying, take dmg from anti-air */
     /* 4) if tower, take dmg from that */
 }
