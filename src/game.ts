@@ -12,6 +12,7 @@ import { ObjectMap } from './game_server';
 import { TwoAbilitiesTest } from './cards/test/TwoAbilitiesTest';
 import { BoostUnitTest } from './cards/test/BoostUnitTest';
 import { RiverMontoya } from './cards/neutral/RiverMontoya';
+import { CardApi } from 'cards/card_api';
 
 export type ServerEvent =
     | RuneEvent
@@ -249,13 +250,16 @@ export class Game {
         else return this.player1Board.getPatrolZoneAsArray().concat(this.player2Board.getPatrolZoneAsArray());
     }
 
-    getAllAttackableCards(space: Card[]): Card[] {
+    getAllAttackableCards(attacker: Card, space: Card[], cardsArePatrollers = false): Card[] {
         return space.filter(card => {
             if (card.cardType != 'Hero' && card.cardType != 'Unit' && card.cardType != 'Building') return false;
 
             let attrs = card.effective();
 
-            if ((attrs.invisible && !attrs.towerRevealedThisTurn) || attrs.unattackable) return false;
+            if ((!cardsArePatrollers && attrs.invisible && !attrs.towerRevealedThisTurn) || attrs.unattackable) return false;
+
+            let unattackableAlteration = CardApi.hookOrAlteration(this, 'alterAttackable', [attacker], 'None', card);
+            if (unattackableAlteration && unattackableAlteration.length > 0) return !unattackableAlteration[0];
 
             return true;
         });

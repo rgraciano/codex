@@ -1,9 +1,9 @@
 import { Card, Character, Attributes } from '../cards/card';
 import { Phase, Action } from './phase';
-import { EventDescriptor } from '../game';
+import { EventDescriptor, Game } from '../game';
 import { CardApi } from '../cards/card_api';
 import { StringMap } from '../game_server';
-import { BoardBuilding } from '../board';
+import { BoardBuilding, Board } from '../board';
 import { UnstoppableWhenAttacking } from '../cards/handlers';
 
 function getAttackerFromId(attackerId: string): Character {
@@ -71,19 +71,18 @@ export function prepareAttackTargetsAction(attackerId: string) {
         return;
     }
 
-    // if alive, prepare a list of possible defenders and return them to the user for selection. note buildings can be attacked as well.
-    // this is where we account for stealth, flying, unstoppable, invisible. need to account for tower
-    // detecting the FIRST stealth attacker; track that on tower probably? perhaps use turn number?
+    // prepare a list of possible defenders and return them to the user for selection. note buildings can be attacked as well.
+    // this is where we account for stealth, flying, unstoppable, invisible, & tower
+
     let attackerAttrs = attacker.effective();
 
-    // first - are we unstoppable? OR, are we stealth and invisible and there's no detector? if so, go bananas
+    // first - are we unstoppable? if so, go bananas
     if (attackerAttrs.unstoppable) {
         sendAllTargetsAreValid(attacker);
         return;
     }
 
-    // towerRevealedThisTurn can't have been applied yet unless this attack was somehow stopped and restarted
-    // we check anyway just in case there's some weird edge case that could cause that
+    // second - are we stealth or invisible, and is there a detector that can override that status (eg tower)?
     if ((attackerAttrs.stealth || attackerAttrs.invisible) && !attackerAttrs.towerRevealedThisTurn) {
         let unstoppable = true;
 
@@ -109,7 +108,7 @@ export function prepareAttackTargetsAction(attackerId: string) {
     // check if any patrollers can stop us...
     let patrollersAbleToBlock = attacker.oppositionalControllerBoard
         .getPatrolZoneAsArray()
-        .filter(patroller => checkPatrollerCanBlockAttacker(attackerAttrs, patroller));
+        .filter(patroller => checkPatrollerCanBlockAttacker(attacker, attackerAttrs, patroller));
 
     // if nobody can block, then the attacker can choose to attack any valid target
     if (patrollersAbleToBlock.length === 0) {
@@ -118,61 +117,60 @@ export function prepareAttackTargetsAction(attackerId: string) {
     }
 
     // if a patroller can block, then return the possible patrollers we can attack
-    else {
-        let action = new Action('DefenderChoice', false, 1, true, false);
-        game.phaseStack.addToStack(new Phase([action]));
+    let action = new Action('DefenderChoice', false, 1, true, false);
+    game.phaseStack.addToStack(new Phase([action]));
 
-        // check to see if we have an alteration that allows us to skip patrollers when attacking specific targets.
-        // for example, "unstoppable when attacking a base".
-        let unstoppableForAry = <UnstoppableWhenAttacking[]>(
-            CardApi.hookOrAlteration(game, 'alterUnstoppable', [attacker], 'None', attacker)
+    // check to see if we have an alteration that allows us to skip patrollers when attacking specific targets.
+    // for example, "unstoppable when attacking a base".
+    let unstoppableForAry = <UnstoppableWhenAttacking[]>CardApi.hookOrAlteration(game, 'alterUnstoppable', [attacker], 'None', attacker);
+    let unstoppableFor: UnstoppableWhenAttacking = 'None';
+    if (unstoppableForAry && unstoppableForAry.length > 0) unstoppableFor = unstoppableForAry[0];
+
+    // if we're unstoppable when attacking the opponent's base, add the base to the list of targets
+    if (unstoppableFor == 'Base' && checkBuildingIsAttackable(attacker, attacker.oppositionalControllerBoard.base)) {
+        action.idsToResolve.push(attacker.oppositionalControllerBoard.base.name);
+    } else if (unstoppableFor == 'Heroes') {
+        action.idsToResolve.push(
+            ...game
+                .getAllAttackableCards(attacker, game.getAllActiveCards(attacker.oppositionalControllerBoard))
+                .filter(attackable => attackable.cardType == 'Hero')
+                .map(attackable => attackable.cardId)
         );
-        let unstoppableFor: UnstoppableWhenAttacking = 'None';
-        if (unstoppableForAry && unstoppableForAry.length > 0) unstoppableFor = unstoppableForAry[0];
+    } else if (unstoppableFor == 'Everything') {
+        sendAllTargetsAreValid(attacker);
+        return;
+    } else if (unstoppableFor == 'SkipsTech0Patrollers') {
+        patrollersAbleToBlock = patrollersAbleToBlock.filter(defender => defender.cardType != 'Unit' || defender.techLevel != 0);
+    } else if (unstoppableFor == 'Units') {
+        patrollersAbleToBlock = patrollersAbleToBlock.filter(defender => defender.cardType != 'Unit');
+    }
 
-        // if we're unstoppable when attacking the opponent's base, add the base to the list of targets
-        if (unstoppableFor == 'Base' && checkBuildingIsAttackable(attacker, attacker.oppositionalControllerBoard.base)) {
-            action.idsToResolve.push(attacker.oppositionalControllerBoard.base.name);
-        } else if (unstoppableFor == 'Hero') {
-            action.idsToResolve.push(
-                ...game
-                    .getAllAttackableCards(game.getAllActiveCards(attacker.oppositionalControllerBoard))
-                    .filter(attackable => attackable.cardType == 'Hero')
-                    .map(attackable => attackable.cardId)
-            );
-        } else if (unstoppableFor == 'Everything') {
-            sendAllTargetsAreValid(attacker);
-            return;
-        } else if (unstoppableFor == 'SkipsTech0Patrollers') {
-            patrollersAbleToBlock = patrollersAbleToBlock.filter(defender => defender.cardType != 'Unit' || defender.techLevel != 0);
+    // check again for patrollers, as now the unattackable alteration may have removed them
+    if (patrollersAbleToBlock.length == 0) {
+        sendAllTargetsAreValid(attacker);
+        return;
+    }
 
-            if (patrollersAbleToBlock.length == 0) {
-                sendAllTargetsAreValid(attacker);
-                return;
-            }
-        }
-
-        // check squad leader first
-        if (patrollersAbleToBlock.find(patroller => patroller === attacker.oppositionalControllerBoard.patrolZone.squadLeader)) {
-            action.idsToResolve.push(attacker.oppositionalControllerBoard.patrolZone.squadLeader.cardId);
-            game.addEvent(
-                new EventDescriptor('PossibleAttackTargets', 'The squad leader must be attacked first', {
-                    buldings: false,
-                    validCardTargetIds: [attacker.oppositionalControllerBoard.patrolZone.squadLeader.cardId]
-                })
-            );
-        }
-        // if no squad leader can block, all patrollers are fair game
-        else {
-            let patrollerIds = patrollersAbleToBlock.map(card => card.cardId);
-            action.idsToResolve.push(...patrollerIds);
-            game.addEvent(
-                new EventDescriptor('PossibleAttackTargets', 'A patroller must be attacked first', {
-                    buildings: true,
-                    validCardTargetIds: patrollerIds
-                })
-            );
-        }
+    // no sneaking by the patrollers. let's look for a squad leader first
+    if (patrollersAbleToBlock.find(patroller => patroller === attacker.oppositionalControllerBoard.patrolZone.squadLeader)) {
+        action.idsToResolve.push(attacker.oppositionalControllerBoard.patrolZone.squadLeader.cardId);
+        game.addEvent(
+            new EventDescriptor('PossibleAttackTargets', 'The squad leader must be attacked first', {
+                buldings: false,
+                validCardTargetIds: [attacker.oppositionalControllerBoard.patrolZone.squadLeader.cardId]
+            })
+        );
+    }
+    // if no squad leader can block, all patrollers are fair game
+    else {
+        let patrollerIds = patrollersAbleToBlock.map(card => card.cardId);
+        action.idsToResolve.push(...patrollerIds);
+        game.addEvent(
+            new EventDescriptor('PossibleAttackTargets', 'A patroller must be attacked first', {
+                buildings: true,
+                validCardTargetIds: patrollerIds
+            })
+        );
     }
 }
 
@@ -193,7 +191,7 @@ function sendAllTargetsAreValid(attacker: Character) {
     let game = attacker.game;
 
     let defenderCards = game.getAllActiveCards(attacker.oppositionalControllerBoard);
-    let defenderAttackableCards = game.getAllAttackableCards(defenderCards);
+    let defenderAttackableCards = game.getAllAttackableCards(attacker, defenderCards);
     let defenderIds = defenderAttackableCards.map(localCard => localCard.cardId);
 
     let action = new Action('DefenderChoice', false, 1, true);
@@ -229,8 +227,10 @@ function checkBuildingIsAttackable(attacker: Character, boardBuilding: BoardBuil
 }
 
 /** Only takes into account flying & not flying. Stealth, invisible, etc is handled elsewhere */
-function checkPatrollerCanBlockAttacker(attackerAttrs: Attributes, patroller: Card): boolean {
+function checkPatrollerCanBlockAttacker(attacker: Card, attackerAttrs: Attributes, patroller: Card): boolean {
     if (!patroller) return false;
+
+    if ((patroller.game.getAllAttackableCards(attacker, [patroller]).length <= 0, true)) return false;
 
     let patrollerAttrs = patroller.effective();
 
