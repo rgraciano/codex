@@ -6,7 +6,7 @@ import { Board, BoardBuilding, BuildingType, TechBuilding, AddOn } from './board
 
 import { TimelyMessenger } from './cards/neutral/TimelyMessenger';
 
-import { Card } from './cards/card';
+import { Card, CardType } from './cards/card';
 
 import { ObjectMap } from './game_server';
 import { TwoAbilitiesTest } from './cards/test/TwoAbilitiesTest';
@@ -263,6 +263,12 @@ export class Game {
 
             return true;
         });
+    }
+
+    getAllAttackableIdsOfType(attacker: Card, board: Board, type: CardType): string[] {
+        return this.getAllAttackableCards(attacker, this.getAllActiveCards(board))
+            .filter(card => card.cardType == type)
+            .map(card => card.cardId);
     }
 
     /**

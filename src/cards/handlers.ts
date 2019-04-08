@@ -54,6 +54,11 @@ export interface UnattackableByAlteration extends Card {
     alterUnattackable(cardAttacking: Card): boolean;
 }
 
+/** @returns true if stealth when attacking units.  Specific to Stalking Tiger */
+export interface StealthWhenAttackingUnitsAlteration extends Card {
+    alterStealthWhenAttackingUnits(cardAttacking: Card): boolean;
+}
+
 /*
 *
 *

@@ -117,46 +117,40 @@ export function prepareAttackTargetsAction(attackerId: string) {
         return;
     }
 
-    //
-
     // if a patroller can block, then return the possible patrollers we can attack
     let action = new Action('DefenderChoice', false, 1, true, false);
     game.phaseStack.addToStack(new Phase([action]));
 
+    // This is a tricky situation... if we are stealth only when attacking a specific thing, then we have to return
+    // all of that thing type as a potential target.  The user then may choose that thing type in the next action,
+    // in which case we have to check if there's a Detector in play, and if there is then the action will set towerRevealedThisTurn
+    // to true and it will enter this method AGAIN, having them select targets again.
+    let stealthWhenAttackingUnits = CardApi.hookOrAlterationSingleValue(
+        CardApi.hookOrAlteration(game, 'alterStealthWhenAttackingUnits', [attacker], 'None', attacker),
+        false
+    );
+    if (stealthWhenAttackingUnits && !attacker.effective().towerRevealedThisTurn) {
+        action.idsToResolve.push(...game.getAllAttackableIdsOfType(attacker, attacker.oppositionalControllerBoard, 'Unit'));
+    }
+
     // check to see if we have an alteration that allows us to skip patrollers when attacking specific targets.
     // for example, "unstoppable when attacking a base".
-    let unstoppableForAry = <UnstoppableWhenAttacking[]>CardApi.hookOrAlteration(game, 'alterUnstoppable', [attacker], 'None', attacker);
-    let unstoppableFor: UnstoppableWhenAttacking = 'None';
-    if (unstoppableForAry && unstoppableForAry.length > 0) unstoppableFor = unstoppableForAry[0];
+    let unstoppableFor = CardApi.hookOrAlterationSingleValue(
+        CardApi.hookOrAlteration(game, 'alterUnstoppable', [attacker], 'None', attacker),
+        <UnstoppableWhenAttacking>'None'
+    );
 
     // if we're unstoppable when attacking the opponent's base, add the base to the list of targets
     if (unstoppableFor == 'Base' && checkBuildingIsAttackable(attacker, attacker.oppositionalControllerBoard.base)) {
         action.idsToResolve.push(attacker.oppositionalControllerBoard.base.name);
     } else if (unstoppableFor == 'Building') {
-        let oppBoard = attacker.oppositionalControllerBoard;
-
-        let freeAttack = (bldg: BoardBuilding) => {
+        for (let bldg of attacker.oppositionalControllerBoard.buildings) {
             if (checkBuildingIsAttackable(attacker, bldg)) action.idsToResolve.push(bldg.name);
-        };
-        freeAttack(oppBoard.base);
-        freeAttack(oppBoard.tech1);
-        freeAttack(oppBoard.tech2);
-        freeAttack(oppBoard.tech3);
-        freeAttack(oppBoard.addOn);
+        }
 
-        action.idsToResolve.push(
-            ...game
-                .getAllAttackableCards(attacker, game.getAllActiveCards(oppBoard))
-                .filter(card => card.cardType == 'Building')
-                .map(card => card.cardId)
-        );
+        action.idsToResolve.push(...game.getAllAttackableIdsOfType(attacker, attacker.oppositionalControllerBoard, 'Building'));
     } else if (unstoppableFor == 'Heroes') {
-        action.idsToResolve.push(
-            ...game
-                .getAllAttackableCards(attacker, game.getAllActiveCards(attacker.oppositionalControllerBoard))
-                .filter(attackable => attackable.cardType == 'Hero')
-                .map(attackable => attackable.cardId)
-        );
+        action.idsToResolve.push(...game.getAllAttackableIdsOfType(attacker, attacker.oppositionalControllerBoard, 'Hero'));
     } else if (unstoppableFor == 'Everything') {
         sendAllTargetsAreValid(attacker);
         return;
@@ -219,11 +213,7 @@ function sendAllTargetsAreValid(attacker: Character) {
     game.phaseStack.addToStack(new Phase([action]));
     action.idsToResolve.push(...defenderIds);
 
-    sendBuildingTargetIfValid(attacker, attacker.oppositionalControllerBoard.base, action);
-    sendBuildingTargetIfValid(attacker, attacker.oppositionalControllerBoard.tech1, action);
-    sendBuildingTargetIfValid(attacker, attacker.oppositionalControllerBoard.tech2, action);
-    sendBuildingTargetIfValid(attacker, attacker.oppositionalControllerBoard.tech3, action);
-    sendBuildingTargetIfValid(attacker, attacker.oppositionalControllerBoard.addOn, action);
+    for (let bldg of attacker.oppositionalControllerBoard.buildings) sendBuildingTargetIfValid(attacker, bldg, action);
 
     game.addEvent(
         new EventDescriptor('PossibleAttackTargets', 'No blockers are available. All attack destinations are valid', {

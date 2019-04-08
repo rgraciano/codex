@@ -222,6 +222,11 @@ export class CardApi {
         });
     }
 
+    static hookOrAlterationSingleValue<T>(hookOrAlterationResult: any[], defaultValue: T): T {
+        if (hookOrAlterationResult && hookOrAlterationResult.length > 0) return <T>hookOrAlterationResult[0];
+        return defaultValue;
+    }
+
     /** Triggers will enter a new phase, in which the user may have to choose between which trigger happens first */
     static trigger(
         game: Game,

@@ -43,6 +43,8 @@ export class Board {
 
     addOn: AddOn = null;
 
+    buildings: BoardBuilding[] = [];
+
     constructor(playerNumber: number) {
         this.playerNumber = playerNumber;
 
@@ -270,6 +272,7 @@ export class BoardBuilding {
         this.name = name;
         if (this.name == 'Base') this.built = true;
         this.board = board;
+        board.buildings.push(this);
     }
 
     isActive(): boolean {
