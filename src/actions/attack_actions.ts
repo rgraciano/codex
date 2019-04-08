@@ -83,6 +83,7 @@ export function prepareAttackTargetsAction(attackerId: string) {
     }
 
     // second - are we stealth or invisible, and is there a detector that can override that status (eg tower)?
+    // note this is not where we check temporary stealth, e.g. Stalking Tiger. that comes later
     if ((attackerAttrs.stealth || attackerAttrs.invisible) && !attackerAttrs.towerRevealedThisTurn) {
         let unstoppable = true;
 
@@ -116,6 +117,8 @@ export function prepareAttackTargetsAction(attackerId: string) {
         return;
     }
 
+    //
+
     // if a patroller can block, then return the possible patrollers we can attack
     let action = new Action('DefenderChoice', false, 1, true, false);
     game.phaseStack.addToStack(new Phase([action]));
@@ -129,6 +132,24 @@ export function prepareAttackTargetsAction(attackerId: string) {
     // if we're unstoppable when attacking the opponent's base, add the base to the list of targets
     if (unstoppableFor == 'Base' && checkBuildingIsAttackable(attacker, attacker.oppositionalControllerBoard.base)) {
         action.idsToResolve.push(attacker.oppositionalControllerBoard.base.name);
+    } else if (unstoppableFor == 'Building') {
+        let oppBoard = attacker.oppositionalControllerBoard;
+
+        let freeAttack = (bldg: BoardBuilding) => {
+            if (checkBuildingIsAttackable(attacker, bldg)) action.idsToResolve.push(bldg.name);
+        };
+        freeAttack(oppBoard.base);
+        freeAttack(oppBoard.tech1);
+        freeAttack(oppBoard.tech2);
+        freeAttack(oppBoard.tech3);
+        freeAttack(oppBoard.addOn);
+
+        action.idsToResolve.push(
+            ...game
+                .getAllAttackableCards(attacker, game.getAllActiveCards(oppBoard))
+                .filter(card => card.cardType == 'Building')
+                .map(card => card.cardId)
+        );
     } else if (unstoppableFor == 'Heroes') {
         action.idsToResolve.push(
             ...game

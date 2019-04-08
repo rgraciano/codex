@@ -41,7 +41,7 @@ export interface DealDirectDamageAlteration extends Card {
 
 /** If this character is unstoppable when attacking, returns the types of things it's unstoppable by.  This is to manage
  * Masked Raccoon, Colossus, Wight, Predator Tiger. */
-export type UnstoppableWhenAttacking = 'Base' | 'Heroes' | 'Units' | 'Everything' | 'SkipsTech0Patrollers' | 'None';
+export type UnstoppableWhenAttacking = 'Base' | 'Building' | 'Heroes' | 'Units' | 'Everything' | 'SkipsTech0Patrollers' | 'None';
 export interface UnstoppableWhenAlteration extends Card {
     alterUnstoppable(cardAttacking: Card): UnstoppableWhenAttacking;
 }
