@@ -129,31 +129,29 @@ export class GameServer {
 
             // when attacking, if there's an "only possible choice" then it's a target building or target attack,
             // and we have to get the attacking card ID from the extra state
-            if (action == 'AttackCardsOrBuildingsChoice' || action == 'AttackCardsChoice') {
-                if (action == 'AttackCardsOrBuildingsChoice') {
-                    let buildingChoice = GameServer.getAlNumProperty(context, 'targetBuildingId');
-                    let cardChoice = GameServer.getAlNumProperty(context, 'targetCardId');
+            if (action == 'DefenderChoice') {
+                let buildingChoice = GameServer.getAlNumProperty(context, 'targetBuildingId');
+                let cardChoice = GameServer.getAlNumProperty(context, 'targetCardId');
 
-                    if (overrideWithPhase) {
-                        if (Board.isBuildingId(onlyPossibleTarget)) buildingChoice = onlyPossibleTarget;
-                        else cardChoice = onlyPossibleTarget;
-                    }
-
-                    if (buildingChoice) {
-                        choiceCategory = 'Building';
-                        safeContext.building = buildingChoice;
-                    } else if (cardChoice) {
-                        choiceCategory = 'Card';
-                        safeContext.validCardTargetId = cardChoice;
-                    }
-                } else if (action == 'AttackCardsChoice') {
-                    safeContext.validCardTargetId = GameServer.requireProp(
-                        'targetCardId',
-                        context,
-                        GameServer.alnumProperties,
-                        onlyPossibleTarget
-                    );
+                if (overrideWithPhase) {
+                    if (Board.isBuildingId(onlyPossibleTarget)) buildingChoice = onlyPossibleTarget;
+                    else cardChoice = onlyPossibleTarget;
                 }
+
+                if (buildingChoice) {
+                    choiceCategory = 'Building';
+                    safeContext.building = buildingChoice;
+                } else if (cardChoice) {
+                    choiceCategory = 'Card';
+                    safeContext.validCardTargetId = cardChoice;
+                }
+
+                safeContext.validCardTargetId = GameServer.requireProp(
+                    'targetCardId',
+                    context,
+                    GameServer.alnumProperties,
+                    onlyPossibleTarget
+                );
 
                 if (overrideWithPhase) {
                     choiceValue = <string>phase.extraState.attackingCardId;

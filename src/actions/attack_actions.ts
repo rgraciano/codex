@@ -56,7 +56,7 @@ export function attackAction(attackerId: string) {
 }
 
 /** Second phase of an attack: prepare a list of possible defenders and ask the user to choose their attack target */
-export function prepareAttackTargetsAction(attackerId: string) {
+export function prepareAttackTargetsAction(attackerId: string, mustChooseThisDefender: Card = undefined) {
     let attacker: Character = getAttackerFromId(attackerId);
     let game = attacker.game;
 
@@ -78,7 +78,7 @@ export function prepareAttackTargetsAction(attackerId: string) {
 
     // first - are we unstoppable? if so, go bananas
     if (attackerAttrs.unstoppable) {
-        sendAllTargetsAreValid(attacker);
+        sendAllTargetsAreValid(attacker, mustChooseThisDefender);
         return;
     }
 
@@ -101,7 +101,7 @@ export function prepareAttackTargetsAction(attackerId: string) {
         }
 
         if (unstoppable) {
-            sendAllTargetsAreValid(attacker);
+            sendAllTargetsAreValid(attacker, mustChooseThisDefender);
             return;
         }
     }
@@ -113,7 +113,7 @@ export function prepareAttackTargetsAction(attackerId: string) {
 
     // if nobody can block, then the attacker can choose to attack any valid target
     if (patrollersAbleToBlock.length === 0) {
-        sendAllTargetsAreValid(attacker);
+        sendAllTargetsAreValid(attacker, mustChooseThisDefender);
         return;
     }
 
@@ -124,7 +124,7 @@ export function prepareAttackTargetsAction(attackerId: string) {
     // This is a tricky situation... if we are stealth only when attacking a specific thing, then we have to return
     // all of that thing type as a potential target.  The user then may choose that thing type in the next action,
     // in which case we have to check if there's a Detector in play, and if there is then the action will set towerRevealedThisTurn
-    // to true and it will enter this method AGAIN, having them select targets again.
+    // to true and it will enter prepareAttackTargetsAction AGAIN, having them select targets again.
     let stealthWhenAttackingUnits = CardApi.hookOrAlterationSingleValue(
         CardApi.hookOrAlteration(game, 'alterStealthWhenAttackingUnits', [attacker], 'None', attacker),
         false
@@ -152,7 +152,7 @@ export function prepareAttackTargetsAction(attackerId: string) {
     } else if (unstoppableFor == 'Heroes') {
         action.idsToResolve.push(...game.getAllAttackableIdsOfType(attacker, attacker.oppositionalControllerBoard, 'Hero'));
     } else if (unstoppableFor == 'Everything') {
-        sendAllTargetsAreValid(attacker);
+        sendAllTargetsAreValid(attacker, mustChooseThisDefender);
         return;
     } else if (unstoppableFor == 'SkipsTech0Patrollers') {
         patrollersAbleToBlock = patrollersAbleToBlock.filter(defender => defender.cardType != 'Unit' || defender.techLevel != 0);
@@ -162,7 +162,7 @@ export function prepareAttackTargetsAction(attackerId: string) {
 
     // check again for patrollers, as now the unattackable alteration may have removed them
     if (patrollersAbleToBlock.length == 0) {
-        sendAllTargetsAreValid(attacker);
+        sendAllTargetsAreValid(attacker, mustChooseThisDefender);
         return;
     }
 
@@ -202,15 +202,20 @@ export function prepareAttackTargetsChoice(choiceValue: string, card: Card, acti
     return true;
 }
 
-function sendAllTargetsAreValid(attacker: Character) {
+function sendAllTargetsAreValid(attacker: Character, mustChooseThisDefender: Card) {
     let game = attacker.game;
+    let action = new Action('DefenderChoice', false, 1, true);
+    game.phaseStack.addToStack(new Phase([action]));
+
+    if (mustChooseThisDefender) {
+        action.idsToResolve.push(mustChooseThisDefender.cardId);
+        return;
+    }
 
     let defenderCards = game.getAllActiveCards(attacker.oppositionalControllerBoard);
     let defenderAttackableCards = game.getAllAttackableCards(attacker, defenderCards);
     let defenderIds = defenderAttackableCards.map(localCard => localCard.cardId);
 
-    let action = new Action('DefenderChoice', false, 1, true);
-    game.phaseStack.addToStack(new Phase([action]));
     action.idsToResolve.push(...defenderIds);
 
     for (let bldg of attacker.oppositionalControllerBoard.buildings) sendBuildingTargetIfValid(attacker, bldg, action);
@@ -257,7 +262,6 @@ export function attackChosenTarget(attacker: Card, building?: string, validCardT
     if (attacker.cardType != 'Unit' && attacker.cardType != 'Hero') {
         throw new Error('Attacker must be a character');
     }
-
     let attackChar = <Character>attacker;
 
     if (building) {
@@ -307,10 +311,29 @@ function attackBuilding(attacker: Character, building: BoardBuilding) {
     /* 4) if tower, take dmg from that */
 }
 function attackCard(attacker: Card, defender: Card) {
-    // enter phase that is empty, to resolve the attack. give it one resolveId (attacker) so it will execute
-    // a defender was chosen; fire any defense handlers
-    // I think Debilitator Alpha is the only card in the game that is impacted here.  There's no "Safe Defending" card
-    // Thus, we implement this as a hook that takes effect immediately. no choosing done by the user
+    // this is for the strange scenario in which Stalking Tiger ('stealth when attacking a unit') chose a unit, is attacking it,
+    // but has now been revealed by an opponent tower and now has to go select another defender.
+    if (defender.cardType == 'Unit') {
+        if (
+            CardApi.hookOrAlterationSingleValue(
+                CardApi.hookOrAlteration(attacker.game, 'alterStealthWhenAttackingUnits', [attacker], 'None', attacker),
+                false
+            ) &&
+            !attacker.effective().towerRevealedThisTurn
+        ) {
+            let addOn = defender.controllerBoard.addOn;
+            if (addOn.isActive() && addOn.addOnType == 'Tower' && !addOn.towerRevealedThisTurn) {
+                attacker.game.addEvent(
+                    new EventDescriptor('TowerReveal', attacker.name + ' stealth attacked a unit and was revealed by the tower')
+                );
+
+                addOn.towerRevealedThisTurn = true;
+                attacker.attributeModifiers.towerRevealedThisTurn = 1;
+                prepareAttackTargetsAction(attacker.cardId, defender);
+                return;
+            }
+        }
+    }
     // check if attacker still alive; if not, we can simply exit this phase indicating that attacker is dead and therefore attack has stopped
     // attacker and defender now deal damage simultaneously to each other
     // tower also does damage
