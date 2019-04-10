@@ -40,8 +40,11 @@ export class CardApi {
         this.trigger(card.game, 'ArrivesChoice', 'onArrives', 'AllActive', { arrivingCardId: card.cardId });
     }
 
-    /** Does everything needed to destroy a card.  Triggers Dies, Leaves Play, & Would Discard. */
-    static destroyCard(card: Card) {
+    /**
+     * Does everything needed to destroy a card.  Triggers Dies, Leaves Play, & Would Discard.
+     * @returns true if was actually destroyed, false if was saved by something
+     */
+    static destroyCard(card: Card, useExistingPhase = false): boolean {
         let game: Game = card.game;
 
         // Set damage equal to health, as we can always tell something is dead that way. This is in case someone calls this method directly, e.g. by destroying a card
@@ -55,11 +58,11 @@ export class CardApi {
         // After the hooks are run, we again check whether or not this should die
         effective = card.effective();
         if (card.allHealth > 0 && effective.damage < card.allHealth) {
-            return;
+            return false;
         }
 
         /**** DEAD. SO DEAD. ****/
-        this.trigger(game, 'DiesChoice', 'onDies', 'AllActive', { dyingCardId: card.cardId });
+        this.trigger(game, 'DiesChoice', 'onDies', 'AllActive', { dyingCardId: card.cardId }, useExistingPhase);
 
         if (card.cardType == 'Hero') {
             let phase = game.phaseStack.topOfStack();
@@ -69,6 +72,7 @@ export class CardApi {
         }
 
         this.leavePlay(card, 'Discard', true, true);
+        return true;
     }
 
     /** Called specifically when a card leaves play, such as when Undo is used to bounce a card to hand */

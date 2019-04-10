@@ -232,7 +232,7 @@ export abstract class Card {
 
     get costAfterAlterations(): number {
         let cost: number = this.effective().cost;
-        let costAlterations = <number[]>CardApi.hook(this.game, 'alterCost', [this], 'AllActive');
+        let costAlterations = <number[]>CardApi.hookOrAlteration(this.game, 'alterCost', [this], 'AllActive');
         if (costAlterations && costAlterations.length > 0)
             cost += costAlterations.reduce((previousValue: number, currentValue: number, currentIndex: number, array: number[]) => {
                 return previousValue + currentValue;
@@ -280,7 +280,7 @@ export abstract class Card {
             if (this.controllerBoard.techBuildingIsActive(3)) maxHeroesInPlay = 3;
 
             let addOn = this.controllerBoard.addOn;
-            if (this.controllerBoard.addOnIsActive() && addOn.addOnType == 'Heroes Hall')
+            if (this.controllerBoard.addOn.isActive() && addOn.addOnType == 'Heroes Hall')
                 maxHeroesInPlay = maxHeroesInPlay == 3 ? 3 : maxHeroesInPlay + 1;
 
             return hero.canBeSummoned() && heroesInPlay < maxHeroesInPlay;
@@ -328,7 +328,7 @@ export abstract class Card {
                 if (this.controllerBoard.tech2.spec == this.spec) return true;
                 else
                     return (
-                        this.controllerBoard.addOnIsActive() &&
+                        this.controllerBoard.addOn.isActive() &&
                         this.controllerBoard.addOn.addOnType == 'Tech Lab' &&
                         this.controllerBoard.addOn.techLabSpec == this.spec
                     );
@@ -485,6 +485,7 @@ export class Attributes {
     ephemeral: number = 0;
     resist: number = 0;
     healing: number = 0;
+    sparkshot: number = 0;
 
     // Things can go in and out of illusion mode, so we track like an attribute.  diesWhenTargeted can change
     // when Macchiatus comes into play

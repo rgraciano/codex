@@ -116,6 +116,10 @@ export interface PatrolHook extends Card {
     sideline(slot: keyof PatrolZone): EventDescriptor;
 }
 
+export interface DealCombatDamageHook extends Card {
+    dealCombatDamage(dealingDamageTo: Card): EventDescriptor;
+}
+
 /*
 *
 *

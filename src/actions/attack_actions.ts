@@ -3,7 +3,7 @@ import { Phase, Action } from './phase';
 import { EventDescriptor, Game } from '../game';
 import { CardApi } from '../cards/card_api';
 import { StringMap } from '../game_server';
-import { BoardBuilding, Board } from '../board';
+import { BoardBuilding, Board, PatrolZone } from '../board';
 import { UnstoppableWhenAttacking } from '../cards/handlers';
 
 function getAttackerFromId(attackerId: string): Character {
@@ -97,7 +97,7 @@ export function prepareAttackTargetsAction(attackerId: string, mustChooseThisDef
             unstoppable = false;
             addOn.towerRevealedThisTurn = true;
             attacker.gainProperty('towerRevealedThisTurn');
-            game.addEvent(new EventDescriptor('TowerDetected', 'Tower detected ' + attacker.name, { attackerId: attackerId }));
+            game.addEvent(new EventDescriptor('TowerReveal', 'Tower revealed ' + attacker.name, { attackerId: attackerId }));
         }
 
         if (unstoppable) {
@@ -311,6 +311,11 @@ function attackBuilding(attacker: Character, building: BoardBuilding) {
     /* 4) if tower, take dmg from that */
 }
 function attackCard(attacker: Card, defender: Card) {
+    let defenderBoard = defender.controllerBoard;
+    let tower = defenderBoard.addOn.isActive() && defenderBoard.addOn.addOnType == 'Tower' ? defenderBoard.addOn : undefined;
+
+    let game = attacker.game;
+
     // this is for the strange scenario in which Stalking Tiger ('stealth when attacking a unit') chose a unit, is attacking it,
     // but has now been revealed by an opponent tower and now has to go select another defender.
     if (defender.cardType == 'Unit') {
@@ -321,30 +326,137 @@ function attackCard(attacker: Card, defender: Card) {
             ) &&
             !attacker.effective().towerRevealedThisTurn
         ) {
-            let addOn = defender.controllerBoard.addOn;
-            if (addOn.isActive() && addOn.addOnType == 'Tower' && !addOn.towerRevealedThisTurn) {
+            if (tower && !tower.towerRevealedThisTurn) {
                 attacker.game.addEvent(
                     new EventDescriptor('TowerReveal', attacker.name + ' stealth attacked a unit and was revealed by the tower')
                 );
 
-                addOn.towerRevealedThisTurn = true;
+                tower.towerRevealedThisTurn = true;
                 attacker.attributeModifiers.towerRevealedThisTurn = 1;
                 prepareAttackTargetsAction(attacker.cardId, defender);
                 return;
             }
         }
     }
-    // check if attacker still alive; if not, we can simply exit this phase indicating that attacker is dead and therefore attack has stopped
-    // attacker and defender now deal damage simultaneously to each other
-    // tower also does damage
-    // account for swift strike. account for anti-air also hitting fliers
-    // if there's overpower and there's excess damage to be done, we'll add the overpower phase now, because we want it to be in
-    // the stack BEFORE things die (so it will be executed AFTER they die)
-    // do sparkshot first; enter phase, pick targets, etc. create a subroutine for this.
-    // do overpower next; choose another attack target, and then do direct damage to that target. create a subroutine for this. might trigger dies()
-    // call on damage handlers. arguments would be thing doing the damage, thing being damaged.
-    // e.g. Guardian of the Gates will disable an attacker, if it survives
-    // if the defender and attacker die, go into dies() for each. we do this LAST, so the user will be asked to resolve it FIRST
+
+    // accounting for tower, which always hits the attacker. no escaping it
+    if (tower) {
+        attacker.attributeModifiers.damage++;
+        game.addEvent(new EventDescriptor('TowerDamage', 'Tower did 1 damage to ' + attacker.name));
+    }
+
+    // Entering a new phase, in which we'll put all concurrent events for resolution
+    let combatDamagePhase = new Phase([]);
+    game.phaseStack.addToStack(combatDamagePhase);
+
+    // Before we deal damage, let's remember where the card we were attacking was residing...
+    let defenderPatrolSlot: keyof PatrolZone = undefined;
+
+    for (let patrolSlot in defenderBoard.patrolZone) {
+        if (defenderBoard.patrolZone[patrolSlot] == defender) {
+            defenderPatrolSlot = patrolSlot;
+        }
+    }
+
+    // Attacker and defender deal combat damage to one another. Accounts for swift strike. Note things may die here,
+    // and will move to the discard pile or be removed from game accordingly
+    let excessDamage = combatDamage(attacker, defender);
+    combatDamage(defender, attacker);
+
+    // Anti-air hits us if we're flying and:
+    //     1) AA is in SQL spot, and we attacked anything else (other than SQL)
+    //  or 2) AA is patroller, and we attacked anything that is not patrolling
+    //
+    let sqlEffective = defenderBoard.patrolZone.squadLeader ? defenderBoard.patrolZone.squadLeader.effective() : false;
+    if (defenderPatrolSlot && defenderPatrolSlot == 'squadLeader' && sqlEffective && sqlEffective.antiAir) {
+        dealCombatDamage(game, defenderBoard.patrolZone.squadLeader, attacker, 'anti-air');
+    } else if (!defenderPatrolSlot) {
+        for (let patroller of defenderBoard.getPatrolZoneAsArray()) {
+            if (patroller) {
+                let eff = patroller.effective();
+
+                if (eff.antiAir && patroller.allAttack) {
+                    dealCombatDamage(game, patroller, attacker, 'anti-air');
+                }
+            }
+        }
+    }
+
+    let attackerEffective = attacker.effective();
+
+    // If overpower is a possibility, then we'll have to let the user choose when to activate it amidst everything else that's happening
+    if (excessDamage > 0 && attackerEffective.overpower) {
+        let overpowerAction = new Action('Overpower', false, 1, true, false);
+        combatDamagePhase.actions.push(overpowerAction);
+        overpowerAction.idsToResolve.push(attacker.cardId);
+    }
+
+    // Sparkshot just happens immediately. It isn't interruptable and it can't be redirected, so we might as well do it right away
+    if (attackerEffective.sparkshot && defenderPatrolSlot) {
+        switch (defenderPatrolSlot) {
+            case 'squadLeader':
+                dealCombatDamage(game, attacker, defender, 'sparkshot', 1);
+                break;
+            case 'elite':
+                dealCombatDamage(game, attacker, defenderBoard.patrolZone.squadLeader, 'sparkshot', 1);
+                dealCombatDamage(game, attacker, defenderBoard.patrolZone.scavenger, 'sparkshot', 1);
+                break;
+            case 'scavenger':
+                dealCombatDamage(game, attacker, defenderBoard.patrolZone.elite, 'sparkshot', 1);
+                dealCombatDamage(game, attacker, defenderBoard.patrolZone.technician, 'sparkshot', 1);
+                break;
+            case 'technician':
+                dealCombatDamage(game, attacker, defenderBoard.patrolZone.scavenger, 'sparkshot', 1);
+                dealCombatDamage(game, attacker, defenderBoard.patrolZone.lookout, 'sparkshot', 1);
+                break;
+            case 'lookout':
+                dealCombatDamage(game, attacker, defenderBoard.patrolZone.technician, 'sparkshot', 1);
+                break;
+        }
+    }
+}
+
+function dealCombatDamage(game: Game, striker: Card, receiver: Card, adjective = '', specificDamage = 0) {
+    if (!striker || !receiver) return;
+
+    let damageDone = specificDamage ? specificDamage : striker.allAttack;
+
+    receiver.attributeModifiers.damage += damageDone;
+    game.addEvent(
+        new EventDescriptor('CombatDamage', striker.name + ' did ' + damageDone + ' ' + adjective + ' damage to ' + receiver.name)
+    );
+    game.addEvent(
+        CardApi.hookOrAlterationSingleValue(CardApi.hookOrAlteration(game, 'dealCombatDamage', [receiver], 'None', striker), undefined)
+    );
+}
+
+function combatDamage(striker: Card, receiver: Card): number {
+    let game = striker.game;
+    let attemptedSwiftStrike = false;
+    let excessDamage = 0;
+
+    if (striker.effective().swiftStrike && !receiver.effective().swiftStrike) {
+        attemptedSwiftStrike = true;
+        dealCombatDamage(game, striker, receiver, 'swift strike');
+    }
+
+    let receiverIsDead = false;
+
+    if (receiver.shouldDestroy()) {
+        excessDamage = receiver.effective().damage - receiver.allHealth;
+        game.addEvent(new EventDescriptor('WouldDie', receiver.name + ' will die from damage received'));
+        receiverIsDead = CardApi.destroyCard(receiver, true);
+    }
+
+    // note processDeath could save the card from death, e.g. in the instance a unit is wearing a Soul Stone
+    if (!receiverIsDead) {
+        if (attemptedSwiftStrike) {
+            game.addEvent(new EventDescriptor('SwiftStrike', receiver.name + ' survived swift strike'));
+        }
+        dealCombatDamage(game, receiver, striker);
+    }
+
+    return excessDamage;
 }
 
 // check BloomingElm.ts for description of temporary stats and how they should work before implementing this

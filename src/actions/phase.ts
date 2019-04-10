@@ -17,6 +17,7 @@ export type ActionName =
     | 'AbilityChoice'
     | 'TowerRevealChoice'
     | 'PatrolChoice'
+    | 'Overpower'
     | TurnActionName;
 
 export type TurnActionName =

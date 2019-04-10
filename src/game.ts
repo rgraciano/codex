@@ -37,7 +37,6 @@ export type ServerEvent =
     | 'BuildingDestroyed'
     | 'CardToDestroy'
     | 'AttackComplete'
-    | 'TowerDetected'
     | 'PossibleAttackTargets'
     | 'NoneChosen'
     | 'Info'
@@ -45,6 +44,7 @@ export type ServerEvent =
     | 'Built'
     | 'Draw'
     | 'TowerReveal'
+    | 'TowerDamage'
     | 'TokenAdded'
     | 'Boost'
     | 'PropAdjustment'
@@ -54,7 +54,9 @@ export type ServerEvent =
     | 'HeroDrain'
     | 'Patrol'
     | 'Sideline'
-    | 'Healing';
+    | 'Healing'
+    | 'SwiftStrike'
+    | 'CombatDamage';
 export type RuneEvent = 'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
 export class Game {
