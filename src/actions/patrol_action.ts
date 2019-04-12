@@ -52,7 +52,7 @@ export function choosePatrolSlotChoice(game: Game, choiceValue: string): boolean
     character.controllerBoard.patrolZone[choiceValue] = character;
 
     // Run the PatrolHook, for cards that get extra bonuses when patrolling
-    CardApi.hook(game, 'patrol', [choiceValue], 'None', character);
+    CardApi.hookOrAlteration(game, 'patrol', [choiceValue], 'None', character);
 
     switch (choiceValue) {
         case 'squadLeader':

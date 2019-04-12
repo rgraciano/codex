@@ -68,12 +68,12 @@ export abstract class Hero extends Character {
             }
 
             if (hittingMid) {
-                CardApi.hook(this.game, 'heroMid', [], 'None', this);
+                CardApi.hookOrAlteration(this.game, 'heroMid', [], 'None', this);
                 this.baseAttributes.health = this.healthMinMidMax[1];
                 this.baseAttributes.attack = this.attackMinMidMax[1];
             }
             if (hittingMax) {
-                CardApi.hook(this.game, 'heroMax', [], 'None', this);
+                CardApi.hookOrAlteration(this.game, 'heroMax', [], 'None', this);
                 this.baseAttributes.health = this.healthMinMidMax[2];
                 this.baseAttributes.attack = this.attackMinMidMax[2];
             }
@@ -88,12 +88,12 @@ export abstract class Hero extends Character {
             this._level = newLvl;
 
             if (losingMax) {
-                CardApi.hook(this.game, 'heroLoseMax', [], 'None', this);
+                CardApi.hookOrAlteration(this.game, 'heroLoseMax', [], 'None', this);
                 this.baseAttributes.health = this.healthMinMidMax[1];
                 this.baseAttributes.attack = this.attackMinMidMax[1];
             }
             if (losingMid) {
-                CardApi.hook(this.game, 'heroLoseMid', [], 'None', this);
+                CardApi.hookOrAlteration(this.game, 'heroLoseMid', [], 'None', this);
                 this.baseAttributes.health = this.healthMinMidMax[0];
                 this.baseAttributes.attack = this.attackMinMidMax[0];
             }

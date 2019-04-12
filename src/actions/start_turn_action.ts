@@ -54,7 +54,7 @@ export function startTurnAction(game: Game): void {
     board.workeredThisTurn = false;
 
     // draw card for surplus
-    if (board.addOnIsActive() && board.addOn.addOnType == 'Surplus') {
+    if (board.addOn.isActive() && board.addOn.addOnType == 'Surplus') {
         board.drawCards(1);
         game.addEvent(new EventDescriptor('Draw', 'Drew a card for Surplus'));
     }
@@ -101,7 +101,7 @@ function clearPatrolZone(board: Board) {
         if (patroller) {
             board.inPlay.push(patroller);
             board.patrolZone[patrolSlot] = null;
-            CardApi.hook(patroller.game, 'sideline', [patrolSlot], 'None', patroller);
+            CardApi.hookOrAlteration(patroller.game, 'sideline', [patrolSlot], 'None', patroller);
         }
     }
 

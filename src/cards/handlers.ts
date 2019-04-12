@@ -154,3 +154,7 @@ export interface LeavesHandler extends Card {
 export interface AttacksHandler extends Card {
     onAttacks(attackingCard: Card): EventDescriptor;
 }
+
+export interface EndTurnHandler extends Card {
+    onEndTurn(): EventDescriptor;
+}

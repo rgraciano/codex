@@ -5,7 +5,7 @@ import { Card } from '../cards/card';
 export function towerRevealAction(game: Game): void {
     let board = game.activePlayer == 1 ? game.player1Board : game.player2Board;
 
-    if (!board.addOnIsActive() || !(board.addOn.addOnType == 'Tower') || board.addOn.towerRevealedThisTurn) {
+    if (!board.addOn.isActive() || !(board.addOn.addOnType == 'Tower') || board.addOn.towerRevealedThisTurn) {
         throw new Error('Reveal is not valid');
     }
 

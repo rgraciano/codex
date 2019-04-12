@@ -333,7 +333,7 @@ function attackCard(attacker: Card, defender: Card) {
         ) {
             if (tower && !tower.towerRevealedThisTurn) {
                 attacker.game.addEvent(
-                    new EventDescriptor('TowerReveal', attacker.name + ' stealth attacked a unit and was revealed by the tower')
+                    new EventDescriptor('TowerReveal', attacker.name + ' stealth attacked a unit and was revealed by the tower.')
                 );
 
                 tower.towerRevealedThisTurn = true;
