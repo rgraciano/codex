@@ -179,7 +179,9 @@ export function prepareAttackTargetsAction(attackerId: string, mustChooseThisDef
     // if no squad leader can block, all patrollers are fair game
     else {
         let patrollerIds = patrollersAbleToBlock.map(card => card.cardId);
-        action.idsToResolve.push(...patrollerIds);
+        if (mustChooseThisDefender && patrollerIds.find(thisPatrollerId => thisPatrollerId == mustChooseThisDefender.cardId))
+            action.idsToResolve.push(mustChooseThisDefender.cardId);
+        else action.idsToResolve.push(...patrollerIds);
         game.addEvent(
             new EventDescriptor('PossibleAttackTargets', 'A patroller must be attacked first', {
                 buildings: true,
@@ -197,7 +199,10 @@ export function prepareAttackTargetsChoice(choiceValue: string, card: Card, acti
             .ifToResolve(choiceValue)
     )
         throw new Error('Invalid choice');
+
+    let phase = card.game.phaseStack.topOfStack();
     context.building ? attackChosenTarget(card, context.building) : attackChosenTarget(card, undefined, context.validCardTargetId);
+    phase.endThisPhase = true;
 
     return true;
 }
@@ -363,26 +368,28 @@ function attackCard(attacker: Card, defender: Card) {
     let excessDamage = combatDamage(attacker, defender);
     combatDamage(defender, attacker);
 
-    // Anti-air hits us if we're flying and:
-    //     1) AA is in SQL spot, and we attacked anything else (other than SQL)
-    //  or 2) AA is patroller, and we attacked anything that is not patrolling
-    //
     let sqlEffective = defenderBoard.patrolZone.squadLeader ? defenderBoard.patrolZone.squadLeader.effective() : false;
-    if (defenderPatrolSlot && defenderPatrolSlot == 'squadLeader' && sqlEffective && sqlEffective.antiAir) {
-        dealCombatDamage(game, defenderBoard.patrolZone.squadLeader, attacker, 'anti-air');
-    } else if (!defenderPatrolSlot) {
-        for (let patroller of defenderBoard.getPatrolZoneAsArray()) {
-            if (patroller) {
-                let eff = patroller.effective();
+    let attackerEffective = attacker.effective();
 
-                if (eff.antiAir && patroller.allAttack) {
-                    dealCombatDamage(game, patroller, attacker, 'anti-air');
+    // Anti-air hits us if we're flying over a patroller w/ anti-air attribute
+    if (attackerEffective.flying) {
+        // attacking a patroller, so squad leader with AA can take a shot at us
+        if (defenderPatrolSlot && defenderPatrolSlot != 'squadLeader' && sqlEffective && sqlEffective.antiAir) {
+            dealCombatDamage(game, defenderBoard.patrolZone.squadLeader, attacker, 'anti-air');
+        }
+        // attacking a non-patroller, so any patroller with AA can take a shot at us
+        else if (!defenderPatrolSlot) {
+            for (let patroller of defenderBoard.getPatrolZoneAsArray()) {
+                if (patroller) {
+                    let eff = patroller.effective();
+
+                    if (eff.antiAir && patroller.allAttack) {
+                        dealCombatDamage(game, patroller, attacker, 'anti-air');
+                    }
                 }
             }
         }
     }
-
-    let attackerEffective = attacker.effective();
 
     // If overpower is a possibility, then we'll have to let the user choose when to activate it amidst everything else that's happening
     if (excessDamage > 0 && attackerEffective.overpower) {
@@ -395,28 +402,28 @@ function attackCard(attacker: Card, defender: Card) {
     if (attackerEffective.sparkshot && defenderPatrolSlot) {
         switch (defenderPatrolSlot) {
             case 'squadLeader':
-                dealCombatDamage(game, attacker, defender, 'sparkshot', 1);
+                dealCombatDamage(game, attacker, defender, 'sparkshot', 1, false);
                 break;
             case 'elite':
-                dealCombatDamage(game, attacker, defenderBoard.patrolZone.squadLeader, 'sparkshot', 1);
-                dealCombatDamage(game, attacker, defenderBoard.patrolZone.scavenger, 'sparkshot', 1);
+                dealCombatDamage(game, attacker, defenderBoard.patrolZone.squadLeader, 'sparkshot', 1, false);
+                dealCombatDamage(game, attacker, defenderBoard.patrolZone.scavenger, 'sparkshot', 1, false);
                 break;
             case 'scavenger':
-                dealCombatDamage(game, attacker, defenderBoard.patrolZone.elite, 'sparkshot', 1);
-                dealCombatDamage(game, attacker, defenderBoard.patrolZone.technician, 'sparkshot', 1);
+                dealCombatDamage(game, attacker, defenderBoard.patrolZone.elite, 'sparkshot', 1, false);
+                dealCombatDamage(game, attacker, defenderBoard.patrolZone.technician, 'sparkshot', 1, false);
                 break;
             case 'technician':
-                dealCombatDamage(game, attacker, defenderBoard.patrolZone.scavenger, 'sparkshot', 1);
-                dealCombatDamage(game, attacker, defenderBoard.patrolZone.lookout, 'sparkshot', 1);
+                dealCombatDamage(game, attacker, defenderBoard.patrolZone.scavenger, 'sparkshot', 1, false);
+                dealCombatDamage(game, attacker, defenderBoard.patrolZone.lookout, 'sparkshot', 1, false);
                 break;
             case 'lookout':
-                dealCombatDamage(game, attacker, defenderBoard.patrolZone.technician, 'sparkshot', 1);
+                dealCombatDamage(game, attacker, defenderBoard.patrolZone.technician, 'sparkshot', 1, false);
                 break;
         }
     }
 }
 
-function dealCombatDamage(game: Game, striker: Card, receiver: Card, adjective = '', specificDamage = 0) {
+function dealCombatDamage(game: Game, striker: Card, receiver: Card, adjective = '', specificDamage = 0, triggerHook = true) {
     if (!striker || !receiver) return;
 
     let damageDone = specificDamage ? specificDamage : striker.allAttack;
@@ -425,9 +432,14 @@ function dealCombatDamage(game: Game, striker: Card, receiver: Card, adjective =
     game.addEvent(
         new EventDescriptor('CombatDamage', striker.name + ' did ' + damageDone + ' ' + adjective + ' damage to ' + receiver.name)
     );
-    game.addEvent(
-        CardApi.hookOrAlterationSingleValue(CardApi.hookOrAlteration(game, 'dealCombatDamage', [receiver], 'None', striker), undefined)
-    );
+
+    if (triggerHook)
+        game.addEvent(
+            CardApi.hookOrAlterationSingleValue(
+                CardApi.hookOrAlteration(game, 'dealCombatDamage', [striker, receiver], 'AllActive'),
+                undefined
+            )
+        );
 }
 
 function combatDamage(striker: Card, receiver: Card): number {
@@ -458,19 +470,3 @@ function combatDamage(striker: Card, receiver: Card): number {
 
     return excessDamage;
 }
-
-// check BloomingElm.ts for description of temporary stats and how they should work before implementing this
-
-// first process onAttack triggers; these can be re-ordered
-// re-ordering stops here
-
-// game state check & trigger loop
-
-// next process damage, process any onDamage triggers (do these exist?)
-// no re-ordering possible (i think...)
-
-// check game state & trigger loop
-
-// process sparkshot, overpower if something died; process onDamage triggers on those targets if this is a thing
-
-// check game state & trigger loop

@@ -117,7 +117,7 @@ export interface PatrolHook extends Card {
 }
 
 export interface DealCombatDamageHook extends Card {
-    dealCombatDamage(dealingDamageTo: Card): EventDescriptor;
+    dealCombatDamage(cardDealingDamage: Card, cardReceivingDamage: Card): EventDescriptor;
 }
 
 /*
@@ -130,10 +130,6 @@ export interface DealCombatDamageHook extends Card {
             phase, and then prompt the user to choose which one to call first.  The front end is aware of each handler type
             so that it can present the options to the user.
 */
-
-export interface AttacksHandler extends Card {
-    onAttack(attacker: Card, defender: Card): EventDescriptor;
-}
 
 export interface UpkeepHandler extends Card {
     onUpkeep(): EventDescriptor;
