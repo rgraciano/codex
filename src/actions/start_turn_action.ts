@@ -11,7 +11,7 @@ export function startTurnAction(game: Game): void {
     let board = boards[0];
     let opponentBoard = boards[1];
 
-    if (game.activePlayer == 1) board.turnCount++;
+    board.turnCount++;
 
     // clear any active spells that I have, since max duration is 'UntilNextTurn'
     board.activeSpells = [];

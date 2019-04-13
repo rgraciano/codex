@@ -22,6 +22,8 @@ export function endTurnAction(game: Game): void {
 }
 
 export function endTurnCleanupAction(game: Game) {
+    for (let building of game.playerBoard.buildings) building.finishBuilding();
+
     // Swap active player number
     game.activePlayer = game.activePlayer == 1 ? 2 : 1;
 

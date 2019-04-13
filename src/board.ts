@@ -313,6 +313,10 @@ export class BoardBuilding {
         this.constructionInProgress = !buildInstantly;
     }
 
+    finishBuilding() {
+        if (this.constructionInProgress) this.constructionInProgress = false;
+    }
+
     getCost(type?: AddOnType): number {
         switch (this.name) {
             case 'Base':
