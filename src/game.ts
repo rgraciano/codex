@@ -56,7 +56,8 @@ export type ServerEvent =
     | 'Sideline'
     | 'Healing'
     | 'SwiftStrike'
-    | 'CombatDamage';
+    | 'CombatDamage'
+    | 'MaxReshuffles';
 export type RuneEvent = 'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
 export class Game {
@@ -120,8 +121,8 @@ export class Game {
 
         Card.idToCardMap.forEach(card => card.setupGameReferences(this));
 
-        this.player1Board.drawCards(5);
-        this.player2Board.drawCards(5);
+        this.player1Board.drawCards(5, this);
+        this.player2Board.drawCards(5, this);
 
         this.phaseStack = new PhaseStack();
         this.phaseStack.setupForNewGame();

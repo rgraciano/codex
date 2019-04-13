@@ -45,6 +45,8 @@ export class Board {
 
     buildings: BoardBuilding[] = [];
 
+    reshufflesThisTurn: number = 0;
+
     constructor(playerNumber: number) {
         this.playerNumber = playerNumber;
 
@@ -80,6 +82,7 @@ export class Board {
             numWorkers: this.workers.length + this.startingWorkers, // for the client
             workeredThisTurn: this.workeredThisTurn,
             canWorker: this.canWorker(),
+            reshufflesThisTurn: this.reshufflesThisTurn,
 
             patrolZone: PatrolZone.serialize(this.patrolZone) // break from convention here b/c instance method screws up property iteration on pz
         };
@@ -120,6 +123,7 @@ export class Board {
         board.tech3 = TechBuilding.deserialize(<ObjectMap>pojo.tech3, board);
 
         board.addOn = AddOn.deserialize(<ObjectMap>pojo.addOn, board);
+        board.reshufflesThisTurn = <number>pojo.reshufflesThisTurn;
 
         return board;
     }
@@ -216,15 +220,21 @@ export class Board {
         return id == 'Base' || id == 'Tech 1' || id == 'Tech 2' || id == 'Tech 3' || id == 'AddOn';
     }
 
-    drawCards(howMany: number) {
-        // If we need to draw more than we have, shuffle the discard pile.  TODO: Limit to one reshuffle per turn
+    drawCards(howMany: number, game: Game) {
+        let drawNum = howMany;
         if (this.deck.length < howMany) {
-            this.shuffleDiscard();
-            this.deck = this.deck.concat(this.discard);
-            this.discard = [];
+            if (this.reshufflesThisTurn == 0) {
+                this.shuffleDiscard();
+                this.deck = this.deck.concat(this.discard);
+                this.discard = [];
+                this.reshufflesThisTurn++;
+            } else {
+                game.addEvent(new EventDescriptor('MaxReshuffles', 'Discard pile may only be re-shuffled once per turn'));
+                drawNum = this.deck.length;
+            }
         }
 
-        this.hand = this.deck.splice(0, howMany);
+        this.hand = this.deck.splice(0, drawNum);
     }
 
     private shuffleDiscard() {
