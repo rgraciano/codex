@@ -295,7 +295,7 @@ export class GameServer {
             if (
                 topOfStack.actions.length === 1 &&
                 !topOfStack.actions[0].neverAutoResolve &&
-                topOfStack.actions[0].idsToResolve.length === 1
+                topOfStack.actions[0].idsToResolve.length < 2
             ) {
                 this.runAction(topOfStack.actions[0].name, {}, true);
                 clearedSingleAction = true;

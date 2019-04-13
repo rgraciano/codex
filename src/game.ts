@@ -12,7 +12,7 @@ import { ObjectMap } from './game_server';
 import { TwoAbilitiesTest } from './cards/test/TwoAbilitiesTest';
 import { BoostUnitTest } from './cards/test/BoostUnitTest';
 import { RiverMontoya } from './cards/neutral/RiverMontoya';
-import { CardApi } from 'cards/card_api';
+import { CardApi } from './cards/card_api';
 
 export type ServerEvent =
     | RuneEvent

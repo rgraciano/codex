@@ -84,6 +84,7 @@ export class PhaseStack {
             // first, if we've chosen everything possible, then we clear the action
             phase.actions = phase.actions.filter(
                 action =>
+                    !action.clearOnEmpty ||
                     action.neverAutoResolve ||
                     (!action.canChooseTargetsMoreThanOnce && action.resolvedIds.length < action.idsToResolve.length)
             );
@@ -91,6 +92,7 @@ export class PhaseStack {
             // next, if we've chosen the correct number already, clear the action
             phase.actions = phase.actions.filter(
                 action =>
+                    !action.clearOnEmpty ||
                     action.neverAutoResolve ||
                     (!action.mustChooseAll && action.chooseNumber > 0 && action.chooseNumber < action.resolveIds.length)
             );
@@ -119,6 +121,7 @@ export class Action {
     idsToResolve: string[] = [];
     resolvedIds: string[] = [];
     neverAutoResolve = false;
+    clearOnEmpty = true;
 
     constructor(
         name: ActionName,
@@ -163,6 +166,12 @@ export class Action {
 
     registerNeverAutoResolve(): Action {
         this.neverAutoResolve = true;
+        return this;
+    }
+
+    registerEmptyActionForAutoResolve(): Action {
+        this.clearOnEmpty = false;
+        this.chooseNumber = 0;
         return this;
     }
 
