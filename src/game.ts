@@ -57,16 +57,21 @@ export type ServerEvent =
     | 'Healing'
     | 'SwiftStrike'
     | 'CombatDamage'
-    | 'MaxReshuffles';
+    | 'MaxReshuffles'
+    | 'DiscardDraw';
 export type RuneEvent = 'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
 export class Game {
     player1Board: Board;
     player2Board: Board;
 
+    // these are for convenience, since we use them all the time. not serialized
+    playerBoard: Board;
+    opponentBoard: Board;
+
     phaseStack: PhaseStack;
 
-    activePlayer: number = 1;
+    activePlayer: 1 | 2 = 1;
 
     events: Array<EventDescriptor> = [];
 
@@ -75,6 +80,9 @@ export class Game {
     setupNewGame() {
         this.player1Board = new Board(1);
         this.player2Board = new Board(2);
+
+        this.playerBoard = this.player1Board;
+        this.opponentBoard = this.player2Board;
 
         this.player1Board.base = new BoardBuilding('Base', this.player1Board);
         this.player1Board.base.build(true);
@@ -141,10 +149,13 @@ export class Game {
 
     static deserialize(pojo: ObjectMap): Game {
         let game: Game = new Game();
-        game.activePlayer = <number>pojo.activePlayer;
+        game.activePlayer = <(1 | 2)>pojo.activePlayer;
         game.player1Board = Board.deserialize(<ObjectMap>pojo.player1Board, game);
         game.player2Board = Board.deserialize(<ObjectMap>pojo.player2Board, game);
         game.phaseStack = PhaseStack.deserialize(<ObjectMap>pojo.phaseStack);
+
+        [game.playerBoard, game.opponentBoard] =
+            game.activePlayer == 1 ? [game.player1Board, game.player2Board] : [game.player2Board, game.player1Board];
 
         // need to setup the references AFTER the whole thing has been initialized
         Card.idToCardMap.forEach(card => card.setupGameReferences(game));

@@ -155,6 +155,7 @@ export interface AttacksHandler extends Card {
     onAttacks(attackingCard: Card): EventDescriptor;
 }
 
+/** Called at end of turn, e.g. for Bloodrage Ogre */
 export interface EndTurnHandler extends Card {
     onEndTurn(): EventDescriptor;
 }

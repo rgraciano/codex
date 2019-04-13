@@ -16,6 +16,9 @@ export function startTurnAction(game: Game): void {
     // clear any active spells that I have, since max duration is 'UntilNextTurn'
     board.activeSpells = [];
 
+    // reset reshuffles this turn
+    board.reshufflesThisTurn = 0;
+
     // clear my opponent's spells, leaving only the 'Until Next Turn' ones alive (since those are still going on my turn)
     opponentBoard.activeSpells = opponentBoard.activeSpells.filter(spell => spell.spellLifecycle == 'UntilNextTurn');
 
@@ -55,7 +58,7 @@ export function startTurnAction(game: Game): void {
 
     // draw card for surplus
     if (board.addOn.isActive() && board.addOn.addOnType == 'Surplus') {
-        board.drawCards(1);
+        board.drawCards(1, game);
         game.addEvent(new EventDescriptor('Draw', 'Drew a card for Surplus'));
     }
 

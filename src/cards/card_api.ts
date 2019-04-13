@@ -385,7 +385,7 @@ export class CardApi {
                 board.gold++;
                 card.game.addEvent(new EventDescriptor('Scavenger', 'Player ' + card.controller + ' gains 1 gold for Scavenger'));
             } else if (board.patrolZone.technician === card) {
-                board.drawCards(1);
+                board.drawCards(1, card.game);
                 card.game.addEvent(new EventDescriptor('Technician', 'Player ' + card.controller + ' draws 1 card for Technician'));
             }
         }

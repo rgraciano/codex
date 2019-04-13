@@ -20,7 +20,7 @@ export class CapturedBugblatterTest extends Unit implements DiesHandler {
 
     onDies(dyingCard: Card): EventDescriptor {
         if (dyingCard.cardType == 'Unit') {
-            return this.oppositionalControllerBoard.base.damage(1, this);
+            return this.oppControllerBoard.base.damage(1, this);
         }
         return undefined;
     }

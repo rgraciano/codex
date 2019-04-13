@@ -220,10 +220,10 @@ export class Board {
         return id == 'Base' || id == 'Tech 1' || id == 'Tech 2' || id == 'Tech 3' || id == 'AddOn';
     }
 
-    drawCards(howMany: number, game: Game) {
+    drawCards(howMany: number, game: Game, skipReshuffleCheck = false) {
         let drawNum = howMany;
         if (this.deck.length < howMany) {
-            if (this.reshufflesThisTurn == 0) {
+            if (this.reshufflesThisTurn == 0 || skipReshuffleCheck) {
                 this.shuffleDiscard();
                 this.deck = this.deck.concat(this.discard);
                 this.discard = [];
@@ -235,6 +235,12 @@ export class Board {
         }
 
         this.hand = this.deck.splice(0, drawNum);
+    }
+
+    discardHand(): number {
+        let handlen = this.hand.length;
+        this.discard.push(...this.hand);
+        return handlen;
     }
 
     private shuffleDiscard() {

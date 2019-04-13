@@ -18,6 +18,8 @@ export type ActionName =
     | 'TowerRevealChoice'
     | 'PatrolChoice'
     | 'Overpower'
+    | 'EndTurnChoice'
+    | 'EndTurnCleanup'
     | TurnActionName;
 
 export type TurnActionName =

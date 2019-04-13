@@ -88,11 +88,10 @@ export function prepareAttackTargetsAction(attackerId: string, mustChooseThisDef
         let unstoppable = true;
 
         // if the opponent has a card working as a detector...
-        if (game.getAllActiveCards(attacker.oppositionalControllerBoard).filter(card => card.effective().detector).length === 0)
-            unstoppable = false;
+        if (game.getAllActiveCards(attacker.oppControllerBoard).filter(card => card.effective().detector).length === 0) unstoppable = false;
 
         // if the opponent has a tower that can detect the attacker
-        let addOn = attacker.oppositionalControllerBoard.addOn;
+        let addOn = attacker.oppControllerBoard.addOn;
         if (addOn && addOn.addOnType === 'Tower' && addOn.towerRevealedThisTurn === false) {
             unstoppable = false;
             addOn.towerRevealedThisTurn = true;
@@ -107,7 +106,7 @@ export function prepareAttackTargetsAction(attackerId: string, mustChooseThisDef
     }
 
     // check if any patrollers can stop us...
-    let patrollersAbleToBlock = attacker.oppositionalControllerBoard
+    let patrollersAbleToBlock = attacker.oppControllerBoard
         .getPatrolZoneAsArray()
         .filter(patroller => checkPatrollerCanBlockAttacker(attacker, attackerAttrs, patroller));
 
@@ -130,7 +129,7 @@ export function prepareAttackTargetsAction(attackerId: string, mustChooseThisDef
         false
     );
     if (stealthWhenAttackingUnits && !attacker.effective().towerRevealedThisTurn) {
-        action.idsToResolve.push(...game.getAllAttackableIdsOfType(attacker, attacker.oppositionalControllerBoard, 'Unit'));
+        action.idsToResolve.push(...game.getAllAttackableIdsOfType(attacker, attacker.oppControllerBoard, 'Unit'));
     }
 
     // check to see if we have an alteration that allows us to skip patrollers when attacking specific targets.
@@ -141,16 +140,16 @@ export function prepareAttackTargetsAction(attackerId: string, mustChooseThisDef
     );
 
     // if we're unstoppable when attacking the opponent's base, add the base to the list of targets
-    if (unstoppableFor == 'Base' && checkBuildingIsAttackable(attacker, attacker.oppositionalControllerBoard.base)) {
-        action.idsToResolve.push(attacker.oppositionalControllerBoard.base.name);
+    if (unstoppableFor == 'Base' && checkBuildingIsAttackable(attacker, attacker.oppControllerBoard.base)) {
+        action.idsToResolve.push(attacker.oppControllerBoard.base.name);
     } else if (unstoppableFor == 'Building') {
-        for (let bldg of attacker.oppositionalControllerBoard.buildings) {
+        for (let bldg of attacker.oppControllerBoard.buildings) {
             if (checkBuildingIsAttackable(attacker, bldg)) action.idsToResolve.push(bldg.name);
         }
 
-        action.idsToResolve.push(...game.getAllAttackableIdsOfType(attacker, attacker.oppositionalControllerBoard, 'Building'));
+        action.idsToResolve.push(...game.getAllAttackableIdsOfType(attacker, attacker.oppControllerBoard, 'Building'));
     } else if (unstoppableFor == 'Heroes') {
-        action.idsToResolve.push(...game.getAllAttackableIdsOfType(attacker, attacker.oppositionalControllerBoard, 'Hero'));
+        action.idsToResolve.push(...game.getAllAttackableIdsOfType(attacker, attacker.oppControllerBoard, 'Hero'));
     } else if (unstoppableFor == 'Everything') {
         sendAllTargetsAreValid(attacker, mustChooseThisDefender);
         return;
@@ -167,12 +166,12 @@ export function prepareAttackTargetsAction(attackerId: string, mustChooseThisDef
     }
 
     // no sneaking by the patrollers. let's look for a squad leader first
-    if (patrollersAbleToBlock.find(patroller => patroller === attacker.oppositionalControllerBoard.patrolZone.squadLeader)) {
-        action.idsToResolve.push(attacker.oppositionalControllerBoard.patrolZone.squadLeader.cardId);
+    if (patrollersAbleToBlock.find(patroller => patroller === attacker.oppControllerBoard.patrolZone.squadLeader)) {
+        action.idsToResolve.push(attacker.oppControllerBoard.patrolZone.squadLeader.cardId);
         game.addEvent(
             new EventDescriptor('PossibleAttackTargets', 'The squad leader must be attacked first', {
                 buldings: false,
-                validCardTargetIds: [attacker.oppositionalControllerBoard.patrolZone.squadLeader.cardId]
+                validCardTargetIds: [attacker.oppControllerBoard.patrolZone.squadLeader.cardId]
             })
         );
     }
@@ -217,13 +216,13 @@ function sendAllTargetsAreValid(attacker: Character, mustChooseThisDefender: Car
         return;
     }
 
-    let defenderCards = game.getAllActiveCards(attacker.oppositionalControllerBoard);
+    let defenderCards = game.getAllActiveCards(attacker.oppControllerBoard);
     let defenderAttackableCards = game.getAllAttackableCards(attacker, defenderCards);
     let defenderIds = defenderAttackableCards.map(localCard => localCard.cardId);
 
     action.idsToResolve.push(...defenderIds);
 
-    for (let bldg of attacker.oppositionalControllerBoard.buildings) sendBuildingTargetIfValid(attacker, bldg, action);
+    for (let bldg of attacker.oppControllerBoard.buildings) sendBuildingTargetIfValid(attacker, bldg, action);
 
     game.addEvent(
         new EventDescriptor('PossibleAttackTargets', 'No blockers are available. All attack destinations are valid', {

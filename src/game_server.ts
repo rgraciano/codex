@@ -13,6 +13,7 @@ import { towerRevealAction } from './actions/tower_reveal_action';
 import { playStagingAbilityAction } from './actions/play_staging_ability_action';
 import { patrolAction, sidelineAction } from './actions/patrol_action';
 import { heroLevelAction } from './actions/hero_level_action';
+import { endTurnAction, endTurnCleanupAction } from './actions/end_turn';
 
 const savePath = '/Users/rg/gamestates';
 
@@ -34,12 +35,12 @@ The game state is structured into "Phases" which each have a set of correspondin
 2) Check the top of the Phase stack.  Check that the action the player wants is in this Phase's list of possible actions. If valid, route to the correct action.
 3) The action may complete without requiring much, OR it may require more from the user.
     - If the action requires more from the user, it creates a new PHASE and sets the possible actions on the new phase to indicate what we need from the user.
-        - The possible actions for a trigger will be all of the cards that need to resolved to finish resolving that trigger.
+        - The possible actions for a trigger will be one (the trigger action), and it will be marked with all of the cards that need to resolve to finish resolving that trigger.
         - This new Phase is then added to the top of the stack of available phases.
         - This process may continue to repeat, and more and more nesting may occur.
     - If the action is a trigger and a Card Id, we resolve that trigger and cross the card off the list.
 4) Game state is saved.
-5) A response is sent to the user telling them what happened.
+5) A response is sent to the client representing the new game state, along with a list of human-readable event descriptions to communicate what happened.
 */
 export class GameServer {
     game: Game;
@@ -192,6 +193,16 @@ export class GameServer {
                 if (buildingId == 'AddOn') addOnType = GameServer.requireProp('addOnType', context, GameServer.nameProperties);
 
                 buildAction(this.game, buildingId, <AddOnType>addOnType);
+                break;
+            }
+
+            case 'EndTurn': {
+                endTurnAction(this.game);
+                break;
+            }
+
+            case 'EndTurnCleanup': {
+                endTurnCleanupAction(this.game);
                 break;
             }
 

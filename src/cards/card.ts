@@ -46,7 +46,7 @@ export abstract class Card {
     ownerBoard: Board;
     opponentBoard: Board;
     controllerBoard: Board;
-    oppositionalControllerBoard: Board;
+    oppControllerBoard: Board;
 
     constructor(owner: number, controller?: number, cardId?: string) {
         this.cardId = cardId ? cardId : Card.makeCardId();
@@ -67,21 +67,12 @@ export abstract class Card {
 
     setupGameReferences(game: Game) {
         this.game = game;
-        if (this.owner === 1) {
-            this.ownerBoard = this.game.player1Board;
-            this.opponentBoard = this.game.player2Board;
-        } else {
-            this.ownerBoard = this.game.player2Board;
-            this.opponentBoard = this.game.player1Board;
-        }
 
-        if (this.controller === 1) {
-            this.controllerBoard = this.game.player1Board;
-            this.oppositionalControllerBoard = this.game.player2Board;
-        } else {
-            this.controllerBoard = this.game.player2Board;
-            this.oppositionalControllerBoard = this.game.player1Board;
-        }
+        [this.ownerBoard, this.opponentBoard] =
+            this.owner == 1 ? [this.game.player1Board, this.game.player2Board] : [this.game.player2Board, this.game.player1Board];
+
+        [this.controllerBoard, this.oppControllerBoard] =
+            this.controller == 1 ? [this.game.player1Board, this.game.player2Board] : [this.game.player2Board, this.game.player1Board];
     }
 
     serialize(): ObjectMap {
