@@ -94,7 +94,10 @@ export abstract class Card {
             stagingAbilities: Array.from(this.stagingAbilityMap.keys()),
             canUseAbilities: <boolean[]>[],
             canUseStagingAbilities: <boolean[]>[],
-            canPlay: this.canPlay()
+            canPlay: this.canPlay(),
+            allHealth: this.allHealth,
+            allAttack: this.allAttack,
+            costAfterAlterations: this.costAfterAlterations
         };
 
         this.abilityMap.forEach((ability, key, map) => objMap.canUseAbilities.push(ability.canUse()));
