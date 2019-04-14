@@ -51,7 +51,21 @@ export class PhaseStack {
     stack: Phase[] = [];
 
     setupForNewGame() {
-        this.stack = [];
+        this.addToStack(
+            new Phase([
+                new Action('PlayCard').registerNeverAutoResolve(),
+                new Action('Worker').registerNeverAutoResolve(),
+                new Action('Tech').registerNeverAutoResolve(),
+                new Action('Build').registerNeverAutoResolve(),
+                new Action('Patrol').registerNeverAutoResolve(),
+                new Action('Ability').registerNeverAutoResolve(),
+                new Action('Attack').registerNeverAutoResolve(),
+                new Action('HeroLevel').registerNeverAutoResolve(),
+                new Action('EndTurn').registerNeverAutoResolve(),
+                new Action('TowerReveal').registerNeverAutoResolve(),
+                new Action('Sideline').registerNeverAutoResolve()
+            ])
+        );
     }
 
     serialize(): ObjectMap {

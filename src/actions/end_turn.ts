@@ -27,6 +27,9 @@ export function endTurnCleanupAction(game: Game) {
     // Swap active player number
     game.activePlayer = game.activePlayer == 1 ? 2 : 1;
 
+    // Close the empty phase
+    game.phaseStack.endCurrentPhase();
+
     // TODO: Print out forum-formatted everything that happened, along with a link to the next turn, instead of auto-starting the next turn
     startTurnAction(game);
 }

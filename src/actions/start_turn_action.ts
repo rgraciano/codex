@@ -62,23 +62,6 @@ export function startTurnAction(game: Game): void {
         game.addEvent(new EventDescriptor('Draw', 'Drew a card for Surplus'));
     }
 
-    // enter player turn phase
-    game.phaseStack.addToStack(
-        new Phase([
-            new Action('PlayCard').registerNeverAutoResolve(),
-            new Action('Worker').registerNeverAutoResolve(),
-            new Action('Tech').registerNeverAutoResolve(),
-            new Action('Build').registerNeverAutoResolve(),
-            new Action('Patrol').registerNeverAutoResolve(),
-            new Action('Ability').registerNeverAutoResolve(),
-            new Action('Attack').registerNeverAutoResolve(),
-            new Action('HeroLevel').registerNeverAutoResolve(),
-            new Action('EndTurn').registerNeverAutoResolve(),
-            new Action('TowerReveal').registerNeverAutoResolve(),
-            new Action('Sideline').registerNeverAutoResolve()
-        ])
-    );
-
     // enter upkeep phase, process upkeep events. when this is resolved, we'll exit into the PlayerTurn phase just beneath
     CardApi.trigger(game, 'UpkeepChoice', 'onUpkeep', 'PlayerActive', {});
 }
