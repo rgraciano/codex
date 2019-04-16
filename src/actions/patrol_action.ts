@@ -3,6 +3,7 @@ import { Phase, Action } from './phase';
 import { Game, EventDescriptor } from '../game';
 import { CardApi } from '../cards/card_api';
 import { PatrolZone } from '../board';
+import { stringify } from 'querystring';
 
 export function patrolAction(cardId: string): void {
     let cardToPatrol = Card.idToCardMap.get(cardId);
@@ -18,7 +19,7 @@ export function patrolAction(cardId: string): void {
 
     let action = new Action('PatrolChoice').registerNeverAutoResolve();
     let phase = new Phase([action]);
-    phase.extraState['patrolCardId'] = cardId;
+    action.extraState['patrolCardId'] = cardId;
     cardToPatrol.game.phaseStack.addToStack(phase);
 }
 
@@ -36,8 +37,8 @@ export function sidelineAction(cardId: string): void {
     cardToSideline.game.addEvent(new EventDescriptor('Sideline', 'Sidelined ' + cardToSideline.name));
 }
 
-export function choosePatrolSlotChoice(game: Game, choiceValue: string): boolean {
-    let patrolCardId = <string>game.phaseStack.topOfStack().extraState['patrolCardId'];
+export function choosePatrolSlotChoice(game: Game, action: Action, choiceValue: string): boolean {
+    let patrolCardId = <string>action.extraState['patrolCardId'];
     if (!patrolCardId) throw new Error('Could not find patroller ID');
 
     let character = <Character>Card.idToCardMap.get(patrolCardId);

@@ -1,6 +1,7 @@
 import { Card } from '../cards/card';
 import { Game } from '../game';
 import { CardApi } from '../cards/card_api';
+import { Action } from './phase';
 
 export function abilityAction(cardId: string, abilityName: string, stagingAbility: boolean = false): void {
     let cardWithAbility = Card.idToCardMap.get(cardId);
@@ -15,18 +16,11 @@ export function abilityAction(cardId: string, abilityName: string, stagingAbilit
     ability.use();
 }
 
-export function chooseAbilityTargetChoice(game: Game, card: Card, cardId: string) {
-    let phase = game.phaseStack.topOfStack();
-    let cardWithAbility = Card.idToCardMap.get(<string>phase.extraState['cardWithAbility']);
-    let ability = cardWithAbility.abilityMap.get(<string>phase.extraState['abilityName']);
+export function chooseAbilityTargetChoice(game: Game, action: Action, card: Card, cardId: string) {
+    let cardWithAbility = Card.idToCardMap.get(<string>action.extraState['cardWithAbility']);
+    let ability = cardWithAbility.abilityMap.get(<string>action.extraState['abilityName']);
 
-    if (
-        !card.game.phaseStack
-            .topOfStack()
-            .getAction('AbilityChoice')
-            .ifToResolve(cardId)
-    )
-        throw new Error('Invalid choice');
+    if (!action.ifToResolve(cardId)) throw new Error('Invalid choice');
 
     /*if (none) {
         // if the user chose 'none', end phase and do not resolve
@@ -36,7 +30,7 @@ export function chooseAbilityTargetChoice(game: Game, card: Card, cardId: string
     }*/
 
     let destroyed = false;
-    if (card && <boolean>phase.extraState['usesTargetingRules']) {
+    if (card && <boolean>action.extraState['usesTargetingRules']) {
         // subtract any resistance on the targeted card
         let eff = card.effective();
         cardWithAbility.controllerBoard.gold -= eff.resist;

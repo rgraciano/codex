@@ -1,6 +1,6 @@
 import { Game, EventDescriptor } from '../game';
 import { StringMap } from '../game_server';
-import { ActionName } from './phase';
+import { ActionName, Action } from './phase';
 import { Card } from '../cards/card';
 import { Hero } from '../cards/hero';
 import { ArrivesHandler, DiesHandler, LeavesHandler, UpkeepHandler, AttacksHandler } from '../cards/handlers';
@@ -9,22 +9,11 @@ import { CardApi } from '../cards/card_api';
 import { choosePatrolSlotChoice } from './patrol_action';
 import { chooseAbilityTargetChoice } from './ability_action';
 import { upkeepChoice } from './start_turn_action';
-import { prepareAttackTargetsChoice } from './attack_actions';
+import { prepareAttackTargetsChoice, attackChosenTarget } from './attack_actions';
 import { chooseTowerRevealChoice } from './tower_reveal_action';
 
 export type ChoiceCategory = 'Card' | 'Building' | 'Arbitrary';
-export function choiceAction(
-    game: Game,
-    choiceValue: string,
-    choiceType: ChoiceCategory,
-    actionName: ActionName,
-    context: StringMap
-): void {
-    let phase = game.phaseStack.topOfStack();
-    let action = phase.getAction(actionName);
-
-    if (!action) throw new Error('Invalid action');
-
+export function choiceAction(game: Game, action: Action, choiceValue: string, choiceCategory: ChoiceCategory, context: StringMap): void {
     let buildingId: string;
     //let none: boolean = false;
     let cardId: string;
@@ -32,7 +21,7 @@ export function choiceAction(
 
     let markResolved = true;
 
-    switch (choiceType) {
+    switch (choiceCategory) {
         case 'Arbitrary':
             break;
 
@@ -51,17 +40,21 @@ export function choiceAction(
             break;
     }
 
-    switch (actionName) {
+    switch (action.name) {
         case 'ArrivesChoice':
-            game.addEvent((<ArrivesHandler>card).onArrives(Card.idToCardMap.get(<string>phase.extraState['arrivingCardId'])));
+            game.addEvent((<ArrivesHandler>card).onArrives(Card.idToCardMap.get(<string>action.extraState['arrivingCardId'])));
             break;
 
         case 'AttacksChoice':
-            game.addEvent((<AttacksHandler>card).onAttacks(Card.idToCardMap.get(<string>phase.extraState['attackingCardId'])));
+            game.addEvent((<AttacksHandler>card).onAttacks(Card.idToCardMap.get(<string>action.extraState['attackingCardId'])));
             break;
 
         case 'AbilityChoice':
-            markResolved = chooseAbilityTargetChoice(game, card, choiceValue);
+            markResolved = chooseAbilityTargetChoice(game, action, card, choiceValue);
+            break;
+
+        case 'DefenderChoice':
+            //attackChosenTarget(cardId, )
             break;
 
         case 'TowerRevealChoice':
@@ -69,23 +62,23 @@ export function choiceAction(
             break;
 
         case 'DestroyChoice':
-            markResolved = destroyChoice(card);
+            markResolved = destroyChoice(action, card);
             break;
 
         case 'DiesChoice':
         case 'LeavesChoice':
-            markResolved = diesOrLeavesChoice(game, actionName, cardId, card);
+            markResolved = diesOrLeavesChoice(game, action, cardId, card);
             break;
 
         case 'HeroLevelChoice':
-            markResolved = heroLevelChoice(card);
+            markResolved = heroLevelChoice(action, card);
 
         case 'PatrolChoice':
-            markResolved = choosePatrolSlotChoice(game, choiceValue);
+            markResolved = choosePatrolSlotChoice(game, action, choiceValue);
             break;
 
         case 'PrepareAttackTargets':
-            markResolved = prepareAttackTargetsChoice(choiceValue, card, actionName, context);
+            markResolved = prepareAttackTargetsChoice(action, choiceValue, card, context);
             break;
 
         case 'UpkeepChoice':
@@ -99,39 +92,33 @@ export function choiceAction(
     if (markResolved) action.resolveId(choiceValue);
 }
 
-function diesOrLeavesChoice(game: Game, actionName: ActionName, cardId: string, card: Card): boolean {
-    validateChoiceForAction(game, actionName, card.cardId);
+function diesOrLeavesChoice(game: Game, action: Action, cardId: string, card: Card): boolean {
+    validateChoiceForAction(game, action, card.cardId);
     let phase = game.phaseStack.topOfStack();
 
     if (!phase.actionsForIds['cardId']) throw new Error('Card ' + cardId + ' is not valid');
 
-    let dyingOrLeavingCard = Card.idToCardMap.get(<string>phase.extraState['dyingCardId']);
+    let dyingOrLeavingCard = Card.idToCardMap.get(<string>action.extraState['dyingCardId']);
 
-    if (actionName == 'DiesChoice') game.addEvent((<DiesHandler>card).onDies(dyingOrLeavingCard));
+    if (action.name == 'DiesChoice') game.addEvent((<DiesHandler>card).onDies(dyingOrLeavingCard));
     else game.addEvent((<LeavesHandler>card).onLeaves(dyingOrLeavingCard));
 
     return true;
 }
 
-function destroyChoice(card: Card): boolean {
-    validateChoiceForAction(card.game, 'DestroyChoice', card.cardId);
+function destroyChoice(action: Action, card: Card): boolean {
+    validateChoiceForAction(card.game, action, card.cardId);
     CardApi.destroyCard(card);
     return true;
 }
 
-function heroLevelChoice(card: Card): boolean {
-    validateChoiceForAction(card.game, 'HeroLevelChoice', card.cardId);
+function heroLevelChoice(action: Action, card: Card): boolean {
+    validateChoiceForAction(card.game, action, card.cardId);
     let hero = <Hero>card;
     hero.level = hero.level + 2;
     return true;
 }
 
-function validateChoiceForAction(game: Game, actionName: ActionName, id: string) {
-    if (
-        !game.phaseStack
-            .topOfStack()
-            .getAction(actionName)
-            .ifToResolve(id)
-    )
-        throw new Error('Invalid choice');
+function validateChoiceForAction(game: Game, action: Action, id: string) {
+    if (!action.ifToResolve(id)) throw new Error('Invalid choice');
 }

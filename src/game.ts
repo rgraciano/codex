@@ -180,7 +180,7 @@ export class Game {
 
         if (cardsToDestroy.length > 0) {
             let action = new Action('DestroyChoice');
-            action.resolveNeededForCards(cardsToDestroy);
+            action.addCards(cardsToDestroy);
             this.phaseStack.addToStack(new Phase([action]));
         }
 

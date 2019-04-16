@@ -90,20 +90,20 @@ export abstract class Ability {
         phaseStack.addToStack(phase);
 
         // can we ever choose the same thing more than once? i don't think so... and the default here is to cross things off the list
-        action.resolveNeededForCards(allCards);
-        if (buildings && buildings.boardBuildings) action.resolveNeededForIds(buildings.boardBuildings);
+        action.addCards(allCards);
+        if (buildings && buildings.boardBuildings) action.addIds(buildings.boardBuildings);
 
         if (!choicesRequired) action.idsToResolve.push('None');
 
         // gives the back-end the ability to find the resolve() method for this card
-        phase.extraState.cardWithAbility = this.card.cardId;
-        phase.extraState.abilityName = this.name;
+        action.extraState.cardWithAbility = this.card.cardId;
+        action.extraState.abilityName = this.name;
 
         // we use the choice of 'None' to end the chain when choices are not required, so we don't need to explicitly track
         // whether or not things are required
-        phase.extraState.label = label;
+        action.extraState.label = label;
 
-        phase.extraState.usesTargetingRules = usesTargetingRules;
+        action.extraState.usesTargetingRules = usesTargetingRules;
     }
 
     // building choices can be built-ins, or cards

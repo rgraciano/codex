@@ -67,7 +67,7 @@ export class CardApi {
         if (card.cardType == 'Hero') {
             let phase = game.phaseStack.topOfStack();
             let action = new Action('HeroLevelChoice', false, 1, true, false);
-            action.resolveCards(this.getCardsFromSpace(game, 'OpponentActive').filter(opponentCard => opponentCard.cardType == 'Hero'));
+            action.addCards(this.getCardsFromSpace(game, 'OpponentActive').filter(opponentCard => opponentCard.cardType == 'Hero'));
             phase.actions.push(action);
         }
 
@@ -241,21 +241,25 @@ export class CardApi {
         useExistingPhase = false
     ) {
         let phase: Phase = undefined;
+        let action: Action = undefined;
 
         if (useExistingPhase) {
-            let topOfStack = game.phaseStack.topOfStack();
-            phase = topOfStack;
+            phase = game.phaseStack.topOfStack();
+            action = phase.actions.find(act => act.name == actionName);
+            if (!action) throw new Error('Could not find action when trying to use existing phase, for action ' + actionName);
+        }
+        if (phase === undefined) {
+            action = new Action(actionName, true);
+            phase = new Phase([action]);
         }
 
-        if (phase === undefined) phase = new Phase([new Action(actionName, true)]);
-
-        if (extraState) phase.extraState = extraState;
+        if (extraState) action.extraState = extraState;
 
         let space: Card[] = this.getCardsFromSpace(game, triggerSpace);
 
         let foundCards: Card[] = this.findCardsWithProperty(space, triggerFn);
         // add all of those cards to the list of allowedActions, automatically removing those that were already resolved and ensuring there are no duplicates
-        phase.getAction(actionName).resolveCards(foundCards);
+        phase.getAction(actionName).addCards(foundCards);
     }
 
     static makeTokens(game: Game, tokenName: string, numTokens: number, onMyBoard: boolean = true) {

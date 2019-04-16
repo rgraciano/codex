@@ -46,6 +46,7 @@ export function attackAction(attackerId: string) {
     // enter phase that is empty, to choose the target of the attack. give it one resolveId (attacker) so that it will auto-execute
     // when the attack handlers are all done
     let prepTargetsAction = new Action('PrepareAttackTargets', false, 1, true, false);
+    prepTargetsAction.clearOnEmpty = false;
     prepTargetsAction.idsToResolve.push(attacker.cardId);
     game.phaseStack.addToStack(new Phase([prepTargetsAction]));
 
@@ -60,9 +61,11 @@ export function prepareAttackTargetsAction(attackerId: string, mustChooseThisDef
     let attacker: Character = getAttackerFromId(attackerId);
     let game = attacker.game;
 
+    // First, if this phase is being auto-resolved, then let's end it
+    if (game.phaseStack.topOfStack().actions.find(action => action.name == 'PrepareAttackTargets')) game.phaseStack.endCurrentPhase();
+
     // check if attacker still alive; if not, we can simply exit this phase indicating that attacker is dead and therefore attack has stopped
     if (!game.cardIsInPlay(attacker.controllerBoard, attacker)) {
-        game.phaseStack.endCurrentPhase();
         game.addEvent(
             new EventDescriptor('AttackComplete', 'Attacker is no longer in play, so the attack is now completed', {
                 attackerId: attackerId
@@ -190,14 +193,8 @@ export function prepareAttackTargetsAction(attackerId: string, mustChooseThisDef
     }
 }
 
-export function prepareAttackTargetsChoice(choiceValue: string, card: Card, action: string, context: StringMap): boolean {
-    if (
-        !card.game.phaseStack
-            .topOfStack()
-            .getAction('DefenderChoice')
-            .ifToResolve(choiceValue)
-    )
-        throw new Error('Invalid choice');
+export function prepareAttackTargetsChoice(action: Action, choiceValue: string, card: Card, context: StringMap): boolean {
+    if (action.ifToResolve(choiceValue)) throw new Error('Invalid choice');
 
     let phase = card.game.phaseStack.topOfStack();
     context.building ? attackChosenTarget(card, context.building) : attackChosenTarget(card, undefined, context.validCardTargetId);
@@ -232,6 +229,12 @@ function sendAllTargetsAreValid(attacker: Character, mustChooseThisDefender: Car
     );
 }
 
+function makeDefenderAction(attacker: Character): Action {
+    let action = new Action('DefenderChoice', false, 1, true);
+    return action;
+    //action.
+}
+
 function sendBuildingTargetIfValid(attacker: Character, boardBuilding: BoardBuilding, action: Action) {
     if (checkBuildingIsAttackable(attacker, boardBuilding)) action.idsToResolve.push(boardBuilding.name);
 }
@@ -250,7 +253,7 @@ function checkBuildingIsAttackable(attacker: Character, boardBuilding: BoardBuil
 function checkPatrollerCanBlockAttacker(attacker: Card, attackerAttrs: Attributes, patroller: Card): boolean {
     if (!patroller) return false;
 
-    if ((patroller.game.getAllAttackableCards(attacker, [patroller]).length <= 0, true)) return false;
+    if (patroller.game.getAllAttackableCards(attacker, [patroller], true).length <= 0) return false;
 
     let patrollerAttrs = patroller.effective();
 

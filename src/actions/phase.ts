@@ -137,6 +137,10 @@ export class Action {
     neverAutoResolve = false;
     clearOnEmpty = true;
 
+    // This is used to track any information an action needs to carry forward in this phase,
+    // e.g., which attacker we're currently resolving.
+    extraState: PrimitiveMap = {};
+
     constructor(
         name: ActionName,
         mustChooseAll: boolean = false,
@@ -160,7 +164,8 @@ export class Action {
             mustChooseAll: this.mustChooseAll,
             chooseNumber: this.chooseNumber,
             canChooseTargetsMoreThanOnce: this.canChooseTargetsMoreThanOnce,
-            neverAutoResolve: this.neverAutoResolve
+            neverAutoResolve: this.neverAutoResolve,
+            extraState: this.extraState
         };
     }
 
@@ -175,6 +180,7 @@ export class Action {
         action.idsToResolve = <string[]>pojo.idsToResolve;
         action.resolvedIds = <string[]>pojo.resolvedIds;
         action.neverAutoResolve = <boolean>pojo.neverAutoResolve;
+        action.extraState = <PrimitiveMap>pojo.extraState;
         return action;
     }
 
@@ -189,15 +195,11 @@ export class Action {
         return this;
     }
 
-    resolveNeededForCards(cards: Card[]) {
-        this.idsToResolve.push(...cards.map(card => card.cardId));
-    }
-
-    resolveNeededForIds(ids: string[]) {
+    addIds(ids: string[]) {
         this.idsToResolve.push(...ids);
     }
 
-    resolveCards(cards: Card[]): void {
+    addCards(cards: Card[]): void {
         cards.map(card => this.resolveId(card.cardId));
     }
 
@@ -232,10 +234,6 @@ export class Phase {
     // If necessary, we record the thing to do for each ID here.
     actionsForIds: StringMap = {};
 
-    // This is used to track any information an action needs to carry forward in this phase,
-    // e.g., which attacker we're currently resolving.
-    extraState: PrimitiveMap = {};
-
     constructor(actions: Action[]) {
         this.actions = actions;
     }
@@ -243,8 +241,7 @@ export class Phase {
     serialize(): ObjectMap {
         return {
             actions: this.actions.map(action => action.serialize()),
-            actionsForIds: this.actionsForIds,
-            extraState: this.extraState
+            actionsForIds: this.actionsForIds
         };
     }
 
@@ -252,7 +249,6 @@ export class Phase {
         let actions = (<ObjectMap[]>pojo.actions).map(action => Action.deserialize(action));
         let phase = new Phase(actions);
         phase.actionsForIds = <StringMap>pojo.actionsForIds;
-        phase.extraState = <PrimitiveMap>pojo.extraState;
         return phase;
     }
 

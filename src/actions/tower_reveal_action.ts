@@ -20,7 +20,7 @@ export function towerRevealAction(game: Game): void {
     }
 
     let action = new Action('TowerRevealChoice');
-    action.resolveNeededForCards(eligibleCards);
+    action.addCards(eligibleCards);
     game.phaseStack.addToStack(new Phase([action]));
 
     board.addOn.towerRevealedThisTurn = true;

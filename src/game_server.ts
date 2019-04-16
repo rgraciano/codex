@@ -117,20 +117,22 @@ export class GameServer {
         return propValue;
     }
 
-    runAction(action: ActionName, context: StringMap, overrideWithPhase: boolean = false) {
+    runAction(actionName: ActionName, context: StringMap, overrideWithPhase: boolean = false) {
         let onlyPossibleTarget: string = undefined;
         let phase = this.game.phaseStack.topOfStack();
+        let action = phase.getAction(actionName);
+        if (!action) throw new Error('Invalid action');
 
         if (overrideWithPhase) onlyPossibleTarget = <string>phase.actions[0].idsToResolve[0];
 
-        if (action.endsWith('Choice')) {
+        if (actionName.endsWith('Choice')) {
             let safeContext: StringMap = {};
             let choiceValue: string;
             let choiceCategory: ChoiceCategory = 'Card';
 
             // when attacking, if there's an "only possible choice" then it's a target building or target attack,
             // and we have to get the attacking card ID from the extra state
-            if (action == 'DefenderChoice') {
+            if (actionName == 'DefenderChoice') {
                 let buildingChoice = GameServer.getAlNumProperty(context, 'targetBuildingId');
                 let cardChoice = GameServer.getAlNumProperty(context, 'targetCardId');
 
@@ -155,11 +157,11 @@ export class GameServer {
                 );
 
                 if (overrideWithPhase) {
-                    choiceValue = <string>phase.extraState.attackingCardId;
+                    choiceValue = <string>action.extraState.attackingCardId;
                 } else {
                     choiceValue = GameServer.requireProp('cardId', context, GameServer.alnumProperties);
                 }
-            } else if (action == 'PatrolChoice') {
+            } else if (actionName == 'PatrolChoice') {
                 choiceCategory = 'Arbitrary';
                 choiceValue = GameServer.requireProp('patrolSlot', context, GameServer.alnumProperties);
             }
@@ -168,12 +170,12 @@ export class GameServer {
                 choiceValue = onlyPossibleTarget;
             }
 
-            choiceAction(this.game, choiceValue, choiceCategory, <ActionName>action, safeContext);
+            choiceAction(this.game, action, choiceValue, choiceCategory, safeContext);
 
             return;
         }
 
-        switch (action) {
+        switch (actionName) {
             case 'Ability': {
                 let cardId = GameServer.requireProp('cardId', context, GameServer.alnumProperties); // no onlyPossibleTarget possible
                 abilityAction(cardId, GameServer.requireProp('abilityName', context, GameServer.nameProperties));
