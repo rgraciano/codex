@@ -141,26 +141,8 @@ export class GameServer {
                     else cardChoice = onlyPossibleTarget;
                 }
 
-                if (buildingChoice) {
-                    choiceCategory = 'Building';
-                    safeContext.building = buildingChoice;
-                } else if (cardChoice) {
-                    choiceCategory = 'Card';
-                    safeContext.validCardTargetId = cardChoice;
-                }
-
-                safeContext.validCardTargetId = GameServer.requireProp(
-                    'targetCardId',
-                    context,
-                    GameServer.alnumProperties,
-                    onlyPossibleTarget
-                );
-
-                if (overrideWithPhase) {
-                    choiceValue = <string>action.extraState.attackingCardId;
-                } else {
-                    choiceValue = GameServer.requireProp('cardId', context, GameServer.alnumProperties);
-                }
+                if (buildingChoice) choiceCategory = 'Building';
+                else if (cardChoice) choiceCategory = 'Card';
             } else if (actionName == 'PatrolChoice') {
                 choiceCategory = 'Arbitrary';
                 choiceValue = GameServer.requireProp('patrolSlot', context, GameServer.alnumProperties);

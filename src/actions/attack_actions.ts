@@ -120,7 +120,7 @@ export function prepareAttackTargetsAction(attackerId: string, mustChooseThisDef
     }
 
     // if a patroller can block, then return the possible patrollers we can attack
-    let action = new Action('DefenderChoice', false, 1, true, false);
+    let action = makeDefenderAction(attacker);
     game.phaseStack.addToStack(new Phase([action]));
 
     // This is a tricky situation... if we are stealth only when attacking a specific thing, then we have to return
@@ -205,7 +205,7 @@ export function prepareAttackTargetsChoice(action: Action, choiceValue: string, 
 
 function sendAllTargetsAreValid(attacker: Character, mustChooseThisDefender: Card) {
     let game = attacker.game;
-    let action = new Action('DefenderChoice', false, 1, true);
+    let action = makeDefenderAction(attacker);
     game.phaseStack.addToStack(new Phase([action]));
 
     if (mustChooseThisDefender) {
@@ -231,8 +231,8 @@ function sendAllTargetsAreValid(attacker: Character, mustChooseThisDefender: Car
 
 function makeDefenderAction(attacker: Character): Action {
     let action = new Action('DefenderChoice', false, 1, true);
+    action.extraState.attackingCardId = attacker.cardId;
     return action;
-    //action.
 }
 
 function sendBuildingTargetIfValid(attacker: Character, boardBuilding: BoardBuilding, action: Action) {

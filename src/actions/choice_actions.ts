@@ -54,7 +54,9 @@ export function choiceAction(game: Game, action: Action, choiceValue: string, ch
             break;
 
         case 'DefenderChoice':
-            //attackChosenTarget(cardId, )
+            let attackerId = <string>action.extraState.attackingCardId;
+            let attacker = Card.idToCardMap.get(attackerId);
+            attackChosenTarget(attacker, buildingId, cardId);
             break;
 
         case 'TowerRevealChoice':
