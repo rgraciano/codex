@@ -141,8 +141,13 @@ export class GameServer {
                     else cardChoice = onlyPossibleTarget;
                 }
 
-                if (buildingChoice) choiceCategory = 'Building';
-                else if (cardChoice) choiceCategory = 'Card';
+                if (buildingChoice) {
+                    choiceCategory = 'Building';
+                    choiceValue = buildingChoice;
+                } else if (cardChoice) {
+                    choiceCategory = 'Card';
+                    choiceValue = cardChoice;
+                }
             } else if (actionName == 'PatrolChoice') {
                 choiceCategory = 'Arbitrary';
                 choiceValue = GameServer.requireProp('patrolSlot', context, GameServer.alnumProperties);
