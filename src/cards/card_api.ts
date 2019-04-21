@@ -3,7 +3,7 @@ import { Card } from './card';
 import { Hero } from './hero';
 import { Spell, AttachSpell, ImmediateSpell, OngoingSpell, UntilSpell } from './spell';
 import { GlobalBonusHook, WouldDieHook, WouldDiscardHook } from './handlers';
-import { Phase, ActionName, PrimitiveMap, Action } from '../actions/phase';
+import { Phase, ActionName, PrimitiveMap, Action, ActionOptions } from '../actions/phase';
 import { Board, PatrolZone } from '../board';
 
 type SpaceType = 'AllActive' | 'PlayerActive' | 'OpponentActive' | 'AllPatroller' | 'OpponentPatroller' | 'None';
@@ -66,7 +66,7 @@ export class CardApi {
 
         if (card.cardType == 'Hero') {
             let phase = game.phaseStack.topOfStack();
-            let action = new Action('HeroLevelChoice', false, 1, true, false);
+            let action = new Action('HeroLevelChoice', { canChooseTargetsMoreThanOnce: false, chooseNumber: 1, mustChooseAll: false });
             action.addCards(this.getCardsFromSpace(game, 'OpponentActive').filter(opponentCard => opponentCard.cardType == 'Hero'));
             phase.actions.push(action);
         }
@@ -150,9 +150,9 @@ export class CardApi {
         // to make any choices.  But for some spells, and when Boost / Don't Boost are there, then the user has to choose what to do
         // next.
         if (card.stagingAbilityMap.size > 1) {
-            let action = new Action('StagingAbility', false, 1, true, false).registerNeverAutoResolve();
+            let action = new Action('StagingAbility', new ActionOptions()).registerNeverAutoResolve();
             let phase = new Phase([action]);
-            action.idsToResolve.push(card.cardId);
+            action.addIds([card.cardId]);
             card.game.phaseStack.addToStack(phase);
             this.moveCard(card, fromSpace, board.playStagingArea);
         } else {
@@ -249,7 +249,7 @@ export class CardApi {
             if (!action) throw new Error('Could not find action when trying to use existing phase, for action ' + actionName);
         }
         if (phase === undefined) {
-            action = new Action(actionName, true);
+            action = new Action(actionName, { canChooseTargetsMoreThanOnce: false, chooseNumber: 0, mustChooseAll: true });
             phase = new Phase([action]);
         }
 

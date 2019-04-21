@@ -1,12 +1,12 @@
 import { Game, EventDescriptor } from '../game';
-import { Phase, Action } from './phase';
+import { Phase, Action, ActionOptions } from './phase';
 import { CardApi } from '../cards/card_api';
 import { startTurnAction } from './start_turn_action';
 
 export function endTurnAction(game: Game): void {
     // Push cleanup phase onto the stack, so this will happen AFTER the EndTurnChoice triggers
     // The EndTurnCleanup action switches the active player and that sort of thing
-    let action = new Action('EndTurnCleanup').registerEmptyActionForAutoResolve();
+    let action = new Action('EndTurnCleanup', new ActionOptions()).registerEmptyActionForAutoResolve();
     let phase = new Phase([action]);
     game.phaseStack.addToStack(phase);
 

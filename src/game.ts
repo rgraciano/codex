@@ -179,7 +179,7 @@ export class Game {
         });
 
         if (cardsToDestroy.length > 0) {
-            let action = new Action('DestroyChoice');
+            let action = new Action('DestroyChoice', { canChooseTargetsMoreThanOnce: false, chooseNumber: 0, mustChooseAll: true });
             action.addCards(cardsToDestroy);
             this.phaseStack.addToStack(new Phase([action]));
         }

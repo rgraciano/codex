@@ -45,9 +45,13 @@ export function attackAction(attackerId: string) {
 
     // enter phase that is empty, to choose the target of the attack. give it one resolveId (attacker) so that it will auto-execute
     // when the attack handlers are all done
-    let prepTargetsAction = new Action('PrepareAttackTargets', false, 1, true, false);
+    let prepTargetsAction = new Action('PrepareAttackTargets', {
+        chooseNumber: 1,
+        mustChooseAll: true,
+        canChooseTargetsMoreThanOnce: false
+    });
     prepTargetsAction.clearOnEmpty = false;
-    prepTargetsAction.idsToResolve.push(attacker.cardId);
+    prepTargetsAction.addIds([attacker.cardId]);
     game.phaseStack.addToStack(new Phase([prepTargetsAction]));
 
     // enter phase for attack handlers
@@ -132,7 +136,7 @@ export function prepareAttackTargetsAction(attackerId: string, mustChooseThisDef
         false
     );
     if (stealthWhenAttackingUnits && !attacker.effective().towerRevealedThisTurn) {
-        action.idsToResolve.push(...game.getAllAttackableIdsOfType(attacker, attacker.oppControllerBoard, 'Unit'));
+        action.addIds(game.getAllAttackableIdsOfType(attacker, attacker.oppControllerBoard, 'Unit'));
     }
 
     // check to see if we have an alteration that allows us to skip patrollers when attacking specific targets.
@@ -144,15 +148,15 @@ export function prepareAttackTargetsAction(attackerId: string, mustChooseThisDef
 
     // if we're unstoppable when attacking the opponent's base, add the base to the list of targets
     if (unstoppableFor == 'Base' && checkBuildingIsAttackable(attacker, attacker.oppControllerBoard.base)) {
-        action.idsToResolve.push(attacker.oppControllerBoard.base.name);
+        action.addIds([attacker.oppControllerBoard.base.name]);
     } else if (unstoppableFor == 'Building') {
         for (let bldg of attacker.oppControllerBoard.buildings) {
-            if (checkBuildingIsAttackable(attacker, bldg)) action.idsToResolve.push(bldg.name);
+            if (checkBuildingIsAttackable(attacker, bldg)) action.addIds([bldg.name]);
         }
 
-        action.idsToResolve.push(...game.getAllAttackableIdsOfType(attacker, attacker.oppControllerBoard, 'Building'));
+        action.addIds(game.getAllAttackableIdsOfType(attacker, attacker.oppControllerBoard, 'Building'));
     } else if (unstoppableFor == 'Heroes') {
-        action.idsToResolve.push(...game.getAllAttackableIdsOfType(attacker, attacker.oppControllerBoard, 'Hero'));
+        action.addIds(game.getAllAttackableIdsOfType(attacker, attacker.oppControllerBoard, 'Hero'));
     } else if (unstoppableFor == 'Everything') {
         sendAllTargetsAreValid(attacker, mustChooseThisDefender);
         return;
@@ -170,7 +174,7 @@ export function prepareAttackTargetsAction(attackerId: string, mustChooseThisDef
 
     // no sneaking by the patrollers. let's look for a squad leader first
     if (patrollersAbleToBlock.find(patroller => patroller === attacker.oppControllerBoard.patrolZone.squadLeader)) {
-        action.idsToResolve.push(attacker.oppControllerBoard.patrolZone.squadLeader.cardId);
+        action.addIds([attacker.oppControllerBoard.patrolZone.squadLeader.cardId]);
         game.addEvent(
             new EventDescriptor('PossibleAttackTargets', 'The squad leader must be attacked first', {
                 buldings: false,
@@ -182,8 +186,8 @@ export function prepareAttackTargetsAction(attackerId: string, mustChooseThisDef
     else {
         let patrollerIds = patrollersAbleToBlock.map(card => card.cardId);
         if (mustChooseThisDefender && patrollerIds.find(thisPatrollerId => thisPatrollerId == mustChooseThisDefender.cardId))
-            action.idsToResolve.push(mustChooseThisDefender.cardId);
-        else action.idsToResolve.push(...patrollerIds);
+            action.addIds([mustChooseThisDefender.cardId]);
+        else action.addIds(patrollerIds);
         game.addEvent(
             new EventDescriptor('PossibleAttackTargets', 'A patroller must be attacked first', {
                 buildings: true,
@@ -209,7 +213,7 @@ function sendAllTargetsAreValid(attacker: Character, mustChooseThisDefender: Car
     game.phaseStack.addToStack(new Phase([action]));
 
     if (mustChooseThisDefender) {
-        action.idsToResolve.push(mustChooseThisDefender.cardId);
+        action.addIds([mustChooseThisDefender.cardId]);
         return;
     }
 
@@ -217,7 +221,7 @@ function sendAllTargetsAreValid(attacker: Character, mustChooseThisDefender: Car
     let defenderAttackableCards = game.getAllAttackableCards(attacker, defenderCards);
     let defenderIds = defenderAttackableCards.map(localCard => localCard.cardId);
 
-    action.idsToResolve.push(...defenderIds);
+    action.addIds(defenderIds);
 
     for (let bldg of attacker.oppControllerBoard.buildings) sendBuildingTargetIfValid(attacker, bldg, action);
 
@@ -230,13 +234,13 @@ function sendAllTargetsAreValid(attacker: Character, mustChooseThisDefender: Car
 }
 
 function makeDefenderAction(attacker: Character): Action {
-    let action = new Action('DefenderChoice', false, 1, true);
+    let action = new Action('DefenderChoice', { chooseNumber: 1, mustChooseAll: false, canChooseTargetsMoreThanOnce: false });
     action.extraState.attackingCardId = attacker.cardId;
     return action;
 }
 
 function sendBuildingTargetIfValid(attacker: Character, boardBuilding: BoardBuilding, action: Action) {
-    if (checkBuildingIsAttackable(attacker, boardBuilding)) action.idsToResolve.push(boardBuilding.name);
+    if (checkBuildingIsAttackable(attacker, boardBuilding)) action.addIds([boardBuilding.name]);
 }
 
 function checkBuildingIsAttackable(attacker: Character, boardBuilding: BoardBuilding): boolean {
@@ -395,9 +399,9 @@ function attackCard(attacker: Card, defender: Card) {
 
     // If overpower is a possibility, then we'll have to let the user choose when to activate it amidst everything else that's happening
     if (excessDamage > 0 && attackerEffective.overpower) {
-        let overpowerAction = new Action('Overpower', false, 1, true, false);
+        let overpowerAction = new Action('Overpower', { canChooseTargetsMoreThanOnce: false, chooseNumber: 1, mustChooseAll: false });
         combatDamagePhase.actions.push(overpowerAction);
-        overpowerAction.idsToResolve.push(attacker.cardId);
+        overpowerAction.addIds([attacker.cardId]);
     }
 
     // Sparkshot just happens immediately. It isn't interruptable and it can't be redirected, so we might as well do it right away

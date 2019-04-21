@@ -1,5 +1,5 @@
 import { Card, Character } from '../cards/card';
-import { Phase, Action } from './phase';
+import { Phase, Action, ActionOptions } from './phase';
 import { Game, EventDescriptor } from '../game';
 import { CardApi } from '../cards/card_api';
 import { PatrolZone } from '../board';
@@ -17,7 +17,7 @@ export function patrolAction(cardId: string): void {
 
     if (!character.canPatrol()) throw new Error('This character is unable to patrol');
 
-    let action = new Action('PatrolChoice').registerNeverAutoResolve();
+    let action = new Action('PatrolChoice', new ActionOptions()).registerNeverAutoResolve();
     let phase = new Phase([action]);
     action.extraState['patrolCardId'] = cardId;
     cardToPatrol.game.phaseStack.addToStack(phase);

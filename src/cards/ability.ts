@@ -85,7 +85,11 @@ export abstract class Ability {
             });
         }
 
-        let action = new Action('AbilityChoice', false, chooseNumber, choicesRequired);
+        let action = new Action('AbilityChoice', {
+            chooseNumber: chooseNumber,
+            canChooseTargetsMoreThanOnce: canChooseTargetsMoreThanOnce,
+            mustChooseAll: false
+        });
         let phase = new Phase([action]);
         phaseStack.addToStack(phase);
 
@@ -93,7 +97,7 @@ export abstract class Ability {
         action.addCards(allCards);
         if (buildings && buildings.boardBuildings) action.addIds(buildings.boardBuildings);
 
-        if (!choicesRequired) action.idsToResolve.push('None');
+        if (!choicesRequired) action.addIds(['None']);
 
         // gives the back-end the ability to find the resolve() method for this card
         action.extraState.cardWithAbility = this.card.cardId;

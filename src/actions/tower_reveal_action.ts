@@ -19,7 +19,7 @@ export function towerRevealAction(game: Game): void {
         return;
     }
 
-    let action = new Action('TowerRevealChoice');
+    let action = new Action('TowerRevealChoice', { canChooseTargetsMoreThanOnce: false, chooseNumber: 1, mustChooseAll: false });
     action.addCards(eligibleCards);
     game.phaseStack.addToStack(new Phase([action]));
 

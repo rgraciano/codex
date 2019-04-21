@@ -53,17 +53,17 @@ export class PhaseStack {
     setupForNewGame() {
         this.addToStack(
             new Phase([
-                new Action('PlayCard').registerNeverAutoResolve(),
-                new Action('Worker').registerNeverAutoResolve(),
-                new Action('Tech').registerNeverAutoResolve(),
-                new Action('Build').registerNeverAutoResolve(),
-                new Action('Patrol').registerNeverAutoResolve(),
-                new Action('Ability').registerNeverAutoResolve(),
-                new Action('Attack').registerNeverAutoResolve(),
-                new Action('HeroLevel').registerNeverAutoResolve(),
-                new Action('EndTurn').registerNeverAutoResolve(),
-                new Action('TowerReveal').registerNeverAutoResolve(),
-                new Action('Sideline').registerNeverAutoResolve()
+                new Action('PlayCard', new ActionOptions()).registerNeverAutoResolve(),
+                new Action('Worker', new ActionOptions()).registerNeverAutoResolve(),
+                new Action('Tech', new ActionOptions()).registerNeverAutoResolve(),
+                new Action('Build', new ActionOptions()).registerNeverAutoResolve(),
+                new Action('Patrol', new ActionOptions()).registerNeverAutoResolve(),
+                new Action('Ability', new ActionOptions()).registerNeverAutoResolve(),
+                new Action('Attack', new ActionOptions()).registerNeverAutoResolve(),
+                new Action('HeroLevel', new ActionOptions()).registerNeverAutoResolve(),
+                new Action('EndTurn', new ActionOptions()).registerNeverAutoResolve(),
+                new Action('TowerReveal', new ActionOptions()).registerNeverAutoResolve(),
+                new Action('Sideline', new ActionOptions()).registerNeverAutoResolve()
             ])
         );
     }
@@ -96,20 +96,15 @@ export class PhaseStack {
             if (phase.gameOver) return true;
 
             // first, if we've chosen everything possible, then we clear the action
-            phase.actions = phase.actions.filter(
-                action =>
-                    !action.clearOnEmpty ||
-                    action.neverAutoResolve ||
-                    (!action.canChooseTargetsMoreThanOnce && action.resolvedIds.length < action.idsToResolve.length)
-            );
+            phase.actions = phase.actions.filter(action => {
+                // these actions must be manually cleared
+                if (!action.clearOnEmpty || action.neverAutoResolve) return true;
 
-            // next, if we've chosen the correct number already, clear the action
-            phase.actions = phase.actions.filter(
-                action =>
-                    !action.clearOnEmpty ||
-                    action.neverAutoResolve ||
-                    (!action.mustChooseAll && action.chooseNumber > 0 && action.chooseNumber < action.resolveIds.length)
-            );
+                // if we haven't yet chosen all of the things we needed to choose, then we continue choosing
+                if (action.numberResolved < action.chooseNumber) return true;
+
+                return false;
+            });
 
             // if all actions have been resolved, or if we are marked with "end this phase", exit this phase
             if (phase.actions.length == 0) return false;
@@ -126,33 +121,32 @@ export class PhaseStack {
     }
 }
 
+export class ActionOptions {
+    mustChooseAll: boolean = false;
+    chooseNumber: number = 1;
+    canChooseTargetsMoreThanOnce: boolean = false;
+}
 export class Action {
     name: ActionName;
-    chooseNumber: number;
-    mustChooseAll: boolean;
-    mustChooseExactNumber: boolean;
-    canChooseTargetsMoreThanOnce: boolean;
-    idsToResolve: string[] = [];
-    resolvedIds: string[] = [];
+    chooseNumber: number; // how many choices we need to make
+    mustChooseAll: boolean; // rather than a specific number, the user has to keep resolving til there's nothing left
+    canChooseTargetsMoreThanOnce: boolean; // user may choose the same thing multiple times
+
     neverAutoResolve = false;
     clearOnEmpty = true;
+
+    private idsToResolve: string[] = [];
+    private resolvedIds: string[] = [];
 
     // This is used to track any information an action needs to carry forward in this phase,
     // e.g., which attacker we're currently resolving.
     extraState: PrimitiveMap = {};
 
-    constructor(
-        name: ActionName,
-        mustChooseAll: boolean = false,
-        chooseNumber: number = 1,
-        mustChooseExactNumber: boolean = true,
-        canChooseTargetsMoreThanOnce: boolean = false
-    ) {
+    constructor(name: ActionName, options: ActionOptions) {
         this.name = name;
-        this.chooseNumber = chooseNumber;
-        this.mustChooseExactNumber = mustChooseExactNumber;
-        this.mustChooseAll = mustChooseAll;
-        this.canChooseTargetsMoreThanOnce = canChooseTargetsMoreThanOnce;
+        this.chooseNumber = options.chooseNumber;
+        this.mustChooseAll = options.mustChooseAll;
+        this.canChooseTargetsMoreThanOnce = options.canChooseTargetsMoreThanOnce;
     }
 
     serialize(): ObjectMap {
@@ -160,7 +154,6 @@ export class Action {
             name: this.name,
             idsToResolve: this.idsToResolve,
             resolvedIds: this.resolvedIds,
-            mustChooseExactNumber: this.mustChooseExactNumber,
             mustChooseAll: this.mustChooseAll,
             chooseNumber: this.chooseNumber,
             canChooseTargetsMoreThanOnce: this.canChooseTargetsMoreThanOnce,
@@ -170,13 +163,11 @@ export class Action {
     }
 
     static deserialize(pojo: ObjectMap): Action {
-        let action = new Action(
-            <ActionName>pojo.name,
-            <boolean>pojo.mustChooseAll,
-            <number>pojo.chooseNumber,
-            <boolean>pojo.mustChooseExactNumber,
-            <boolean>pojo.canChooseTargetsMoreThanOnce
-        );
+        let action = new Action(<ActionName>pojo.name, {
+            mustChooseAll: <boolean>pojo.mustChooseAll,
+            chooseNumber: <number>pojo.chooseNumber,
+            canChooseTargetsMoreThanOnce: <boolean>pojo.canChooseTargetsMoreThanOnce
+        });
         action.idsToResolve = <string[]>pojo.idsToResolve;
         action.resolvedIds = <string[]>pojo.resolvedIds;
         action.neverAutoResolve = <boolean>pojo.neverAutoResolve;
@@ -197,10 +188,14 @@ export class Action {
 
     addIds(ids: string[]) {
         this.idsToResolve.push(...ids);
+
+        if (this.mustChooseAll) {
+            this.chooseNumber += ids.length;
+        }
     }
 
     addCards(cards: Card[]): void {
-        cards.map(card => this.resolveId(card.cardId));
+        cards.map(card => this.addIds([card.cardId]));
     }
 
     /** @ids could be card IDs OR BuildingTypes */
@@ -211,15 +206,31 @@ export class Action {
     resolveId(id: string) {
         this.resolvedIds.push(id);
 
-        let index = this.idsToResolve.findIndex(thisId => thisId === id);
-        if (index > -1) {
-            this.idsToResolve.splice(index, 1);
+        if (!this.canChooseTargetsMoreThanOnce) {
+            let index = this.idsToResolve.findIndex(thisId => thisId === id);
+
+            if (index > -1) {
+                this.idsToResolve.splice(index, 1);
+            }
         }
     }
 
     /** @returns whether or not card can be found in list of must resolved */
     ifToResolve(cardId: string): boolean {
         return this.idsToResolve.filter(thisId => thisId === cardId).length > 0;
+    }
+
+    get numberResolved() {
+        return this.resolvedIds.length;
+    }
+
+    get onlyPossibleId() {
+        if (this.idsToResolve.length > 1) throw new Error('More than one ID is possible to resolve');
+        else return this.idsToResolve[0];
+    }
+
+    get canAutoResolve() {
+        return !this.neverAutoResolve && this.idsToResolve.length < 2;
     }
 }
 

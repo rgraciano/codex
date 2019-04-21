@@ -123,7 +123,7 @@ export class GameServer {
         let action = phase.getAction(actionName);
         if (!action) throw new Error('Invalid action');
 
-        if (overrideWithPhase) onlyPossibleTarget = <string>phase.actions[0].idsToResolve[0];
+        if (overrideWithPhase) onlyPossibleTarget = <string>phase.actions[0].onlyPossibleId;
 
         if (actionName.endsWith('Choice')) {
             let safeContext: StringMap = {};
@@ -281,11 +281,7 @@ export class GameServer {
 
             if (topOfStack.gameOver) return;
 
-            if (
-                topOfStack.actions.length === 1 &&
-                !topOfStack.actions[0].neverAutoResolve &&
-                topOfStack.actions[0].idsToResolve.length < 2
-            ) {
+            if (topOfStack.actions.length === 1 && topOfStack.actions[0].canAutoResolve) {
                 this.runAction(topOfStack.actions[0].name, {}, true);
                 clearedSingleAction = true;
             } else clearedSingleAction = false;
