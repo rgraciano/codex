@@ -241,17 +241,12 @@ export class CardApi {
         useExistingPhase = false
     ) {
         let phase: Phase = undefined;
-        let action: Action = undefined;
+        let action: Action = new Action(actionName, { canChooseTargetsMoreThanOnce: false, chooseNumber: 0, mustChooseAll: true });
 
         if (useExistingPhase) {
             phase = game.phaseStack.topOfStack();
-            action = phase.actions.find(act => act.name == actionName);
-            if (!action) throw new Error('Could not find action when trying to use existing phase, for action ' + actionName);
-        }
-        if (phase === undefined) {
-            action = new Action(actionName, { canChooseTargetsMoreThanOnce: false, chooseNumber: 0, mustChooseAll: true });
-            phase = new Phase([action]);
-        }
+            phase.actions.push(action);
+        } else phase = new Phase([action]);
 
         if (extraState) action.extraState = extraState;
 

@@ -371,8 +371,9 @@ function attackCard(attacker: Card, defender: Card) {
 
     // Attacker and defender deal combat damage to one another. Accounts for swift strike. Note things may die here,
     // and will move to the discard pile or be removed from game accordingly
-    let excessDamage = combatDamage(attacker, defender);
-    combatDamage(defender, attacker);
+    let excessDamage: number = 0;
+    if (defender.effective().swiftStrike > 0 && attacker.effective().swiftStrike < 1) excessDamage = combatDamage(defender, attacker, true);
+    else excessDamage = combatDamage(attacker, defender);
 
     let sqlEffective = defenderBoard.patrolZone.squadLeader ? defenderBoard.patrolZone.squadLeader.effective() : false;
     let attackerEffective = attacker.effective();
@@ -448,31 +449,41 @@ function dealCombatDamage(game: Game, striker: Card, receiver: Card, adjective =
         );
 }
 
-function combatDamage(striker: Card, receiver: Card): number {
+function combatResolveDamage(striker: Card, receiver: Card, swiftStrike = false): [number, boolean] {
     let game = striker.game;
-    let attemptedSwiftStrike = false;
     let excessDamage = 0;
+    let destroyed = false;
 
-    if (striker.effective().swiftStrike && !receiver.effective().swiftStrike) {
-        attemptedSwiftStrike = true;
-        dealCombatDamage(game, striker, receiver, 'swift strike');
-    }
-
-    let receiverIsDead = false;
+    dealCombatDamage(game, striker, receiver, swiftStrike ? 'swift strike' : '');
 
     if (receiver.shouldDestroy()) {
         excessDamage = receiver.effective().damage - receiver.allHealth;
         game.addEvent(new EventDescriptor('WouldDie', receiver.name + ' will die from damage received'));
-        receiverIsDead = CardApi.destroyCard(receiver, true);
-    }
 
-    // note processDeath could save the card from death, e.g. in the instance a unit is wearing a Soul Stone
-    if (!receiverIsDead) {
-        if (attemptedSwiftStrike) {
-            game.addEvent(new EventDescriptor('SwiftStrike', receiver.name + ' survived swift strike'));
+        // if swift strike was used, then we destroy the card right now
+        // note the card could be saved by something like soul stone
+        if (swiftStrike) {
+            destroyed = CardApi.destroyCard(receiver);
         }
-        dealCombatDamage(game, receiver, striker);
     }
 
-    return excessDamage;
+    return [excessDamage, destroyed];
+}
+
+function combatDamage(striker: Card, receiver: Card, returnExcessForReceiver = false): number {
+    let attemptedSwiftStrike = false;
+    let strikerExcessDamage = 0,
+        receiverExcessDamage = 0;
+    let receiverDestroyed = false;
+
+    if (striker.effective().swiftStrike && !receiver.effective().swiftStrike) attemptedSwiftStrike = true;
+
+    [strikerExcessDamage, receiverDestroyed] = combatResolveDamage(striker, receiver, attemptedSwiftStrike);
+
+    if (!attemptedSwiftStrike || !receiverDestroyed) [receiverExcessDamage] = combatResolveDamage(receiver, striker);
+
+    // note processDeath could save the card from death, e.g. in the instance a unit is wearing a Soul Stone..
+    // gotta manage this somehow... trigger death to process?
+
+    return returnExcessForReceiver ? receiverExcessDamage : strikerExcessDamage;
 }
