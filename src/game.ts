@@ -165,24 +165,36 @@ export class Game {
 
     processGameState(): EventDescriptor[] {
         let results: EventDescriptor[];
+        let needNewPhase = false;
 
         results = this.processBoardState(this.player1Board);
         results.push(...this.processBoardState(this.player2Board));
 
+        let destroyChoiceAction = this.phaseStack.topOfStack().actions.find(act => act.name == 'DestroyChoice');
+
+        if (!destroyChoiceAction) {
+            needNewPhase = true;
+            destroyChoiceAction = new Action('DestroyChoice', {
+                canChooseTargetsMoreThanOnce: false,
+                chooseNumber: 0,
+                mustChooseAll: true
+            });
+        }
+
         // check everything in play to see if anything has died. if it has, create a new phase like Destroy and have a DestroyChoice
         // for everything we see as dying simultaneously.  cleanUpPhases() should then be able to trigger dies() for our DestroyChoice,
         // which will trigger some stuff and life will go on
-        let cardsToDestroy: Card[] = this.getAllActiveCards().filter(card => {
+        this.getAllActiveCards().map(card => {
             if (card && (card.cardType == 'Hero' || card.cardType == 'Unit') && card.shouldDestroy()) {
-                results.push(new EventDescriptor('CardToDestroy', card.name + ' will be destroyed', { cardId: card.cardId }));
-                return true;
+                if (!destroyChoiceAction.ifToResolve(card.cardId)) {
+                    results.push(new EventDescriptor('CardToDestroy', card.name + ' will be destroyed', { cardId: card.cardId }));
+                    destroyChoiceAction.addIds([card.cardId]);
+                }
             }
         });
 
-        if (cardsToDestroy.length > 0) {
-            let action = new Action('DestroyChoice', { canChooseTargetsMoreThanOnce: false, chooseNumber: 0, mustChooseAll: true });
-            action.addCards(cardsToDestroy);
-            this.phaseStack.addToStack(new Phase([action]));
+        if (destroyChoiceAction.countToResolve() > 0 && needNewPhase) {
+            this.phaseStack.addToStack(new Phase([destroyChoiceAction]));
         }
 
         return results;

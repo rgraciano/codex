@@ -130,23 +130,24 @@ export class GameServer {
             let choiceValue: string;
             let choiceCategory: ChoiceCategory = 'Card';
 
+            let buildingChoice = GameServer.getAlNumProperty(context, 'buildingId');
+            let cardChoice = GameServer.getAlNumProperty(context, 'cardId');
+
+            // Default to buildingId or cardId, whichever is set
+            if (buildingChoice) {
+                choiceCategory = 'Building';
+                choiceValue = buildingChoice;
+            } else if (cardChoice) {
+                choiceCategory = 'Card';
+                choiceValue = cardChoice;
+            }
+
             // when attacking, if there's an "only possible choice" then it's a target building or target attack,
             // and we have to get the attacking card ID from the extra state
             if (actionName == 'DefenderChoice') {
-                let buildingChoice = GameServer.getAlNumProperty(context, 'targetBuildingId');
-                let cardChoice = GameServer.getAlNumProperty(context, 'targetCardId');
-
                 if (overrideWithPhase) {
-                    if (Board.isBuildingId(onlyPossibleTarget)) buildingChoice = onlyPossibleTarget;
-                    else cardChoice = onlyPossibleTarget;
-                }
-
-                if (buildingChoice) {
-                    choiceCategory = 'Building';
-                    choiceValue = buildingChoice;
-                } else if (cardChoice) {
-                    choiceCategory = 'Card';
-                    choiceValue = cardChoice;
+                    if (Board.isBuildingId(onlyPossibleTarget)) choiceValue = onlyPossibleTarget;
+                    else choiceValue = onlyPossibleTarget;
                 }
             } else if (actionName == 'PatrolChoice') {
                 choiceCategory = 'Arbitrary';

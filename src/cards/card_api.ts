@@ -318,12 +318,8 @@ export class CardApi {
 
     public static removeCardFromPlay(card: Card) {
         let game: Game = card.game;
-        let found = false;
-
-        if (!this.removeCardFromBoard(game.player1Board, card)) found = this.removeCardFromBoard(game.player2Board, card);
-        else found = true;
-
-        if (!found) throw new Error('Tried to remove ' + card.cardId + ' from play, but could not find it');
+        let found = this.removeCardFromBoard(game.player1Board, card);
+        if (!found) this.removeCardFromBoard(game.player2Board, card);
     }
 
     private static removeCardFromBoard(board: Board, card: Card): boolean {

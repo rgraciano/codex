@@ -220,6 +220,10 @@ export class Action {
         return this.idsToResolve.filter(thisId => thisId === cardId).length > 0;
     }
 
+    countToResolve(): number {
+        return this.idsToResolve.length;
+    }
+
     get numberResolved() {
         return this.resolvedIds.length;
     }
