@@ -368,6 +368,13 @@ export abstract class Card {
     }
 
     private adjustProperty(numToAdjust: number, prop: keyof Attributes, addOrSubtract: 'add' | 'subtract') {
+        if (!this.game.getAllActiveCards().includes(this)) {
+            return new EventDescriptor(
+                'NothingHappened',
+                this.name + ' ' + prop + ' would have changed, but the card is no longer in play'
+            );
+        }
+
         let add = addOrSubtract == 'add';
 
         if (add) this.attributeModifiers[prop] += numToAdjust;
@@ -493,6 +500,9 @@ export class Attributes {
     cantSacrifice: number = 0;
     cantPatrol: number = 0;
     cantAttack: number = 0;
+
+    // Deals damage as -1/-1 runes
+    dealsDamageAsMinus11: number = 0;
 
     // Counting how many runes are on the card
     timeRunes: number = 0;

@@ -139,6 +139,12 @@ export class CardApi {
     static play(board: Board, card: Card, fromSpace: Card[], free = false) {
         if (!card.canPlay()) throw new Error(card.name + ' is not currently playable');
 
+        // ensure that we reset this card before trying to play it, in case something weird happened
+        // to it in the discard pile or wherever it was sitting. for example, a card hook that executes
+        // on combat damage could change a card after it died, accidentally.  that would be a bug in the
+        // card hook, but this makes the game a bit more resilient to dodge any such bugs
+        card.resetCard();
+
         if (!free) {
             let cost: number = card.costAfterAlterations;
             board.gold -= cost > 0 ? cost : 0;

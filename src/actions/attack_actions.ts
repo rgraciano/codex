@@ -434,10 +434,21 @@ function dealCombatDamage(game: Game, striker: Card, receiver: Card, adjective =
     if (!striker || !receiver) return;
 
     let damageDone = specificDamage ? specificDamage : striker.allAttack;
+    let addlText = '';
 
-    receiver.attributeModifiers.damage += damageDone;
+    // only do damage if the card is in play
+    if (game.getAllActiveCards().includes(receiver)) {
+        if (striker.effective().dealsDamageAsMinus11 > 0) {
+            receiver.gainProperty('minusOneOne', damageDone);
+            addlText = ' as -1/-1 runes';
+        } else receiver.gainProperty('damage', damageDone);
+    }
+
     game.addEvent(
-        new EventDescriptor('CombatDamage', striker.name + ' did ' + damageDone + ' ' + adjective + ' damage to ' + receiver.name)
+        new EventDescriptor(
+            'CombatDamage',
+            striker.name + ' did ' + damageDone + ' ' + adjective + ' damage to ' + receiver.name + addlText
+        )
     );
 
     if (triggerHook)

@@ -58,7 +58,8 @@ export type ServerEvent =
     | 'SwiftStrike'
     | 'CombatDamage'
     | 'MaxReshuffles'
-    | 'DiscardDraw';
+    | 'DiscardDraw'
+    | 'NothingHappened';
 export type RuneEvent = 'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
 export class Game {
