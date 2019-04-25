@@ -74,6 +74,7 @@ export function choiceAction(game: Game, action: Action, choiceValue: string, ch
 
         case 'HeroLevelChoice':
             markResolved = heroLevelChoice(action, card);
+            break;
 
         case 'PatrolChoice':
             markResolved = choosePatrolSlotChoice(game, action, choiceValue);
