@@ -144,11 +144,9 @@ export class GameServer {
 
             // when attacking, if there's an "only possible choice" then it's a target building or target attack,
             // and we have to get the attacking card ID from the extra state
-            if (actionName == 'DefenderChoice') {
-                if (overrideWithPhase) {
-                    if (Board.isBuildingId(onlyPossibleTarget)) choiceValue = onlyPossibleTarget;
-                    else choiceValue = onlyPossibleTarget;
-                }
+            if (actionName == 'DefenderChoice' && overrideWithPhase && Board.isBuildingId(onlyPossibleTarget)) {
+                choiceCategory = 'Building';
+                choiceValue = onlyPossibleTarget;
             } else if (actionName == 'PatrolChoice') {
                 choiceCategory = 'Arbitrary';
                 choiceValue = GameServer.requireProp('patrolSlot', context, GameServer.alnumProperties);
@@ -157,6 +155,7 @@ export class GameServer {
             }
             // when not attacking, the only possible choice is simple
             else if (overrideWithPhase) {
+                choiceCategory = 'Card';
                 choiceValue = onlyPossibleTarget;
             }
 

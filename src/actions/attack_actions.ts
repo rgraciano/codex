@@ -247,7 +247,7 @@ function checkBuildingIsAttackable(attacker: Character, boardBuilding: BoardBuil
     let hookResults = CardApi.hookOrAlteration(attacker.game, 'alterCanAttackBuildings', [attacker, boardBuilding], 'AllActive');
     let preventedFromAttacking = false;
 
-    if (hookResults)
+    if (hookResults.length > 0)
         preventedFromAttacking = hookResults.reduce((previousValue: any, currentValue: any) => !previousValue || !currentValue);
 
     return !preventedFromAttacking && boardBuilding.isActive();
@@ -308,6 +308,8 @@ export function attackChosenTarget(attacker: Card, building?: string, validCardT
 }
 
 function attackBuilding(attacker: Character, building: BoardBuilding) {
+    let game = attacker.game;
+
     /* 1) have to check if building can actually be damaged, as it could be flying or it could be unattackable due to a card effect
      *    1a- call a hook that checks whether or not buildings are attackable? also put this in card targeting rules
      *        alterCanAttackBuildings(cardAttacking: Card, buildingDefender: BoardBuilding): boolean;
@@ -317,10 +319,21 @@ function attackBuilding(attacker: Character, building: BoardBuilding) {
     }
 
     /* 2) deal dmg to building. use alterCombatDamage */
+    let modifiedDamage = CardApi.hookOrAlteration(attacker.game, 'alterCombatDamage', [attacker, undefined, building], 'AllActive').reduce(
+        (acc: number, cur: number) => acc + cur
+    );
+
+    game.addEvent(building.damage(attacker.allAttack + modifiedDamage, attacker));
+
+    game.addEvents(CardApi.hookOrAlteration(game, 'dealCombatDamage', [attacker, undefined, building], 'AllActive'));
 
     /* 3) if flying, take dmg from anti-air */
+    processAntiAirDamage(attacker);
+
     /* 4) if tower, take dmg from that */
+    processTowerDamage(attacker);
 }
+
 function attackCard(attacker: Card, defender: Card) {
     let defenderBoard = defender.controllerBoard;
     let tower = defenderBoard.addOn.isActive() && defenderBoard.addOn.addOnType == 'Tower' ? defenderBoard.addOn : undefined;
@@ -350,11 +363,7 @@ function attackCard(attacker: Card, defender: Card) {
         }
     }
 
-    // accounting for tower, which always hits the attacker. no escaping it
-    if (tower) {
-        attacker.attributeModifiers.damage++;
-        game.addEvent(new EventDescriptor('TowerDamage', 'Tower did 1 damage to ' + attacker.name));
-    }
+    processTowerDamage(attacker);
 
     // Entering a new phase, in which we'll put all concurrent events for resolution
     let combatDamagePhase = new Phase([]);
@@ -375,28 +384,9 @@ function attackCard(attacker: Card, defender: Card) {
     if (defender.effective().swiftStrike > 0 && attacker.effective().swiftStrike < 1) excessDamage = combatDamage(defender, attacker, true);
     else excessDamage = combatDamage(attacker, defender);
 
-    let sqlEffective = defenderBoard.patrolZone.squadLeader ? defenderBoard.patrolZone.squadLeader.effective() : false;
+    processAntiAirDamage(attacker, defenderPatrolSlot);
+
     let attackerEffective = attacker.effective();
-
-    // Anti-air hits us if we're flying over a patroller w/ anti-air attribute
-    if (attackerEffective.flying) {
-        // attacking a patroller, so squad leader with AA can take a shot at us
-        if (defenderPatrolSlot && defenderPatrolSlot != 'squadLeader' && sqlEffective && sqlEffective.antiAir) {
-            dealCombatDamage(game, defenderBoard.patrolZone.squadLeader, attacker, 'anti-air');
-        }
-        // attacking a non-patroller, so any patroller with AA can take a shot at us
-        else if (!defenderPatrolSlot) {
-            for (let patroller of defenderBoard.getPatrolZoneAsArray()) {
-                if (patroller) {
-                    let eff = patroller.effective();
-
-                    if (eff.antiAir && patroller.allAttack) {
-                        dealCombatDamage(game, patroller, attacker, 'anti-air');
-                    }
-                }
-            }
-        }
-    }
 
     // If overpower is a possibility, then we'll have to let the user choose when to activate it amidst everything else that's happening
     if (excessDamage > 0 && attackerEffective.overpower) {
@@ -428,6 +418,46 @@ function attackCard(attacker: Card, defender: Card) {
             case 'lookout':
                 dealSparkDmg(defenderBoard.patrolZone.technician);
                 break;
+        }
+    }
+}
+
+function processTowerDamage(attacker: Card) {
+    // accounting for tower, which always hits the attacker. no escaping it
+    if (attacker.oppControllerBoard.addOn.isActive() && attacker.oppControllerBoard.addOn.name == 'Tower') {
+        let [armorDamaged, physicalDamage] = dealDamageToCard(1, attacker);
+        let damageType = armorDamaged > 0 ? 'armor' : 'physical';
+        attacker.game.addEvent(new EventDescriptor('TowerDamage', 'Tower did 1 ' + damageType + ' damage to ' + attacker.name));
+    }
+}
+
+function processAntiAirDamage(attacker: Card, defenderPatrolSlot?: keyof PatrolZone) {
+    let attackerEffective = attacker.effective();
+    let defenderBoard = attacker.oppControllerBoard;
+    let game = attacker.game;
+
+    // Anti-air hits us if we're flying over a patroller w/ anti-air attribute
+    if (attackerEffective.flying) {
+        // attacking a patroller, so squad leader with AA can take a shot at us
+        if (
+            defenderPatrolSlot &&
+            defenderPatrolSlot != 'squadLeader' &&
+            defenderBoard.patrolZone.squadLeader &&
+            defenderBoard.patrolZone.squadLeader.effective().antiAir
+        ) {
+            dealCombatDamage(game, defenderBoard.patrolZone.squadLeader, attacker, 'anti-air');
+        }
+        // attacking a non-patroller, so any patroller with AA can take a shot at us
+        else if (!defenderPatrolSlot) {
+            for (let patroller of defenderBoard.getPatrolZoneAsArray()) {
+                if (patroller) {
+                    let eff = patroller.effective();
+
+                    if (eff.antiAir && patroller.allAttack) {
+                        dealCombatDamage(game, patroller, attacker, 'anti-air');
+                    }
+                }
+            }
         }
     }
 }
@@ -474,13 +504,7 @@ function dealCombatDamage(game: Game, striker: Card, receiver: Card, adjective =
 
     game.addEvent(new EventDescriptor('CombatDamage', descText));
 
-    if (triggerHook)
-        game.addEvent(
-            CardApi.hookOrAlterationSingleValue(
-                CardApi.hookOrAlteration(game, 'dealCombatDamage', [striker, receiver], 'AllActive'),
-                undefined
-            )
-        );
+    if (triggerHook) game.addEvents(CardApi.hookOrAlteration(game, 'dealCombatDamage', [striker, receiver], 'AllActive'));
 }
 
 function combatResolveDamage(striker: Card, receiver: Card, swiftStrike = false): [number, boolean] {

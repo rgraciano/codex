@@ -116,8 +116,9 @@ export interface PatrolHook extends Card {
     sideline(slot: keyof PatrolZone): EventDescriptor;
 }
 
+/** Call when a card dealt combat damage to something */
 export interface DealCombatDamageHook extends Card {
-    dealCombatDamage(cardDealingDamage: Card, cardReceivingDamage: Card): EventDescriptor;
+    dealCombatDamage(cardDealingDamage: Card, cardReceivingDamage?: Card, buildingReceivingDamage?: BoardBuilding): EventDescriptor;
 }
 
 /*
