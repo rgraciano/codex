@@ -1,5 +1,5 @@
 import { Game, EventDescriptor } from '../game';
-import { Card } from './card';
+import { Card, Unit } from './card';
 import { Hero } from './hero';
 import { Spell, AttachSpell, ImmediateSpell, OngoingSpell, UntilSpell } from './spell';
 import { GlobalBonusHook, WouldDieHook, WouldDiscardHook } from './handlers';
@@ -69,9 +69,10 @@ export class CardApi {
             let action = new Action('HeroLevelChoice', { canChooseTargetsMoreThanOnce: false, chooseNumber: 1, mustChooseAll: false });
             action.addCards(this.getCardsFromSpace(game, 'OpponentActive').filter(opponentCard => opponentCard.cardType == 'Hero'));
             phase.actions.push(action);
-        }
 
-        this.leavePlay(card, 'Discard', true, true);
+            this.leavePlay(card, 'HeroZone', true, true);
+        } else this.leavePlay(card, 'Discard', true, true);
+
         return true;
     }
 
@@ -80,6 +81,17 @@ export class CardApi {
         let game: Game = card.game;
 
         this.trigger(game, 'LeavesChoice', 'onLeaves', 'AllActive', { dyingCardId: card.cardId }, useExistingPhase);
+
+        if (isDying) {
+            let board = card.controllerBoard;
+            if (board.patrolZone.scavenger === card) {
+                board.gold++;
+                card.game.addEvent(new EventDescriptor('Scavenger', 'Player ' + card.controller + ' gains 1 gold for Scavenger'));
+            } else if (board.patrolZone.technician === card) {
+                board.drawCards(1, card.game);
+                card.game.addEvent(new EventDescriptor('Technician', 'Player ' + card.controller + ' draws 1 card for Technician'));
+            }
+        }
 
         switch (destination) {
             case 'Hand':
@@ -380,22 +392,11 @@ export class CardApi {
     private static discardCardFromPlay(card: Card, isDying: boolean): void {
         card.resetCard();
 
-        if (isDying) {
-            let board = card.controller == 1 ? card.game.player1Board : card.game.player2Board;
-            if (board.patrolZone.scavenger === card) {
-                board.gold++;
-                card.game.addEvent(new EventDescriptor('Scavenger', 'Player ' + card.controller + ' gains 1 gold for Scavenger'));
-            } else if (board.patrolZone.technician === card) {
-                board.drawCards(1, card.game);
-                card.game.addEvent(new EventDescriptor('Technician', 'Player ' + card.controller + ' draws 1 card for Technician'));
-            }
-        }
-
         this.removeCardFromPlay(card);
 
-        let preventedDiscard = this.hookOrAlteration(card.game, 'wouldDiscard', [card]);
+        let preventedDiscard = this.hookOrAlterationSingleValue(this.hookOrAlteration(card.game, 'wouldDiscard', [card]), false);
 
-        if (!preventedDiscard) {
+        if (!preventedDiscard && !(card.cardType == 'Unit' && (<Unit>card).isToken)) {
             card.ownerBoard.discard.push(card);
             card.game.addEvent(new EventDescriptor('DiscardedCards', card.name + ' was discarded', { cardId: card.cardId }));
         }
