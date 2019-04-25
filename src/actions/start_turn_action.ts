@@ -25,8 +25,15 @@ export function startTurnAction(game: Game): void {
     // clear patrol zone, moving everything to "in play"
     game.addEvent(clearPatrolZone(board));
 
-    // ready everything
-    game.addEvents(readyAllCards(game, board));
+    // un-exhaust everything on the player's board
+    game.getAllActiveCards(board).map(card => {
+        if (card.attributeModifiers.exhausted > 0) card.attributeModifiers.exhausted--; // decrement because adding to this means it's disabled or may have come into play exhausted
+    });
+
+    // remove arrival fatigue from ALL cards, since the opponent may have some arrival fatigue.
+    game.getAllActiveCards().map(card => {
+        if (card.attributeModifiers.arrivalFatigue > 0) card.attributeModifiers.arrivalFatigue = 0;
+    });
 
     // undo any armor damage. all armor resets on every turn
     game.getAllActiveCards().map(card => (card.attributeModifiers.damageToArmor = 0));
@@ -92,21 +99,4 @@ function clearPatrolZone(board: Board) {
     }
 
     return new EventDescriptor('ClearPatrolZone', 'Cleared the patrol zone');
-}
-
-function readyAllCards(game: Game, board: Board): Array<EventDescriptor> {
-    // Nothing happens when we ready cards, so we don't have to worry about any triggers happening here.
-
-    let andDoToReadyCards = function(card: Card): EventDescriptor {
-        if (card.attributeModifiers.exhausted > 0) card.attributeModifiers.exhausted--; // decrement because adding to this means it's disabled or may have come into play exhausted
-
-        card.attributeModifiers.arrivalFatigue = 0; // set to zero because you have arrival fatigue or you don't
-        return new EventDescriptor('ReadyCard', 'Readied ' + card.name, { cardId: card.cardId });
-    };
-    let matching = function(card: Card): boolean {
-        let attrs = card.effective();
-        return attrs.exhausted > 0 || attrs.arrivalFatigue > 0;
-    };
-
-    return Game.findAndDoOnCards(board.inPlay, matching, andDoToReadyCards);
 }

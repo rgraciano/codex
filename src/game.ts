@@ -297,22 +297,6 @@ export class Game {
             .filter(card => card.cardType == type)
             .map(card => card.cardId);
     }
-
-    /**
-     * Finds cards matching arbitary criteria, does a thing to those cards, and returns EventDescriptors describing what we did.
-     *
-     * @param cards search space
-     * @param matching do something if this returns true
-     * @param andDo what do
-     */
-    static findAndDoOnCards(
-        space: Card[],
-        matching: (card: Card) => boolean,
-        andDo: (card: Card) => EventDescriptor
-    ): Array<EventDescriptor> {
-        let cards = space.filter(matching);
-        return cards.map(andDo);
-    }
 }
 
 /** Describes something that happened in the game, so the UI can tell the user later and perhaps do something visually  */
