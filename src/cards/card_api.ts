@@ -23,8 +23,6 @@ export class CardApi {
         // Takes card out of hand, but doesn't put it in play yet
         this.removeCardFromSpace(fromSpace, card);
 
-        card.gainProperty('arrivalFatigue', 1);
-
         /**** GLOBAL BONUSES ****/
         // First, check if this card applies bonuses to other cards (possibly including or excluding self)
         if (Reflect.has(card, 'giveBonus')) card.game.getAllActiveCards().map(boardCard => (<GlobalBonusHook>card).giveBonus(boardCard));
@@ -35,6 +33,7 @@ export class CardApi {
 
         /**** CARD IS NOW ON THE BOARD */
         board.inPlay.push(card);
+        card.gainProperty('arrivalFatigue', 1); // must happen after arriving on board, as cards won't gain properties if not active
 
         /**** ARRIVES PHASE ****/
         this.trigger(card.game, 'ArrivesChoice', 'onArrives', 'AllActive', { arrivingCardId: card.cardId });
