@@ -29,7 +29,7 @@ export function startTurnAction(game: Game): void {
     game.addEvents(readyAllCards(game, board));
 
     // undo any armor damage. all armor resets on every turn
-    game.getAllActiveCards().map(card => (card.attributeModifiers.armorDamageThisTurn = 0));
+    game.getAllActiveCards().map(card => (card.attributeModifiers.damageToArmor = 0));
 
     // add up all healing abilities and heal friendly units & heroes
     let healing = 0;

@@ -407,49 +407,72 @@ function attackCard(attacker: Card, defender: Card) {
 
     // Sparkshot just happens immediately. It isn't interruptable and it can't be redirected, so we might as well do it right away
     if (attackerEffective.sparkshot && defenderPatrolSlot) {
+        let dealSparkDmg = (card: Card) => dealCombatDamage(game, attacker, card, 'sparkshot', 1, false);
+
         switch (defenderPatrolSlot) {
             case 'squadLeader':
-                dealCombatDamage(game, attacker, defender, 'sparkshot', 1, false);
+                dealSparkDmg(defenderBoard.patrolZone.elite);
                 break;
             case 'elite':
-                dealCombatDamage(game, attacker, defenderBoard.patrolZone.squadLeader, 'sparkshot', 1, false);
-                dealCombatDamage(game, attacker, defenderBoard.patrolZone.scavenger, 'sparkshot', 1, false);
+                dealSparkDmg(defenderBoard.patrolZone.squadLeader);
+                dealSparkDmg(defenderBoard.patrolZone.scavenger);
                 break;
             case 'scavenger':
-                dealCombatDamage(game, attacker, defenderBoard.patrolZone.elite, 'sparkshot', 1, false);
-                dealCombatDamage(game, attacker, defenderBoard.patrolZone.technician, 'sparkshot', 1, false);
+                dealSparkDmg(defenderBoard.patrolZone.elite);
+                dealSparkDmg(defenderBoard.patrolZone.technician);
                 break;
             case 'technician':
-                dealCombatDamage(game, attacker, defenderBoard.patrolZone.scavenger, 'sparkshot', 1, false);
-                dealCombatDamage(game, attacker, defenderBoard.patrolZone.lookout, 'sparkshot', 1, false);
+                dealSparkDmg(defenderBoard.patrolZone.scavenger);
+                dealSparkDmg(defenderBoard.patrolZone.lookout);
                 break;
             case 'lookout':
-                dealCombatDamage(game, attacker, defenderBoard.patrolZone.technician, 'sparkshot', 1, false);
+                dealSparkDmg(defenderBoard.patrolZone.technician);
                 break;
         }
     }
 }
 
+/** Removes armor, deals damage to card, and returns the amount of armor damage done and amount of real damage done */
+function dealDamageToCard(attemptedDamage: number, receiver: Card, dealDamageAsMinus11 = false): [number, number] {
+    // Always damage armor first
+    let receiverEffective = receiver.effective();
+
+    let armorRemaining = receiverEffective.armor - receiverEffective.damageToArmor;
+
+    let armorDamaged = armorRemaining > attemptedDamage ? attemptedDamage : armorRemaining;
+
+    let damageDone = attemptedDamage - armorDamaged;
+
+    if (receiver.game.getAllActiveCards().includes(receiver)) {
+        receiver.gainProperty('damageToArmor', armorDamaged);
+
+        if (dealDamageAsMinus11) receiver.gainProperty('minusOneOne', damageDone);
+        else receiver.gainProperty('damage', damageDone);
+    }
+
+    return [armorDamaged, damageDone];
+}
+
 function dealCombatDamage(game: Game, striker: Card, receiver: Card, adjective = '', specificDamage = 0, triggerHook = true) {
     if (!striker || !receiver) return;
 
-    let damageDone = specificDamage ? specificDamage : striker.allAttack;
-    let addlText = '';
+    let attemptedDamage = specificDamage ? specificDamage : striker.allAttack;
+    let dealsDamageAsMinus11 = striker.effective().dealsDamageAsMinus11 > 0;
 
-    // only do damage if the card is in play
-    if (game.getAllActiveCards().includes(receiver)) {
-        if (striker.effective().dealsDamageAsMinus11 > 0) {
-            receiver.gainProperty('minusOneOne', damageDone);
-            addlText = ' as -1/-1 runes';
-        } else receiver.gainProperty('damage', damageDone);
+    let [armorDamaged, damageDone] = dealDamageToCard(attemptedDamage, receiver, dealsDamageAsMinus11);
+
+    let descText = striker.name + ' did ';
+    if (armorDamaged > 0) descText += armorDamaged + ' armor damage';
+    if (damageDone > 0) {
+        if (armorDamaged > 0) descText += ' and';
+        descText += damageDone;
+        if (adjective) descText += ' ' + adjective;
+        if (dealsDamageAsMinus11) descText += ' -1/-1 runes';
+        else descText += ' physical damage';
     }
+    descText += ' to ' + receiver.name;
 
-    game.addEvent(
-        new EventDescriptor(
-            'CombatDamage',
-            striker.name + ' did ' + damageDone + ' ' + adjective + ' damage to ' + receiver.name + addlText
-        )
-    );
+    game.addEvent(new EventDescriptor('CombatDamage', descText));
 
     if (triggerHook)
         game.addEvent(

@@ -463,7 +463,18 @@ export class Attributes {
 
     // Base armor, before modifiers etc
     armor: number = 0;
-    armorDamageThisTurn: number = 0;
+    damage: number = 0;
+    damageToArmor: number = 0;
+
+    // Deals damage as -1/-1 runes
+    dealsDamageAsMinus11: number = 0;
+
+    // Counting how many runes are on the card
+    plusOneOne: number = 0;
+    minusOneOne: number = 0;
+    timeRunes: number = 0;
+    featherRunes: number = 0;
+    crumblingRunes: number = 0;
 
     // The number of things this will obliterate on attack
     obliterate: number = 0;
@@ -500,17 +511,6 @@ export class Attributes {
     cantSacrifice: number = 0;
     cantPatrol: number = 0;
     cantAttack: number = 0;
-
-    // Deals damage as -1/-1 runes
-    dealsDamageAsMinus11: number = 0;
-
-    // Counting how many runes are on the card
-    timeRunes: number = 0;
-    damage: number = 0;
-    plusOneOne: number = 0;
-    minusOneOne: number = 0;
-    featherRunes: number = 0;
-    crumblingRunes: number = 0;
 
     /** After a card is used in a way that exhausts it.
      * These cards can't use most abilities and can't patrol.
