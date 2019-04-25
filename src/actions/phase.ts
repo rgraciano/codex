@@ -101,7 +101,7 @@ export class PhaseStack {
                 if (!action.clearOnEmpty || action.neverAutoResolve) return true;
 
                 // if we haven't yet chosen all of the things we needed to choose, then we continue choosing
-                if (action.numberResolved < action.chooseNumber) return true;
+                if (action.numberResolved < action.chooseNumber && action.countToResolve() >= action.chooseNumber) return true;
 
                 return false;
             });

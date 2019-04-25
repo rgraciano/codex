@@ -73,7 +73,8 @@ export function choiceAction(game: Game, action: Action, choiceValue: string, ch
             break;
 
         case 'HeroLevelChoice':
-            markResolved = heroLevelChoice(action, card);
+            if (!card) game.addEvent(new EventDescriptor('HeroGainLvl', 'No heroes available to gain 2 levels'));
+            else markResolved = heroLevelChoice(action, card);
             break;
 
         case 'PatrolChoice':
@@ -92,7 +93,7 @@ export function choiceAction(game: Game, action: Action, choiceValue: string, ch
             throw new Error('Could not find a phase for this choice');
     }
 
-    if (markResolved) action.resolveId(choiceValue);
+    if (markResolved && choiceValue) action.resolveId(choiceValue);
 }
 
 function diesOrLeavesChoice(game: Game, action: Action, cardId: string, card: Card): boolean {
@@ -118,7 +119,7 @@ function destroyChoice(action: Action, card: Card): boolean {
 function heroLevelChoice(action: Action, card: Card): boolean {
     validateChoiceForAction(card.game, action, card.cardId);
     let hero = <Hero>card;
-    hero.level = hero.level + 2;
+    hero.level += 2;
     return true;
 }
 

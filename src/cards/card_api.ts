@@ -67,8 +67,13 @@ export class CardApi {
         if (card.cardType == 'Hero') {
             let phase = game.phaseStack.topOfStack();
             let action = new Action('HeroLevelChoice', { canChooseTargetsMoreThanOnce: false, chooseNumber: 1, mustChooseAll: false });
-            action.addCards(this.getCardsFromSpace(game, 'OpponentActive').filter(opponentCard => opponentCard.cardType == 'Hero'));
-            phase.actions.push(action);
+            action.addCards(
+                game
+                    .getAllActiveCards(card.oppControllerBoard)
+                    .filter(opponentCard => opponentCard.cardType == 'Hero' && (<Hero>opponentCard).level < (<Hero>opponentCard).maxLevel)
+            );
+
+            if (action.countToResolve() > 0) phase.actions.push(action);
 
             this.leavePlay(card, 'HeroZone', true, true);
         } else this.leavePlay(card, 'Discard', true, true);

@@ -152,6 +152,8 @@ export class GameServer {
             } else if (actionName == 'PatrolChoice') {
                 choiceCategory = 'Arbitrary';
                 choiceValue = GameServer.requireProp('patrolSlot', context, GameServer.alnumProperties);
+            } else if (actionName == 'HeroLevelChoice' && !choiceValue && !onlyPossibleTarget) {
+                choiceCategory = 'Arbitrary';
             }
             // when not attacking, the only possible choice is simple
             else if (overrideWithPhase) {
