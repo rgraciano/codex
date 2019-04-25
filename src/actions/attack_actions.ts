@@ -245,7 +245,10 @@ function sendBuildingTargetIfValid(attacker: Character, boardBuilding: BoardBuil
 
 function checkBuildingIsAttackable(attacker: Character, boardBuilding: BoardBuilding): boolean {
     let hookResults = CardApi.hookOrAlteration(attacker.game, 'alterCanAttackBuildings', [attacker, boardBuilding], 'AllActive');
-    let preventedFromAttacking = hookResults.reduce((previousValue: any, currentValue: any) => !previousValue || !currentValue, true);
+    let preventedFromAttacking =
+        hookResults.length > 0
+            ? hookResults.reduce((previousValue: any, currentValue: any) => !previousValue || !currentValue, true)
+            : false;
     return !preventedFromAttacking && boardBuilding.isActive();
 }
 
