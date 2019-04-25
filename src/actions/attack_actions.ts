@@ -245,11 +245,7 @@ function sendBuildingTargetIfValid(attacker: Character, boardBuilding: BoardBuil
 
 function checkBuildingIsAttackable(attacker: Character, boardBuilding: BoardBuilding): boolean {
     let hookResults = CardApi.hookOrAlteration(attacker.game, 'alterCanAttackBuildings', [attacker, boardBuilding], 'AllActive');
-    let preventedFromAttacking = false;
-
-    if (hookResults.length > 0)
-        preventedFromAttacking = hookResults.reduce((previousValue: any, currentValue: any) => !previousValue || !currentValue);
-
+    let preventedFromAttacking = hookResults.reduce((previousValue: any, currentValue: any) => !previousValue || !currentValue, true);
     return !preventedFromAttacking && boardBuilding.isActive();
 }
 
@@ -320,7 +316,8 @@ function attackBuilding(attacker: Character, building: BoardBuilding) {
 
     /* 2) deal dmg to building. use alterCombatDamage */
     let modifiedDamage = CardApi.hookOrAlteration(attacker.game, 'alterCombatDamage', [attacker, undefined, building], 'AllActive').reduce(
-        (acc: number, cur: number) => acc + cur
+        (acc: number, cur: number) => acc + cur,
+        0
     );
 
     game.addEvent(building.damage(attacker.allAttack + modifiedDamage, attacker));

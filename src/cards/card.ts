@@ -225,13 +225,12 @@ export abstract class Card {
     }
 
     get costAfterAlterations(): number {
-        let cost: number = this.effective().cost;
-        let costAlterations = <number[]>CardApi.hookOrAlteration(this.game, 'alterCost', [this], 'AllActive');
-        if (costAlterations && costAlterations.length > 0)
-            cost += costAlterations.reduce((previousValue: number, currentValue: number, currentIndex: number, array: number[]) => {
+        return CardApi.hookOrAlteration(this.game, 'alterCost', [this], 'AllActive').reduce(
+            (previousValue: number, currentValue: number, currentIndex: number, array: number[]) => {
                 return previousValue + currentValue;
-            });
-        return cost;
+            },
+            this.effective().cost
+        );
     }
 
     protected canDoThings(arrivalFatigueOk: boolean, checkAttacksThisTurn: boolean): boolean {
