@@ -23,7 +23,7 @@ export function startTurnAction(game: Game): void {
     opponentBoard.activeSpells = opponentBoard.activeSpells.filter(spell => spell.spellLifecycle == 'UntilNextTurn');
 
     // clear patrol zone, moving everything to "in play"
-    game.addEvent(clearPatrolZone(board));
+    if (board.turnCount > 1) game.addEvent(clearPatrolZone(board));
 
     // un-exhaust everything on the player's board
     game.getAllActiveCards(board).map(card => {
