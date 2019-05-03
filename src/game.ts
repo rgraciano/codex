@@ -139,7 +139,7 @@ export class Game {
 
     serialize(): ObjectMap {
         return {
-            events: Object.assign({}, this.events),
+            events: Object.assign([], this.events),
             activePlayer: this.activePlayer,
             player1Board: this.player1Board.serialize(),
             player2Board: this.player2Board.serialize(),
