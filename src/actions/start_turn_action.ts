@@ -2,7 +2,6 @@ import { Game, EventDescriptor } from '../game';
 import { Card } from '../cards/card';
 import { Board } from '../board';
 import { PatrolZone } from '../board';
-import { Phase, Action } from './phase';
 import { UpkeepHandler } from '../cards/handlers';
 import { CardApi } from '../cards/card_api';
 

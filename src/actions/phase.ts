@@ -4,6 +4,7 @@ import { ObjectMap, StringMap } from '../game_server';
 // The client uses Actions to understand what API calls are currently valid, and how to present possible actions to the user.
 export type ActionName =
     | 'NewGame'
+    | 'LoadState'
     | 'StagingAbility'
     | 'UpkeepChoice'
     | 'ArrivesChoice'

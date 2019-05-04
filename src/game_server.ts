@@ -91,6 +91,10 @@ export class GameServer {
 
         this.loadGameState(state);
 
+        if (action == 'LoadState') {
+            return this.wrapUp();
+        }
+
         if (!this.game.phaseStack.topOfStack().isValidAction(action)) {
             return this.responseError('Action ' + action + ' is not currently valid');
         }
