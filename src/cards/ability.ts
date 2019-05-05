@@ -2,15 +2,29 @@ import { Card, Attributes, TechLevel } from './card';
 import { EventDescriptor, Game } from '../game';
 import { Phase, Action } from '../actions/phase';
 import { BuildingType, BoardBuilding } from '../board';
-import { CardApi } from './card_api';
+import { CardApi, SpaceType } from './card_api';
 import { Hero } from './hero';
 
 export type BuildingChoice = { boardBuildings: BuildingType[]; cardBuildings: Card[] };
 export type ChoiceType = 'Buildings' | 'Heroes' | 'Units' | 'Characters' | 'Weakest';
 
+export class TargetingOptions {
+    minTechLevel: TechLevel = 0;
+    maxTechLevel: TechLevel = 3;
+    numTargets: number = 1;
+    includeUnits: boolean = true;
+    includeHeroes: boolean = false;
+    choicesRequired: boolean = false;
+    usesTargetingRules: boolean = true;
+    canChooseTargetMoreThanOnce: boolean = false;
+    spaceType: SpaceType = 'AllActive';
+}
+
 export abstract class Ability {
     abstract name: string;
     card: Card;
+
+    targetingOptions: TargetingOptions;
 
     requiresHeroLvl = 0;
     requiredGoldCost = 0;
@@ -20,8 +34,9 @@ export abstract class Ability {
     stagingAbility: boolean = false;
     usable: boolean = true; // set to false for abilities that are triggered, like from a handler
 
-    constructor(card: Card) {
+    constructor(card: Card, targetingOptions: TargetingOptions) {
         this.card = card;
+        this.targetingOptions = targetingOptions;
     }
 
     canUse(): boolean {
@@ -59,15 +74,7 @@ export abstract class Ability {
      * Enters a phase to choose a target for an ability
      * @chooseNumber use 0 to indicate ALL
      */
-    choose(
-        buildings: BuildingChoice,
-        cards: Card[],
-        chooseNumber: number,
-        label: string,
-        choicesRequired: boolean,
-        canChooseTargetsMoreThanOnce: boolean,
-        usesTargetingRules: boolean
-    ) {
+    choose(buildings: BuildingChoice, cards: Card[], label: string) {
         let phaseStack = this.card.game.phaseStack;
 
         let allCards: Card[] = [];
@@ -75,7 +82,7 @@ export abstract class Ability {
         if (buildings && buildings.cardBuildings) allCards = allCards.concat(buildings.cardBuildings);
         if (cards) allCards = allCards.concat(cards);
 
-        if (usesTargetingRules && allCards) {
+        if (this.targetingOptions.usesTargetingRules && allCards) {
             allCards.filter(card => {
                 let eff = card.effective();
                 if (eff.untargetable) return false;
@@ -86,8 +93,8 @@ export abstract class Ability {
         }
 
         let action = new Action('AbilityChoice', {
-            chooseNumber: chooseNumber,
-            canChooseTargetsMoreThanOnce: canChooseTargetsMoreThanOnce,
+            chooseNumber: this.targetingOptions.numTargets,
+            canChooseTargetsMoreThanOnce: this.targetingOptions.canChooseTargetMoreThanOnce,
             mustChooseAll: false
         });
         let phase = new Phase([action]);
@@ -97,7 +104,7 @@ export abstract class Ability {
         action.addCards(allCards);
         if (buildings && buildings.boardBuildings) action.addIds(buildings.boardBuildings);
 
-        if (!choicesRequired) action.addIds(['None']);
+        if (!this.targetingOptions.choicesRequired) action.addIds(['None']);
 
         // gives the back-end the ability to find the resolve() method for this card
         action.extraState.cardWithAbility = this.card.cardId;
@@ -107,25 +114,19 @@ export abstract class Ability {
         // whether or not things are required
         action.extraState.label = label;
 
-        action.extraState.usesTargetingRules = usesTargetingRules;
+        action.extraState.usesTargetingRules = this.targetingOptions.usesTargetingRules;
     }
 
     // building choices can be built-ins, or cards
     // note buildings can be untargetable (see Hero's Monument), so we should manage that here
     // returns an array of built-in building IDs and Cards IDs
-    choicesBuildings(
-        includeCards: boolean,
-        includeBase: boolean,
-        includeAddOn: boolean,
-        minTechLevel: TechLevel,
-        maxTechLevel: TechLevel
-    ): BuildingChoice {
+    choicesBuildings(includeCards: boolean, includeBase: boolean, includeAddOn: boolean): BuildingChoice {
         let choices: BuildingChoice = { boardBuildings: [], cardBuildings: [] };
 
         if (includeBase) choices.boardBuildings.push('Base');
         if (includeAddOn) choices.boardBuildings.push('AddOn');
 
-        for (let i = minTechLevel; i <= maxTechLevel; i++) {
+        for (let i = this.targetingOptions.minTechLevel; i <= this.targetingOptions.maxTechLevel; i++) {
             if (i === 0) continue;
 
             choices.boardBuildings.push(<BuildingType>('Tech ' + new Number(i).toString()));
@@ -136,37 +137,14 @@ export abstract class Ability {
         return choices;
     }
 
-    choicesUnits(space: Card[], leastTechLevel?: TechLevel, mostTechLevel?: TechLevel, extraFilter?: (card: Card) => boolean): Card[] {
-        return this.choicesCharacters(space, true, false, leastTechLevel, mostTechLevel, extraFilter);
-    }
-
-    choicesHeroes(space: Card[], leastTechLevel?: TechLevel, mostTechLevel?: TechLevel, extraFilter?: (card: Card) => boolean): Card[] {
-        return this.choicesCharacters(space, false, true, leastTechLevel, mostTechLevel, extraFilter);
-    }
-
-    choicesUnitsOrHeroes(
-        space: Card[],
-        leastTechLevel?: TechLevel,
-        mostTechLevel?: TechLevel,
-        extraFilter?: (card: Card) => boolean
-    ): Card[] {
-        return this.choicesCharacters(space, true, true, leastTechLevel, mostTechLevel, extraFilter);
-    }
-
-    choicesCharacters(
-        space: Card[],
-        includeUnits = true,
-        includeHeroes = true,
-        leastTechLevel?: TechLevel,
-        mostTechLevel?: TechLevel,
-        extraFilter?: (card: Card) => boolean
-    ): Card[] {
+    choicesCharacters(extraFilter?: (card: Card) => boolean): Card[] {
+        let space = CardApi.getCardsFromSpace(this.card.game, this.targetingOptions.spaceType);
         return space.filter(card => {
-            if (leastTechLevel !== undefined && leastTechLevel > card.techLevel) return false;
-            else if (mostTechLevel !== undefined && mostTechLevel < card.techLevel) return false;
+            if (this.targetingOptions.minTechLevel !== undefined && this.targetingOptions.minTechLevel > card.techLevel) return false;
+            else if (this.targetingOptions.maxTechLevel !== undefined && this.targetingOptions.maxTechLevel < card.techLevel) return false;
             else if (extraFilter && !extraFilter(card)) return false;
-            else if (includeUnits && card.cardType == 'Unit') return true;
-            else if (includeHeroes && card.cardType == 'Hero') return true;
+            else if (this.targetingOptions.includeUnits && card.cardType == 'Unit') return true;
+            else if (this.targetingOptions.includeHeroes && card.cardType == 'Hero') return true;
             else return false;
         });
     }
@@ -175,7 +153,8 @@ export abstract class Ability {
      * Note this may return more than numberWeakest targets if there's a tie, and the user will have to choose.
      * Normally this isn't a targeting thing; it automatically happens to the weakest things.
      */
-    choicesWeakest(space: Card[], numberWeakest: number, usesTargetingRules: boolean, useAttack = true): Card[] {
+    choicesWeakest(numberWeakest: number, useAttack = true): Card[] {
+        let space = CardApi.getCardsFromSpace(this.card.game, this.targetingOptions.spaceType);
         let filtered = space.filter(card => card.cardType != 'Unit');
 
         // pick weakest tech level, using attack as a tie-breaker (if applicable). ties are still possible though
@@ -213,60 +192,15 @@ export abstract class Ability {
     }
 }
 
-export abstract class CommonAbility extends Ability {
-    minTechLevel: TechLevel;
-    maxTechLevel: TechLevel;
-    numTargets: number;
-    includeUnits: boolean;
-    includeHeroes: boolean;
-    choicesRequired: boolean;
-    usesTargetingRules: boolean;
-    canChooseTargetMoreThanOnce: boolean;
-
-    constructor(
-        card: Card,
-        minTechLevel: TechLevel,
-        maxTechLevel: TechLevel,
-        numTargets: number,
-        includeUnits = true,
-        includeHeroes = true,
-        choicesRequired = true,
-        usesTargetingRules = true,
-        canChooseTargetMoreThanOnce = false
-    ) {
-        super(card);
-        this.minTechLevel = minTechLevel;
-        this.maxTechLevel = maxTechLevel;
-        this.numTargets = numTargets;
-        this.includeUnits = includeUnits;
-        this.includeHeroes = includeHeroes;
-        this.choicesRequired = choicesRequired;
-        this.usesTargetingRules = usesTargetingRules;
-        this.canChooseTargetMoreThanOnce = canChooseTargetMoreThanOnce;
+export abstract class CharacterChoiceAbility extends Ability {
+    use() {
+        super.use();
+        return this.choose(undefined, this.choicesCharacters(), this.name);
     }
 }
 
-export class AddPlusOneOneAbility extends CommonAbility {
+export class AddPlusOneOneAbility extends CharacterChoiceAbility {
     name = 'Add +1/+1';
-
-    use() {
-        super.use();
-        return this.choose(
-            undefined,
-            this.choicesCharacters(
-                this.card.game.getAllActiveCards(),
-                this.includeUnits,
-                this.includeHeroes,
-                this.minTechLevel,
-                this.maxTechLevel
-            ),
-            this.numTargets,
-            this.name,
-            this.choicesRequired,
-            this.canChooseTargetMoreThanOnce,
-            true
-        );
-    }
 
     resolveChoice(cardOrBuildingId: string) {
         let card = Card.idToCardMap.get(cardOrBuildingId);
@@ -274,32 +208,23 @@ export class AddPlusOneOneAbility extends CommonAbility {
     }
 }
 
-export class SidelineAbility extends CommonAbility {
+export class SidelineAbility extends CharacterChoiceAbility {
     name = 'Sideline';
-
-    use() {
-        super.use();
-        return this.choose(
-            undefined,
-            this.choicesCharacters(
-                this.card.game.getAllPatrollers(),
-                this.includeUnits,
-                this.includeHeroes,
-                this.minTechLevel,
-                this.maxTechLevel
-            ),
-            this.numTargets,
-            this.name,
-            this.choicesRequired,
-            this.canChooseTargetMoreThanOnce,
-            true
-        );
-    }
 
     resolveChoice(cardOrBuildingId: string) {
         let card = Card.idToCardMap.get(cardOrBuildingId);
         CardApi.sidelineCard(card);
         return new EventDescriptor('Sideline', 'Sidelined ' + card.name);
+    }
+}
+
+export class DestroyAbility extends CharacterChoiceAbility {
+    name = 'Destroy';
+
+    resolveChoice(cardOrBuildingId: string) {
+        let card = Card.idToCardMap.get(cardOrBuildingId);
+        CardApi.destroyCard(card);
+        return new EventDescriptor('Ability', 'Marked ' + card.name + ' for destruction');
     }
 }
 
@@ -310,7 +235,7 @@ export class CreateTokensAbility extends Ability {
     onMyBoard: boolean;
 
     constructor(card: Card, cost: number, tokenName: string, numTokens: number, onMyBoard: boolean = true) {
-        super(card);
+        super(card, new TargetingOptions());
         this.name = 'Create ' + tokenName;
         this.tokenName = tokenName;
         this.numTokens = numTokens;
@@ -329,7 +254,7 @@ export class BoostAbility extends Ability {
     useFn: () => void;
 
     constructor(card: Card, cost: number, useFn: () => void) {
-        super(card);
+        super(card, new TargetingOptions());
         this.requiredGoldCost = cost;
         this.useFn = useFn;
     }
@@ -344,6 +269,6 @@ export class BoostAbility extends Ability {
 export class DontBoostAbility extends Ability {
     name = 'No Boost';
     constructor(card: Card) {
-        super(card);
+        super(card, new TargetingOptions());
     }
 }

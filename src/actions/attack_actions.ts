@@ -516,11 +516,11 @@ function combatResolveDamage(striker: Card, receiver: Card, swiftStrike = false)
 
     if (receiver.shouldDestroy()) {
         excessDamage = receiver.effective().damage - receiver.allHealth;
-        game.addEvent(new EventDescriptor('WouldDie', receiver.name + ' will die from damage received'));
 
         // if swift strike was used, then we destroy the card right now
         // note the card could be saved by something like soul stone
         if (swiftStrike) {
+            game.addEvent(new EventDescriptor('WouldDie', receiver.name + ' would die from swift strike damage received'));
             destroyed = CardApi.destroyCard(receiver);
         }
     }

@@ -1,5 +1,5 @@
 import { Card } from '../cards/card';
-import { Game } from '../game';
+import { Game, EventDescriptor } from '../game';
 import { CardApi } from '../cards/card_api';
 import { Action } from './phase';
 
@@ -12,6 +12,8 @@ export function abilityAction(cardId: string, abilityName: string, stagingAbilit
 
     if (!ability.canUse())
         throw new Error('Do not meet the requirements to use ability ' + abilityName + ' on card ' + cardWithAbility.name);
+
+    cardWithAbility.game.addEvent(new EventDescriptor('Ability', 'Used ' + abilityName + ' on ' + cardWithAbility.name));
 
     ability.use();
 }

@@ -1,5 +1,5 @@
 import { Card, TechLevel, Attributes, Unit } from '../card';
-import { Ability, AddPlusOneOneAbility } from '../ability';
+import { Ability, AddPlusOneOneAbility, DestroyAbility, TargetingOptions } from '../ability';
 import { Game, EventDescriptor } from '../../game';
 import * as Color from '../color';
 import { CardApi } from '../card_api';
@@ -20,26 +20,7 @@ export class TwoAbilitiesTest extends Unit {
         this.baseAttributes.attack = 1;
         this.baseAttributes.cost = 0;
 
-        this.registerAbility(new AddPlusOneOneAbility(this, 0, 3, 3));
-        this.registerAbility(new DestroyAbility(this));
-    }
-}
-
-class DestroyAbility extends Ability {
-    name: string;
-    constructor(card: Card) {
-        super(card);
-        this.name = 'Destroy';
-    }
-
-    use() {
-        super.use();
-        return this.choose(undefined, this.choicesUnits(this.card.game.getAllActiveCards(), 0, 0), 2, 'Destroy', false, false, true);
-    }
-
-    resolveChoice(cardOrBuildingId: string) {
-        let card = Card.idToCardMap.get(cardOrBuildingId);
-        CardApi.destroyCard(card);
-        return new EventDescriptor('Ability', 'Marked ' + card.name + ' for destruction');
+        this.registerAbility(new AddPlusOneOneAbility(this, new TargetingOptions()));
+        this.registerAbility(new DestroyAbility(this, new TargetingOptions()));
     }
 }

@@ -1,6 +1,6 @@
 import { EventDescriptor } from '../game';
 import { ObjectMap } from '../game_server';
-import { Ability } from './ability';
+import { Ability, TargetingOptions, CharacterChoiceAbility } from './ability';
 import { Card, CardType, Attributes } from './card';
 
 export type SpellLevel = 'Tech 0' | 'Normal' | 'Ultimate';
@@ -110,23 +110,13 @@ export abstract class UntilSpell extends OngoingSpell {}
  * Game asks user for which target.
  * Game calls resolveChoice() with the target.
  */
-export abstract class AttachAbility extends Ability {
-    name: string;
-
-    constructor(card: Card) {
-        super(card);
-        this.name = 'Attach';
-    }
+export abstract class AttachAbility extends CharacterChoiceAbility {
+    name: string = 'Attach';
 
     abstract choices(): Card[];
 
     attach(card: Card) {
         this.card.contains.push(card);
-    }
-
-    use() {
-        super.use();
-        this.choose(undefined, this.choices(), 1, 'Attach', true, false, true);
     }
 
     resolveChoice(cardOrBuildingId: string): EventDescriptor | undefined {

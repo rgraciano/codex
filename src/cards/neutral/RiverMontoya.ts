@@ -2,7 +2,7 @@ import { TechLevel, Attributes, Card } from '../card';
 import { Hero } from '../hero';
 import { Game, EventDescriptor } from '../../game';
 import * as Color from '../color';
-import { SidelineAbility } from '../../cards/ability';
+import { SidelineAbility, TargetingOptions } from '../../cards/ability';
 import { CardCostAlteration } from '../../cards/handlers';
 
 export class RiverMontoya extends Hero implements CardCostAlteration {
@@ -28,9 +28,16 @@ export class RiverMontoya extends Hero implements CardCostAlteration {
         this.baseAttributes.attack = 2;
         this.baseAttributes.cost = 2;
 
-        let sidelineAbil = new SidelineAbility(this, 0, 1, 1, true, false, true, true);
+        let sidelineOpts = new TargetingOptions();
+        sidelineOpts.minTechLevel = 0;
+        sidelineOpts.maxTechLevel = 1;
+        sidelineOpts.spaceType = 'AllPatroller';
+        sidelineOpts.includeHeroes = false;
+
+        let sidelineAbil = new SidelineAbility(this, sidelineOpts);
         sidelineAbil.requiresExhaust = true;
         sidelineAbil.requiresHeroLvl = this.midLevel;
+
         this.registerAbility(sidelineAbil);
     }
 

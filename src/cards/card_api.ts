@@ -6,7 +6,7 @@ import { GlobalBonusHook, WouldDieHook, WouldDiscardHook } from './handlers';
 import { Phase, ActionName, PrimitiveMap, Action, ActionOptions } from '../actions/phase';
 import { Board, PatrolZone } from '../board';
 
-type SpaceType = 'AllActive' | 'PlayerActive' | 'OpponentActive' | 'AllPatroller' | 'OpponentPatroller' | 'None';
+export type SpaceType = 'AllActive' | 'PlayerActive' | 'OpponentActive' | 'AllPatroller' | 'OpponentPatroller' | 'None';
 /**
  * Everything in here is designed to be called by a card when something happens, e.g., something is made to arrive.
  *
@@ -294,7 +294,7 @@ export class CardApi {
         }
     }
 
-    private static getCardsFromSpace(game: Game, spaceType: SpaceType): Card[] {
+    public static getCardsFromSpace(game: Game, spaceType: SpaceType): Card[] {
         let space: Card[] = [];
         switch (spaceType) {
             case 'AllActive':
