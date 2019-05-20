@@ -27,5 +27,7 @@ export class Spark extends ImmediateSpell {
         this.castAbility = new DamageCharacterAbility(this, 1);
         this.castAbility.targetingOptions.includeHeroes = true;
         this.castAbility.targetingOptions.spaceType = 'OpponentPatroller';
+
+        this.registerHandlerAbility(this.castAbility);
     }
 }

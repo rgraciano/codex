@@ -291,20 +291,22 @@ export class CardApi {
         let phase: Phase = undefined;
         let action: Action = new Action(actionName, { canChooseTargetsMoreThanOnce: false, chooseNumber: 0, mustChooseAll: true });
 
+        if (useExistingPhase) {
+            phase = game.phaseStack.topOfStack();
+            phase.actions.push(action);
+        } else {
+            phase = new Phase([action]);
+            game.phaseStack.addToStack(phase);
+        }
+
         if (extraState) action.extraState = extraState;
 
         let space: Card[] = this.getCardsFromSpace(game, triggerSpace);
 
         let foundCards: Card[] = this.findCardsWithProperty(space, triggerFn);
 
-        if (foundCards.length > 0) {
-            // add all of those cards to the list of allowedActions, automatically removing those that were already resolved and ensuring there are no duplicates
-            phase.getAction(actionName).addCards(foundCards);
-            if (useExistingPhase) {
-                phase = game.phaseStack.topOfStack();
-                phase.actions.push(action);
-            } else phase = new Phase([action]);
-        }
+        // add all of those cards to the list of allowedActions, automatically removing those that were already resolved and ensuring there are no duplicates
+        if (foundCards.length > 0) phase.getAction(actionName).addCards(foundCards);
     }
 
     static makeTokens(game: Game, tokenName: string, numTokens: number, onMyBoard: boolean = true) {

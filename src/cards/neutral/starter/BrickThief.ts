@@ -14,6 +14,9 @@ export class BrickThief extends Unit implements ArrivesHandler {
     techLevel: TechLevel = 0;
     importPath: string = './neutral/starter';
 
+    repairAbility: RepairAnyBuildingAbility = undefined;
+    dmgAbility: DamageAnyBuildingAbility = undefined;
+
     constructor(owner: number, controller?: number, cardId?: string) {
         super(owner, controller, cardId);
 
@@ -23,19 +26,20 @@ export class BrickThief extends Unit implements ArrivesHandler {
         this.baseAttributes.health = 1;
 
         this.baseAttributes.resist = 1;
+
+        this.repairAbility = new RepairAnyBuildingAbility(this, 1);
+        this.registerHandlerAbility(this.repairAbility);
+
+        this.dmgAbility = new DamageAnyBuildingAbility(this, 1);
+        this.registerHandlerAbility(this.dmgAbility);
     }
 
     onArrives(arrivingCard: Card): EventDescriptor {
         if (arrivingCard != this) return undefined;
 
         // Use the repair ability (first on stack means this happens second)
-        let repairAbility = new RepairAnyBuildingAbility(this, 1);
-        this.registerHandlerAbility(repairAbility);
-        repairAbility.use();
-
+        this.repairAbility.use();
         // Use the damage ability (last on stack means this happens first)
-        let dmgAbility = new DamageAnyBuildingAbility(this, 1);
-        this.registerHandlerAbility(dmgAbility);
-        dmgAbility.use();
+        this.dmgAbility.use();
     }
 }

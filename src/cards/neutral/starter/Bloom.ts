@@ -28,5 +28,7 @@ export class Bloom extends ImmediateSpell {
         this.castAbility.targetingOptions.spaceType = 'PlayerActive';
         this.castAbility.targetingOptions.includeHeroes = true;
         this.castAbility.targetingOptions.extraFilter = (targetCard: Card) => targetCard.effective().plusOneOne <= 0;
+
+        this.registerHandlerAbility(this.castAbility);
     }
 }

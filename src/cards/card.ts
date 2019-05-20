@@ -139,6 +139,8 @@ export abstract class Card {
     /**
      * Normal ability.  Use for typical abilities that the user can choose to activate in play.
      *
+     * Note that Ability must be registered in the Card constructor.
+     *
      * There are three types of abilities:
      *
      *    1) Normal abilities. These show up on the front end when cards are in play or in patrol and ability.canUse()
@@ -164,6 +166,7 @@ export abstract class Card {
 
     /**
      * Staging ability. Use when this ability can only be chosen in the staging area, rather than in play.
+     * Note that Ability must be registered in the  Card constructor.
      * @see registerAbility
      */
     registerStagingAbility(ability: Ability) {
@@ -173,6 +176,7 @@ export abstract class Card {
 
     /**
      * Handler ability. Use when only the game can trigger this ability, never the user.
+     * Note that Ability must be registered in the  Card constructor.
      * @see registerAbility
      */
     registerHandlerAbility(ability: Ability) {

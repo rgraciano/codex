@@ -75,7 +75,7 @@ export class GameServer {
     action(action: ActionName, context: StringMap): ObjectMap {
         if (action == 'NewGame') {
             this.game = new Game();
-            this.game.setupNewGame();
+            this.game.setupNewGame([], []);
             startTurnAction(this.game);
 
             return this.wrapUp();

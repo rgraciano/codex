@@ -21,6 +21,7 @@ export class TargetingOptions {
     extraFilter: (card: Card) => boolean = undefined;
 }
 
+/** Note to use and register an Ability, it must always happen in the Card constructor */
 export abstract class Ability {
     abstract name: string;
     card: Card;
@@ -40,8 +41,8 @@ export abstract class Ability {
         this.targetingOptions = targetingOptions;
     }
 
-    canUse(): boolean {
-        if (!this.usable) return false;
+    canUse(skipUsableCheck = false): boolean {
+        if (!skipUsableCheck && !this.usable) return false;
 
         if (this.card.controllerBoard.gold < this.requiredGoldCost) return false;
 
@@ -60,7 +61,7 @@ export abstract class Ability {
     }
 
     payFor() {
-        if (!this.canUse()) throw new Error('Could not pay for ' + this.name + ' ability');
+        if (!this.canUse(true)) throw new Error('Could not pay for ' + this.name + ' ability');
 
         this.card.controllerBoard.gold -= this.requiredGoldCost;
 

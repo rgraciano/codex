@@ -27,5 +27,7 @@ export class Wither extends ImmediateSpell {
         this.castAbility = new AddMinusOneOneAbility(this, new TargetingOptions());
         this.castAbility.targetingOptions.spaceType = 'PlayerActive';
         this.castAbility.targetingOptions.includeHeroes = true;
+
+        this.registerHandlerAbility(this.castAbility);
     }
 }
