@@ -160,3 +160,8 @@ export interface AttacksHandler extends Card {
 export interface EndTurnHandler extends Card {
     onEndTurn(): EventDescriptor;
 }
+
+/** Called when something receives direct damage */
+export interface DirectDamageHandler extends Card {
+    onDirectDamage(damagedByCard: Card, amount: number, cardBeingDamaged: Card, buildingBeingDamaged: BoardBuilding): EventDescriptor;
+}

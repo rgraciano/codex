@@ -270,6 +270,23 @@ export class Board {
 
         return a;
     }
+
+    getBuildingByName(name: string): BoardBuilding {
+        switch (name) {
+            case 'Base':
+                return this.base;
+            case 'Tech 1':
+                return this.tech1;
+            case 'Tech 2':
+                return this.tech2;
+            case 'Tech 3':
+                return this.tech3;
+            case 'AddOn':
+                return this.addOn;
+            default:
+                throw new Error('Invalid building');
+        }
+    }
 }
 
 /** Works differently from card buildings in pretty much every respect */
@@ -386,6 +403,20 @@ export class BoardBuilding {
         }
 
         return new EventDescriptor('BuildingDamage', description, context);
+    }
+
+    /** Repairs building damage.
+     * @returns actual repaired amount
+     */
+    repair(amt: number): number {
+        let repairable = this.maxHealth - this.health;
+        if (amt < repairable) {
+            this._health += amt;
+            return amt;
+        } else {
+            this._health += repairable;
+            return repairable;
+        }
     }
 
     get health(): number {

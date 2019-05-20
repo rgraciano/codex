@@ -21,6 +21,7 @@ export type ActionName =
     | 'Overpower'
     | 'EndTurnChoice'
     | 'EndTurnCleanup'
+    | 'DirectDamageChoice'
     | TurnActionName;
 
 export type TurnActionName =

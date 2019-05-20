@@ -4,7 +4,7 @@ import { Hero } from './hero';
 import { Spell, AttachSpell, ImmediateSpell, OngoingSpell, UntilSpell } from './spell';
 import { GlobalBonusHook, WouldDieHook, WouldDiscardHook } from './handlers';
 import { Phase, ActionName, PrimitiveMap, Action, ActionOptions } from '../actions/phase';
-import { Board, PatrolZone } from '../board';
+import { Board, PatrolZone, BoardBuilding } from '../board';
 
 export type SpaceType = 'AllActive' | 'PlayerActive' | 'OpponentActive' | 'AllPatroller' | 'OpponentPatroller' | 'None';
 /**
@@ -37,6 +37,32 @@ export class CardApi {
 
         /**** ARRIVES PHASE ****/
         this.trigger(card.game, 'ArrivesChoice', 'onArrives', 'AllActive', { arrivingCardId: card.cardId });
+    }
+
+    /** Runs alteration to change amount of damage done, and trigger to see if anything else happens.
+     * @returns amount of damage done after alterations
+     */
+    static dealDirectDamage(amount: number, damagedBy: Card, damageCard: Card, damageBuilding: BoardBuilding): number {
+        let game = damagedBy.game;
+
+        // check whether or not any cards in play alter the amount of damage being done
+        let alteredDamage = this.hookOrAlteration(game, 'alterDamage', [damagedBy, damageCard, damageBuilding], 'AllActive').reduce(
+            (p: number, c: number) => p + c,
+            amount
+        );
+        let extraState: PrimitiveMap = { damagedBy: damagedBy.cardId, amount: alteredDamage };
+        if (damageCard) {
+            damageCard.gainProperty('damage', alteredDamage);
+            extraState.damageCard = damageCard.cardId;
+        } else if (damageBuilding) {
+            damageBuilding.damage(alteredDamage, damagedBy);
+            extraState.damageBuilding = damageBuilding.name;
+        }
+
+        // damage was done, trigger any 'onDirectDamage' effects if they exist
+        this.trigger(game, 'DirectDamageChoice', 'onDirectDamage', 'AllActive', extraState);
+
+        return alteredDamage;
     }
 
     /**

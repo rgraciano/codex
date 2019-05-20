@@ -275,26 +275,8 @@ export function attackChosenTarget(attacker: Card, building?: string, validCardT
     let attackChar = <Character>attacker;
 
     if (building) {
-        let boardBuilding: BoardBuilding;
-        switch (building) {
-            case 'Base':
-                boardBuilding = attacker.opponentBoard.base;
-                break;
-            case 'Tech 1':
-                boardBuilding = attacker.opponentBoard.tech1;
-                break;
-            case 'Tech 2':
-                boardBuilding = attacker.opponentBoard.tech2;
-                break;
-            case 'Tech 3':
-                boardBuilding = attacker.opponentBoard.tech3;
-                break;
-            case 'AddOn':
-                boardBuilding = attacker.opponentBoard.addOn;
-                break;
-            default:
-                throw new Error('Invalid building target');
-        }
+        let boardBuilding: BoardBuilding = attacker.opponentBoard.getBuildingByName(building);
+
         if (!boardBuilding.built || boardBuilding.constructionInProgress || boardBuilding.destroyed)
             throw new Error(boardBuilding.name + ' is not attackable');
 

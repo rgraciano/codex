@@ -199,6 +199,48 @@ export abstract class CharacterChoiceAbility extends Ability {
     }
 }
 
+export abstract class AnyBuildingChoiceAbility extends Ability {
+    use() {
+        super.use();
+        return this.choose(this.choicesBuildings(true, true, true), undefined, this.name);
+    }
+}
+
+export class DamageAnyBuildingAbility extends AnyBuildingChoiceAbility {
+    name = 'Damage Building';
+    amount = 1;
+
+    constructor(card: Card, amount: number) {
+        super(card, new TargetingOptions());
+        this.amount = amount;
+    }
+
+    resolveChoice(cardOrBuildingId: string) {
+        let building = this.card.oppControllerBoard.getBuildingByName(cardOrBuildingId);
+        let amount = CardApi.dealDirectDamage(this.amount, this.card, undefined, building);
+        return new EventDescriptor(
+            'DirectDamage',
+            amount + ' direct damage was done to player ' + this.card.oppControllerBoard.playerNumber + ' ' + cardOrBuildingId
+        );
+    }
+}
+
+export class RepairAnyBuildingAbility extends AnyBuildingChoiceAbility {
+    name = 'Repair Building';
+    amount = 1;
+
+    constructor(card: Card, amount: number) {
+        super(card, new TargetingOptions());
+        this.amount = amount;
+    }
+
+    resolveChoice(cardOrBuildingId: string) {
+        let building = this.card.ownerBoard.getBuildingByName(cardOrBuildingId);
+        let repaired = building.repair(this.amount);
+        return new EventDescriptor('RepairedDamage', 'Repaired ' + repaired + ' damage from ' + cardOrBuildingId);
+    }
+}
+
 export class AddPlusOneOneAbility extends CharacterChoiceAbility {
     name = 'Add +1/+1';
 

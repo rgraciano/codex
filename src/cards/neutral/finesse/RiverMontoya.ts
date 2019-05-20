@@ -1,19 +1,18 @@
-import { TechLevel, Attributes, Card } from '../card';
-import { Hero } from '../hero';
-import { Game, EventDescriptor } from '../../game';
-import * as Color from '../color';
-import { SidelineAbility, TargetingOptions } from '../../cards/ability';
-import { CardCostAlteration } from '../../cards/handlers';
+import { TechLevel, Attributes, Card } from '../../card';
+import { Hero } from '../../hero';
+import * as Color from '../../color';
+import { SidelineAbility, TargetingOptions } from '../../ability';
+import { CardCostAlteration } from '../../handlers';
 
 export class RiverMontoya extends Hero implements CardCostAlteration {
     protected baseAttributes = new Attributes();
 
     color: Color.ColorName = 'Neutral';
-    spec: Color.Spec = 'Starter';
+    spec: Color.Spec = 'Finesse';
     flavorType: string = 'Dancing Fencer';
     name: string = 'River Montoya';
     techLevel: TechLevel = 0;
-    importPath: string = './neutral';
+    importPath: string = './neutral/finesse';
 
     attackMinMidMax = [2, 2, 3];
     healthMinMidMax = [3, 4, 4];

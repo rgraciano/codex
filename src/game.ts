@@ -4,15 +4,17 @@ import { PhaseStack, Phase, Action } from './actions/phase';
 
 import { Board, BoardBuilding, BuildingType, TechBuilding, AddOn } from './board';
 
-import { TimelyMessenger } from './cards/neutral/TimelyMessenger';
+import { TimelyMessenger } from './cards/neutral/starter/TimelyMessenger';
 
 import { Card, CardType } from './cards/card';
 
 import { ObjectMap } from './game_server';
 import { TwoAbilitiesTest } from './cards/test/TwoAbilitiesTest';
 import { BoostUnitTest } from './cards/test/BoostUnitTest';
-import { RiverMontoya } from './cards/neutral/RiverMontoya';
+import { RiverMontoya } from './cards/neutral/finesse/RiverMontoya';
 import { CardApi } from './cards/card_api';
+
+import { Spec } from './cards/color';
 
 export type ServerEvent =
     | RuneEvent
@@ -59,7 +61,9 @@ export type ServerEvent =
     | 'CombatDamage'
     | 'MaxReshuffles'
     | 'DiscardDraw'
-    | 'NothingHappened';
+    | 'NothingHappened'
+    | 'DirectDamage'
+    | 'RepairedDamage';
 export type RuneEvent = 'timeRunes' | 'damage' | 'plusOneOne' | 'minusOneOne' | 'featherRunes' | 'crumblingRunes';
 
 export class Game {
@@ -78,7 +82,7 @@ export class Game {
 
     gameStateId: string; // used at the end of turn to save this game
 
-    setupNewGame() {
+    setupNewGame(player1Specs: Spec[], player2Specs: Spec[]) {
         this.player1Board = new Board(1);
         this.player2Board = new Board(2);
 

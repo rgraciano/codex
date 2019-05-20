@@ -3,7 +3,7 @@ import { StringMap } from '../game_server';
 import { ActionName, Action } from './phase';
 import { Card } from '../cards/card';
 import { Hero } from '../cards/hero';
-import { ArrivesHandler, DiesHandler, LeavesHandler, UpkeepHandler, AttacksHandler } from '../cards/handlers';
+import { ArrivesHandler, DiesHandler, LeavesHandler, UpkeepHandler, AttacksHandler, DirectDamageHandler } from '../cards/handlers';
 import { CardApi } from '../cards/card_api';
 
 import { choosePatrolSlotChoice } from './patrol_action';
@@ -51,6 +51,18 @@ export function choiceAction(game: Game, action: Action, choiceValue: string, ch
 
         case 'AbilityChoice':
             markResolved = chooseAbilityTargetChoice(game, action, card, choiceValue);
+            break;
+
+        case 'DirectDamageChoice':
+            let extraState = action.extraState;
+            let damagedBy = Card.idToCardMap.get(<string>extraState['damagedBy']);
+            let cardBeingDamaged = extraState.damageCard ? Card.idToCardMap.get(<string>extraState['damageCard']) : undefined;
+            let buildingBeingDamaged = extraState.damageBuilding
+                ? damagedBy.oppControllerBoard.getBuildingByName(<string>extraState.damageBuilding)
+                : undefined;
+            let amount = extraState.amount;
+
+            game.addEvent((<DirectDamageHandler>card).onDirectDamage(damagedBy, <number>amount, cardBeingDamaged, buildingBeingDamaged));
             break;
 
         case 'DefenderChoice':
