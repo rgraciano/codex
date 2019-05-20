@@ -82,7 +82,21 @@ export abstract class Ability {
         if (buildings && buildings.cardBuildings) allCards = allCards.concat(buildings.cardBuildings);
         if (cards) allCards = allCards.concat(cards);
 
-        if (this.targetingOptions.usesTargetingRules && allCards) {
+        // First we check for any opposing flagbearers that would have to be targeted
+        let flagbearer: Card = undefined;
+        if (this.targetingOptions.usesTargetingRules && allCards)
+            flagbearer = allCards.find((curCard: Card) => {
+                let eff = curCard.effective();
+                if (eff.flagbearer <= 0) return false;
+                else if (curCard.controller == curCard.game.activePlayer) return false;
+                else if (eff.untargetable || eff.invisible) return false;
+                else if (curCard.oppControllerBoard.gold < eff.resist) return false;
+                else return true;
+            });
+        // If found... then ONLY flagbearers will be targeted
+        if (flagbearer) allCards = [flagbearer];
+        // If no flagbearers, we filter by invisible, resist, etc; eliminating impossible targets
+        else if (this.targetingOptions.usesTargetingRules && allCards) {
             allCards.filter(card => {
                 let eff = card.effective();
                 if (eff.untargetable) return false;

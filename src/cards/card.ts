@@ -497,6 +497,7 @@ export class Attributes {
     resist: number = 0;
     healing: number = 0;
     sparkshot: number = 0;
+    flagbearer: number = 0;
 
     // Things can go in and out of illusion mode, so we track like an attribute.  diesWhenTargeted can change
     // when Macchiatus comes into play
