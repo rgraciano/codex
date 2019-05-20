@@ -18,6 +18,7 @@ export class TargetingOptions {
     usesTargetingRules: boolean = true;
     canChooseTargetMoreThanOnce: boolean = false;
     spaceType: SpaceType = 'AllActive';
+    extraFilter: (card: Card) => boolean = undefined;
 }
 
 export abstract class Ability {
@@ -151,12 +152,12 @@ export abstract class Ability {
         return choices;
     }
 
-    choicesCharacters(extraFilter?: (card: Card) => boolean): Card[] {
+    choicesCharacters(): Card[] {
         let space = CardApi.getCardsFromSpace(this.card.game, this.targetingOptions.spaceType);
         return space.filter(card => {
             if (this.targetingOptions.minTechLevel !== undefined && this.targetingOptions.minTechLevel > card.techLevel) return false;
             else if (this.targetingOptions.maxTechLevel !== undefined && this.targetingOptions.maxTechLevel < card.techLevel) return false;
-            else if (extraFilter && !extraFilter(card)) return false;
+            else if (this.targetingOptions.extraFilter && !this.targetingOptions.extraFilter(card)) return false;
             else if (this.targetingOptions.includeUnits && card.cardType == 'Unit') return true;
             else if (this.targetingOptions.includeHeroes && card.cardType == 'Hero') return true;
             else return false;
@@ -239,6 +240,22 @@ export class DamageAnyBuildingAbility extends AnyBuildingChoiceAbility {
     }
 }
 
+export class DamageCharacterAbility extends CharacterChoiceAbility {
+    name = 'Damage Character';
+    amount = 1;
+
+    constructor(card: Card, amount: number) {
+        super(card, new TargetingOptions());
+        this.amount = amount;
+    }
+
+    resolveChoice(cardOrBuildingId: string) {
+        let cardToDamage = Card.idToCardMap.get(cardOrBuildingId);
+        let amount = CardApi.dealDirectDamage(this.amount, this.card, cardToDamage, undefined);
+        return new EventDescriptor('DirectDamage', amount + ' direct damage was done to ' + cardToDamage.name);
+    }
+}
+
 export class RepairAnyBuildingAbility extends AnyBuildingChoiceAbility {
     name = 'Repair Building';
     amount = 1;
@@ -261,6 +278,15 @@ export class AddPlusOneOneAbility extends CharacterChoiceAbility {
     resolveChoice(cardOrBuildingId: string) {
         let card = Card.idToCardMap.get(cardOrBuildingId);
         return card.gainProperty('plusOneOne', 1);
+    }
+}
+
+export class AddMinusOneOneAbility extends CharacterChoiceAbility {
+    name = 'Add -1/-1';
+
+    resolveChoice(cardOrBuildingId: string) {
+        let card = Card.idToCardMap.get(cardOrBuildingId);
+        return card.gainProperty('minusOneOne', 1);
     }
 }
 
