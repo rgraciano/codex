@@ -14,6 +14,7 @@ import { playStagingAbilityAction } from './actions/play_staging_ability_action'
 import { patrolAction, sidelineAction } from './actions/patrol_action';
 import { heroLevelAction } from './actions/hero_level_action';
 import { endTurnAction, endTurnCleanupAction } from './actions/end_turn';
+import { Spec, isValidSpec } from './cards/color';
 
 const savePath = '/Users/rg/gamestates';
 
@@ -75,7 +76,12 @@ export class GameServer {
     action(action: ActionName, context: StringMap): ObjectMap {
         if (action == 'NewGame') {
             this.game = new Game();
-            this.game.setupNewGame([], []);
+
+            let specChoices: StringMap = GameServer.nameProperties(context, ['spec1', 'spec2']);
+
+            if (!isValidSpec(specChoices.spec1) || !isValidSpec(specChoices.spec2)) return this.responseError('Invalid spec');
+
+            this.game.setupNewGame([<Spec>specChoices.spec1], [<Spec>specChoices.spec2]);
             startTurnAction(this.game);
 
             return this.wrapUp();

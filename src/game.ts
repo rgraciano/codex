@@ -4,24 +4,12 @@ import { PhaseStack, Phase, Action } from './actions/phase';
 
 import { Board, BoardBuilding, BuildingType, TechBuilding, AddOn } from './board';
 
-import { TimelyMessenger } from './cards/neutral/starter/TimelyMessenger';
-
 import { Card, CardType } from './cards/card';
 
 import { ObjectMap } from './game_server';
 import { RiverMontoya } from './cards/neutral/finesse/RiverMontoya';
 import { CardApi } from './cards/card_api';
-
-import { Spec } from './cards/color';
-import { Spark } from './cards/neutral/starter/Spark';
-import { Bloom } from './cards/neutral/starter/Bloom';
-import { BrickThief } from './cards/neutral/starter/BrickThief';
-import { FruitNinja } from './cards/neutral/starter/FruitNinja';
-import { GranfalloonFlagbearer } from './cards/neutral/starter/GranfalloonFlagbearer';
-import { HelpfulTurtle } from './cards/neutral/starter/HelpfulTurtle';
-import { OlderBrother } from './cards/neutral/starter/OlderBrother';
-import { Tenderfoot } from './cards/neutral/starter/Tenderfoot';
-import { Wither } from './cards/neutral/starter/Wither';
+import { Spec, getStarterCardsForSpec, getHeroesForSpecs } from './cards/color';
 
 export type ServerEvent =
     | RuneEvent
@@ -111,33 +99,11 @@ export class Game {
         this.player2Board.tech3 = new TechBuilding('Tech 3', this.player2Board, 3);
         this.player2Board.addOn = new AddOn('AddOn', this.player2Board);
 
-        this.player1Board.heroZone = [new RiverMontoya(1)];
+        this.player1Board.heroZone = getHeroesForSpecs(player1Specs, 1);
+        this.player2Board.heroZone = getHeroesForSpecs(player2Specs, 2);
 
-        this.player1Board.discard = [
-            new Bloom(1),
-            new BrickThief(1),
-            new FruitNinja(1),
-            new GranfalloonFlagbearer(1),
-            new HelpfulTurtle(1),
-            new OlderBrother(1),
-            new Spark(1),
-            new Tenderfoot(1),
-            new TimelyMessenger(1),
-            new Wither(1)
-        ];
-
-        this.player2Board.discard = [
-            new TimelyMessenger(2),
-            new TimelyMessenger(2),
-            new TimelyMessenger(2),
-            new TimelyMessenger(2),
-            new TimelyMessenger(2),
-            new TimelyMessenger(2),
-            new TimelyMessenger(2),
-            new TimelyMessenger(2),
-            new TimelyMessenger(2),
-            new TimelyMessenger(2)
-        ];
+        this.player1Board.discard = getStarterCardsForSpec(player1Specs[0], 1);
+        this.player2Board.discard = getStarterCardsForSpec(player2Specs[0], 2);
 
         Card.idToCardMap.forEach(card => card.setupGameReferences(this));
 
