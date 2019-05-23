@@ -354,10 +354,13 @@ export abstract class Card {
         return otherCard === this ? fn(otherCard) : undefined;
     }
 
+    doIfYourCard(otherCard: Card, fn: (otherCard: Card) => EventDescriptor): EventDescriptor {
+        return otherCard.controller == this.controller ? fn(otherCard) : undefined;
+    }
+
     /** When otherCard is controlled by the same player, and its FlavorType matches, run fn(otherCard) */
     doIfYourCardAndFlavorType(otherCard: Card, flavorType: string, fn: (otherCard: Card) => EventDescriptor): EventDescriptor {
-        if (otherCard.controller === this.controller && otherCard.flavorType && otherCard.flavorType === flavorType) return fn(otherCard);
-        else return undefined;
+        return otherCard.flavorType == this.flavorType ? this.doIfYourCard(otherCard, fn) : undefined;
     }
 
     /** Gains something like 'haste' or 'frenzy' */

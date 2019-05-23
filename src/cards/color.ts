@@ -15,6 +15,7 @@ import { RiverMontoya } from './neutral/finesse/RiverMontoya';
 
 export type ColorName = 'Neutral' | 'Red' | 'Green' | 'Purple' | 'White' | 'Black' | 'Blue';
 export type Spec =
+    | 'Starter'
     | 'Finesse'
     | 'Bashing'
     | 'Anarchy'
