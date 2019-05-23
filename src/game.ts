@@ -9,7 +9,7 @@ import { Card, CardType } from './cards/card';
 import { ObjectMap } from './game_server';
 import { RiverMontoya } from './cards/neutral/finesse/RiverMontoya';
 import { CardApi } from './cards/card_api';
-import { Spec, getStarterCardsForSpec, getHeroesForSpecs } from './cards/color';
+import { Spec, getStarterCardsForSpec, getHeroesForSpecs, isMultiColor } from './cards/color';
 
 export type ServerEvent =
     | RuneEvent
@@ -104,6 +104,9 @@ export class Game {
 
         this.player1Board.discard = getStarterCardsForSpec(player1Specs[0], 1);
         this.player2Board.discard = getStarterCardsForSpec(player2Specs[0], 2);
+
+        this.player1Board.multiColor = isMultiColor(player1Specs);
+        this.player2Board.multiColor = isMultiColor(player2Specs);
 
         Card.idToCardMap.forEach(card => card.setupGameReferences(this));
 

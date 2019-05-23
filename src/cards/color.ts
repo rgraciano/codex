@@ -73,3 +73,22 @@ export function getStarterCardsForSpec(spec: Spec, playerNumber: number): Card[]
         ];
     else throw new Error('Spec not yet supported');
 }
+
+export function isMultiColor(specs: Spec[]): boolean {
+    let starterSpec = specs[0];
+    let color: Spec[] = undefined;
+    let multiColor = false;
+
+    for (let c of [Neutral, Red, Green, Blue, Black, Purple, White]) {
+        if (c.includes(starterSpec)) {
+            color = c;
+            break;
+        }
+    }
+
+    specs.forEach(spec => {
+        if (!color.includes(spec)) multiColor = true;
+    });
+
+    return multiColor;
+}
