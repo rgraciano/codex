@@ -365,15 +365,35 @@ export abstract class Card {
 
     /** Gains something like 'haste' or 'frenzy' */
     gainProperty(property: keyof Attributes, numToGain = 1) {
-        return this.adjustProperty(numToGain, property, 'add');
+        return this.adjustProperty(numToGain, property);
     }
 
     /** Loses something like 'haste' or 'frenzy' */
     loseProperty(property: keyof Attributes, numToLose = 1) {
-        return this.adjustProperty(numToLose, property, 'subtract');
+        return this.adjustProperty(-numToLose, property);
     }
 
-    private adjustProperty(numToAdjust: number, prop: keyof Attributes, addOrSubtract: 'add' | 'subtract') {
+    adjustProperties(propNumPairs: [keyof Attributes, number][]): EventDescriptor {
+        let description = this.name + ' ';
+        let first = true;
+
+        for (let pair of propNumPairs) {
+            let [propName, numToChange] = pair;
+
+            let gaining = numToChange > 0;
+            let gainWord = gaining ? 'gained' : 'lost';
+            let propAdjFn = gaining ? this.gainProperty : this.loseProperty;
+
+            propAdjFn(propName, numToChange);
+
+            if (!first) description += ', ';
+            description += gainWord + ' ' + Math.abs(numToChange) + ' ' + propName;
+        }
+
+        return new EventDescriptor('PropAdjustment', description);
+    }
+
+    private adjustProperty(numToAdjust: number, prop: keyof Attributes) {
         if (!this.game.getAllActiveCards().includes(this)) {
             return new EventDescriptor(
                 'NothingHappened',
@@ -381,7 +401,7 @@ export abstract class Card {
             );
         }
 
-        let add = addOrSubtract == 'add';
+        let add = numToAdjust > 0;
 
         if (add) this.attributeModifiers[prop] += numToAdjust;
         else this.attributeModifiers[prop] -= numToAdjust;

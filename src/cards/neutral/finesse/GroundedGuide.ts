@@ -24,22 +24,13 @@ export class GroundedGuide extends Unit implements GlobalBonusHook {
     }
 
     private adjustBonus(card: Card, gain = true): EventDescriptor {
-        let description = gain ? 'gained' : 'lost';
-        let propAdjFn = gain ? card.gainProperty : card.loseProperty;
-
-        let gaveVirtuosoBonus = this.doIfYourCardAndFlavorType(card, 'Virtuoso', card => {
-            propAdjFn('attack', 2);
-            propAdjFn('health');
-            return new EventDescriptor('PropAdjustment', card.name + ' ' + description + ' +2 attack / +1 health');
-        });
+        let gaveVirtuosoBonus = this.doIfYourCardAndFlavorType(card, 'Virtuoso', card =>
+            card.adjustProperties([['attack', 2], ['health', 1]])
+        );
 
         return gaveVirtuosoBonus
             ? gaveVirtuosoBonus
-            : this.doIfYourCard(card, card => {
-                  propAdjFn('attack');
-                  propAdjFn('health');
-                  return new EventDescriptor('PropAdjustment', card.name + ' ' + description + ' +1 attack / +1 health');
-              });
+            : this.doIfYourCard(card, card => card.adjustProperties([['attack', 1], ['health', 1]]));
     }
 
     giveBonus(card: Card): EventDescriptor {
