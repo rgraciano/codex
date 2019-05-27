@@ -7,6 +7,7 @@ import * as Color from './color';
 import { Spell } from './spell';
 import { Hero } from './hero';
 import { CardApi } from './card_api';
+import { Maestro } from './neutral/finesse/Maestro';
 
 export type CardType = 'Spell' | 'Hero' | 'Unit' | 'Building' | 'Upgrade' | 'Effect' | 'None';
 export type TechLevel = 0 | 1 | 2 | 3;
@@ -132,6 +133,9 @@ export abstract class Card {
         }
 
         card.attributeModifiers = <Attributes>pojo.attributeModifiers;
+
+        if (card.attributeModifiers.hasMaestroAbility > 0) Maestro.setupMaestroAbility(card);
+
         card.deserializeExtra(pojo);
         return card;
     }
@@ -162,6 +166,10 @@ export abstract class Card {
      */
     registerAbility(ability: Ability) {
         this.abilityMap.set(ability.name, ability);
+    }
+
+    unregisterAbility(name: string) {
+        this.abilityMap.delete(name);
     }
 
     /**
@@ -229,12 +237,13 @@ export abstract class Card {
     }
 
     get costAfterAlterations(): number {
-        return CardApi.hookOrAlteration(this.game, 'alterCost', [this], 'AllActive').reduce(
+        let cost = CardApi.hookOrAlteration(this.game, 'alterCost', [this], 'AllActive').reduce(
             (previousValue: number, currentValue: number, currentIndex: number, array: number[]) => {
                 return previousValue + currentValue;
             },
             this.effective().cost
         );
+        return cost >= 0 ? cost : 0;
     }
 
     protected canDoThings(arrivalFatigueOk: boolean, checkAttacksThisTurn: boolean): boolean {
@@ -347,6 +356,14 @@ export abstract class Card {
         this.controller = this.owner;
         this.contains = [];
         this.attributeModifiers = new Attributes();
+    }
+
+    isYourCard(otherCard: Card): boolean {
+        return otherCard.controller == this.controller;
+    }
+
+    isYourCardAndFlavorType(otherCard: Card, flavorType: string): boolean {
+        return this.isYourCard(otherCard) && otherCard.flavorType == flavorType;
     }
 
     /** If otherCard is actually this card, do something */
@@ -550,6 +567,9 @@ export class Attributes {
 
     /** This is for cards w/ readiness, to track if they've already attacked once this turn. */
     haveAttackedThisTurn: 0;
+
+    /** These are for temporary abilities that were added by other cards, tracking that the ability was added */
+    hasMaestroAbility: 0;
 
     // TODO: Also model temporaryArmor / temporaryAttack.  See: Aged Sensei.  He'll have to add a trigger to clear it by end of turn.
     // TODO: For Safe Attacking - maybe there's a startOfAttack trigger and an endOfAttack trigger to add / remove the armor?
