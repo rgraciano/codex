@@ -36,6 +36,7 @@ export function chooseAbilityTargetChoice(game: Game, action: Action, card: Card
         // subtract any resistance on the targeted card
         let eff = card.effective();
         cardWithAbility.controllerBoard.gold -= eff.resist;
+        if (cardWithAbility.controllerBoard.gold < 0) cardWithAbility.controllerBoard.gold = 0;
 
         // some things die when targeted, eg illusions
         if (eff.diesWhenTargeted > 0) {
