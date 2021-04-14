@@ -5,3 +5,5 @@ This is a prototype game server with enforced rules for Codex.  The React-TS cli
 In this v0.1, we will be able to play a turn, generate forum output, and a link for the
 other player to play their turn with current game state.  Multiple branches of a game
 could be created by using the same link repeatedly (feature, not bug).  
+
+If you're looking to get started, go to src/game_server.ts and begin from there.
