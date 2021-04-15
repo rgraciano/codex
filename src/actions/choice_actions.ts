@@ -1,9 +1,8 @@
 import { Game, EventDescriptor } from '../game';
 import { StringMap } from '../game_server';
-import { ActionName, Action } from './phase';
-import { Card } from '../cards/card';
-import { Hero } from '../cards/hero';
-import { ArrivesHandler, DiesHandler, LeavesHandler, UpkeepHandler, AttacksHandler, DirectDamageHandler } from '../cards/handlers';
+import { Action } from './phase';
+import { Card, Hero } from '../cards/card';
+import { ArrivesHandler, DiesHandler, LeavesHandler, AttacksHandler, DirectDamageHandler } from '../cards/handlers';
 import { CardApi } from '../cards/card_api';
 
 import { choosePatrolSlotChoice } from './patrol_action';

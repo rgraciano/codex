@@ -1,5 +1,4 @@
-import { TechLevel, Attributes, Card } from '../../card';
-import { Hero } from '../../hero';
+import { TechLevel, Attributes, Card, Hero } from '../../card';
 import * as Color from '../../color';
 import { SidelineAbility, TargetingOptions } from '../../ability';
 import { CardCostAlteration } from '../../handlers';

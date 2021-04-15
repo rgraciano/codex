@@ -1,9 +1,8 @@
-import { Card, Attributes, TechLevel } from './card';
+import { Card, Attributes, TechLevel, Hero } from './card';
 import { EventDescriptor, Game } from '../game';
 import { Phase, Action } from '../actions/phase';
 import { BuildingType, BoardBuilding } from '../board';
 import { CardApi, SpaceType } from './card_api';
-import { Hero } from './hero';
 
 export type BuildingChoice = { boardBuildings: BuildingType[]; cardBuildings: Card[] };
 export type ChoiceType = 'Buildings' | 'Heroes' | 'Units' | 'Characters' | 'Weakest';

@@ -1,5 +1,4 @@
-import { Card } from './card';
-import { Hero } from './hero';
+import { Card, Hero } from './card';
 
 import { Spark } from './neutral/starter/Spark';
 import { Bloom } from './neutral/starter/Bloom';

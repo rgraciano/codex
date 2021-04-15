@@ -1,6 +1,5 @@
 import { Game, EventDescriptor } from '../game';
-import { Card, Unit } from './card';
-import { Hero } from './hero';
+import { Card, Unit, Hero } from './card';
 import { Spell, AttachSpell, ImmediateSpell, OngoingSpell, UntilSpell } from './spell';
 import { GlobalBonusHook, WouldDieHook, WouldDiscardHook } from './handlers';
 import { Phase, ActionName, PrimitiveMap, Action, ActionOptions } from '../actions/phase';

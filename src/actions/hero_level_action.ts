@@ -1,5 +1,4 @@
-import { Card } from '../cards/card';
-import { Hero } from '../cards/hero';
+import { Card, Hero } from '../cards/card';
 
 export function heroLevelAction(cardId: string): void {
     let card = Card.idToCardMap.get(cardId);
