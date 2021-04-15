@@ -133,6 +133,7 @@ export abstract class Card {
 
         card.attributeModifiers = <Attributes>pojo.attributeModifiers;
 
+        // TODO: Fix Maestro
         //if (card.attributeModifiers.hasMaestroAbility > 0) Maestro.setupMaestroAbility(card);
 
         card.deserializeExtra(pojo);
