@@ -14,8 +14,6 @@ export class Maestro extends Unit implements GlobalBonusHook, CardCostAlteration
     techLevel: TechLevel = 2;
     importPath: string = './neutral/finesse';
 
-    static maestroAbilityName = 'Maestro: 2 Damage to Building';
-
     constructor(owner: number, controller?: number, cardId?: string) {
         super(owner, controller, cardId);
 
@@ -36,16 +34,8 @@ export class Maestro extends Unit implements GlobalBonusHook, CardCostAlteration
 
     removeBonus(card: Card): EventDescriptor {
         return this.doIfYourCardAndFlavorType(card, 'Virtuoso', card => {
-            card.unregisterAbility(Maestro.maestroAbilityName);
+            card.unregisterAbility(Card.maestroAbilityName);
             return new EventDescriptor('Info', card.name + ' lost Maestro building damage ability');
         });
-    }
-
-    static setupMaestroAbility(card: Card): EventDescriptor {
-        let buildingDmgAbility = new DamageAnyBuildingAbility(card, 2);
-        buildingDmgAbility.name = Maestro.maestroAbilityName;
-        buildingDmgAbility.requiresExhaust = true;
-        card.registerAbility(buildingDmgAbility);
-        return new EventDescriptor('Info', card.name + ' can now be exhausted to do 2 damage to any building');
     }
 }

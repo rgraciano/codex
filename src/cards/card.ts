@@ -2,7 +2,7 @@ import { anyid } from 'anyid';
 import { Game, EventDescriptor, RuneEvent } from '../game';
 import { ObjectMap } from '../game_server';
 import { Board } from '../board';
-import { Ability } from './ability';
+import { Ability, DamageAnyBuildingAbility } from './ability';
 import * as Color from './color';
 import { Spell } from './spell';
 import { CardApi } from './card_api';
@@ -133,11 +133,20 @@ export abstract class Card {
 
         card.attributeModifiers = <Attributes>pojo.attributeModifiers;
 
-        // TODO: Fix Maestro
-        //if (card.attributeModifiers.hasMaestroAbility > 0) Maestro.setupMaestroAbility(card);
+        if (card.attributeModifiers.hasMaestroAbility > 0) Card.setupMaestroAbility(card);
 
         card.deserializeExtra(pojo);
         return card;
+    }
+
+    static maestroAbilityName = 'Maestro: 2 Damage to Building';
+
+    static setupMaestroAbility(card: Card): EventDescriptor {
+        let buildingDmgAbility = new DamageAnyBuildingAbility(card, 2);
+        buildingDmgAbility.name = Card.maestroAbilityName;
+        buildingDmgAbility.requiresExhaust = true;
+        card.registerAbility(buildingDmgAbility);
+        return new EventDescriptor('Info', card.name + ' can now be exhausted to do 2 damage to any building');
     }
 
     /**
