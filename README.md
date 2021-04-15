@@ -7,3 +7,10 @@ other player to play their turn with current game state.  Multiple branches of a
 could be created by using the same link repeatedly (feature, not bug).  
 
 If you're looking to get started, go to src/game_server.ts and begin from there.
+
+To use this server, compile the TypeScript and then run the built index.js file:
+
+tsc
+node built/index.js
+
+The server will then start up on local port 8080 by default, and you'll see a message that looks like:  "restify listening at http://[::]:8080".
